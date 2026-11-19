@@ -17,17 +17,31 @@ sensing and the projector is driven over ADB (network, port 5555) by a built-in 
 ## Layout
 ```
 app/src/main/kotlin/dev/keystone/auto/
-  core/     pure Kotlin maths (no Android): Geometry (Pt, Mat3, homography), Keystone (panel model, Offsets),
-            Solver (largest rectangle), Pose (phone gravity + camera intrinsics -> levelled view), Pipeline (per-capture solve,
-            outlier-rejecting combine)
-  vision/   pure Kotlin image processing: GrayImage, Mask ops, MarkerDetector (finds the 4 pattern discs)
-  link/     ADB: AdbConnection (dadb), Projector (read/apply keystone, helper, pattern app), AdbScanner + Subnet
-  data/     Learning (self-improvement from accept/reject), Codec (JSON for profile + history)
-app/src/main/assets/projector/   ksall.jar (helper run ON the projector) and pattern.apk (test pattern) — built, committed
+  MainActivity.kt, AppViewModel.kt, UiState.kt   single activity; AppViewModel runs the whole flow, UiState holds the
+                                                 sealed Screen / ConnectState / Session / VerifyState / DoneState types
+  core/      pure Kotlin maths (no Android): Geometry (Pt, Mat3, homography), Keystone (Panel model, Offsets),
+             Solver (largest rectangle), Pose (gravity + intrinsics -> levelled view), Pipeline (per-capture solve, combine)
+  vision/    pure Kotlin image processing: GrayImage, Mask ops, MarkerDetector (finds the 4 pattern discs)
+  link/      ADB over TCP: AdbConnection (dadb), Projector (read/apply keystone, helper, pattern app), AdbScanner + Subnet
+  data/      Learning (accept/reject -> aspect, yaw, roll bias), Codec (JSON for profile + history)
+  platform/  Android glue: Store (settings, profile, history, original keystone), Network (Wi-Fi subnet), AppLog,
+             CameraRig/CameraMeta (CameraX + Camera2 intrinsics), GravityTracker, CaptureProcessor (photo -> measurement)
+  ui/        Compose: theme/Theme, Components, Illustrations (code-drawn diagrams), Root (screen switch),
+             screens/ Connect, Guide, Capture (+ CaptureOverlay), FlowScreens (Working, Verify, Feedback, ResultPhoto, Done),
+             SettingsScreens (Settings, History, Log)
+app/src/main/assets/projector/   ksall.jar (helper run ON the projector) and pattern.apk (test pattern) - built, committed
 projector/helper/KsAll.java      source of the helper (calls Hisilicon AdvancedPictureSetting through app_process)
-pattern/                         Gradle module: the full-screen four-marker test pattern app installed on the projector
+pattern/                         Gradle module: the full-screen four-marker pattern app installed on the projector
 tools/build-assets.sh            rebuilds ksall.jar and pattern.apk into app assets
+docs/screenshots/                README images, produced from the UI snapshot tests
 ```
+
+## The flow (AppViewModel)
+Connect (scan / remembered host / manual IP -> connect, push helper, install pattern app, remember original keystone) ->
+Guide -> Capture (N photos, each analysed immediately) -> Working (solve, sanity-check, apply) -> Verify
+(Looks correct -> optional result photo -> learn -> Done; Not quite -> Feedback chip -> adjust -> re-solve from the same
+photos -> Verify again; Undo any time). Photos retaken after a rejection are measured against the keystone that is on the
+projector at that moment (`Session.keystoneAtStart` is updated). All projector calls go through `proj {}` which reconnects once.
 
 ## Key facts about the projector (verified on the real device)
 - Keystone = homography moving the four frame corners; offsets are pixels measured **inward**: TL=(X1,Y1) TR=(1280-X2,Y2)
@@ -45,11 +59,17 @@ target aspect whose pre-image fits the panel (corner offsets capped) -> 7. avera
 Unknown camera yaw is assumed 0 (phone parallel to the wall) unless learned.
 
 ## Testing
-- `./gradlew testDebugUnitTest` runs the JVM tests (geometry, solver, pose with a simulated camera, detector on rendered
-  photos, link layer against a simulated projector, learning on a simulated wall).
+- `./gradlew testDebugUnitTest` runs everything on the JVM: geometry, solver, pose with a simulated camera, detector on
+  rendered photos, link layer against a simulated projector, learning on a simulated wall, and **UI snapshot tests**.
 - Optional, skipped when not configured:
   - `KS_CAPTURES=<dir>` real photos + sidecar JSON: cross-checks the Kotlin pipeline against the Python prototype.
-  - `KS_PROJECTOR=<ip>` live read-only test against a real projector; `KS_SCAN=<ip>/<prefix>` live subnet scan.
+  - `KS_PROJECTOR=<ip>` live read-only test against a real projector (also the generated-key-pair connection);
+    `KS_SCAN=<ip>/<prefix>` live subnet scan.
+- **UI snapshots**: `ui/UiSnapshotTest` and `ui/CaptureSnapshotTest` (Robolectric, native graphics) draw the activity's decor view
+  into PNGs under `app/build/ui-snapshots/`. Look at them after any UI change; they catch layout problems and crashes
+  without a device. `captureToImage()` does not work under Robolectric, hence the manual draw. Qualifier order matters
+  (`w411dp-h891dp-port-xxhdpi`). `CaptureOverlay` is a pure composable precisely so it can be rendered without a camera.
+- Not testable here: the real camera, sensors, Wi-Fi scanning on a phone and the dadb behaviour on Android. These need a phone.
 - Assets: `tools/build-assets.sh` (needs JDK 17, Android SDK platform 34 + build-tools 34.0.0).
 - Build: `./gradlew assembleDebug` (JDK 17, `local.properties` with `sdk.dir`).
 
