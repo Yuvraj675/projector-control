@@ -1,0 +1,17 @@
+# build output / tooling
+build/
+.gradle/
+.idea/
+*.iml
+local.properties
+captures/
+venv/
+__pycache__/
+*.pyc
+
+# personal photos of the room never go into the repo (local validation data only)
+**/local-data/
+*.jpg
+*.jpeg
+!**/res/**/*.jpg
+dist/
