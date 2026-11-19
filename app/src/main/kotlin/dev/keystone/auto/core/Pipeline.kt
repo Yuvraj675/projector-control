@@ -45,7 +45,12 @@ data class Combined(
     val spread: Double,             // largest per-value standard deviation among the used captures (pixels)
 )
 
-/** Average per-capture solutions after rejecting outliers (needs >= 3 captures to reject anything). */
+/**
+ * Average per-capture solutions after rejecting gross outliers (needs >= 3 captures to reject anything).
+ * Hand-held shots scatter by roughly +-10 px per value, which is normal and gets averaged out; only a capture whose
+ * summed deviation from the median solution is far beyond that (a bad detection, a badly tilted phone) is dropped.
+ * Calibrated on real captures: the four shots of the accepted setting deviate by 12..71 px in total.
+ */
 fun combine(results: List<Offsets>): Combined {
     require(results.isNotEmpty())
     val vals = results.map { it.toList() }
@@ -53,7 +58,7 @@ fun combine(results: List<Offsets>): Combined {
     val median = (0 until 8).map { k -> vals.map { it[k] }.sorted().let { s -> if (n % 2 == 1) s[n / 2] else (s[n / 2 - 1] + s[n / 2]) / 2 } }
     val dist = vals.map { v -> (0 until 8).sumOf { abs(v[it] - median[it]) } }
     val medDist = dist.sorted().let { s -> if (n % 2 == 1) s[n / 2] else (s[n / 2 - 1] + s[n / 2]) / 2 }
-    val keep = if (n >= 3) dist.indices.filter { dist[it] <= maxOf(40.0, 2.5 * medDist) } else dist.indices.toList()
+    val keep = if (n >= 3) dist.indices.filter { dist[it] <= maxOf(100.0, 4.0 * medDist) } else dist.indices.toList()
     val used = if (keep.isEmpty()) dist.indices.toList() else keep
     val mean = (0 until 8).map { k -> used.sumOf { vals[it][k] } / used.size }
     val spread = (0 until 8).maxOf { k ->
