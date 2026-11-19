@@ -16,17 +16,25 @@ data class Intrinsics(val fx: Double, val fy: Double, val cx: Double, val cy: Do
 }
 
 /**
- * Intrinsics for a JPEG that is a centred crop of the sensor's active array (Camera2 reports LENS_INTRINSIC_CALIBRATION
- * for the full active array; CameraX crops 4:3 to 16:9).
+ * Intrinsics for a JPEG made from the sensor's active array. Camera2 reports LENS_INTRINSIC_CALIBRATION for the full
+ * active array; the JPEG is a centred crop of it to the JPEG's aspect ratio (CameraX crops 4:3 to 16:9), possibly scaled
+ * to a smaller size.
  */
 fun intrinsicsForJpeg(
     fx: Double, fy: Double, cx: Double, cy: Double,
     activeArray: IntArray, // left, top, right, bottom
     jpegW: Int, jpegH: Int,
 ): Intrinsics {
-    val offX = ((activeArray[2] - activeArray[0]) - jpegW) / 2.0
-    val offY = ((activeArray[3] - activeArray[1]) - jpegH) / 2.0
-    return Intrinsics(fx, fy, cx - offX, cy - offY)
+    val aw = (activeArray[2] - activeArray[0]).toDouble()
+    val ah = (activeArray[3] - activeArray[1]).toDouble()
+    val jpegAspect = jpegW.toDouble() / jpegH
+    val cropW: Double
+    val cropH: Double
+    if (aw / ah > jpegAspect) { cropH = ah; cropW = ah * jpegAspect } else { cropW = aw; cropH = aw / jpegAspect }
+    val offX = (aw - cropW) / 2.0
+    val offY = (ah - cropH) / 2.0
+    val scale = jpegW / cropW
+    return Intrinsics(fx * scale, fy * scale, (cx - offX) * scale, (cy - offY) * scale)
 }
 
 /** Fallback when the phone reports no calibration: derive the focal length in pixels from the physical sensor size. */

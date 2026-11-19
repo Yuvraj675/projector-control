@@ -16,6 +16,20 @@ class PoseTest {
     }
 
     @Test
+    fun scaledAndPortraitJpegsGetConsistentIntrinsics() {
+        // a 3840x2160 JPEG scaled from the same 16:9 crop: everything scales by 3840/4096
+        val k2 = intrinsicsForJpeg(2801.094, 2801.094, 2048.0, 1536.0, intArrayOf(0, 0, 4096, 3072), 3840, 2160)
+        val s = 3840.0 / 4096.0
+        assertEquals(2801.094 * s, k2.fx, 1e-6); assertEquals(1080.0, k2.cy, 1e-6); assertEquals(1920.0, k2.cx, 1e-6)
+        // full 4:3 JPEG: no crop, no scale
+        val k3 = intrinsicsForJpeg(2801.094, 2801.094, 2048.0, 1536.0, intArrayOf(0, 0, 4096, 3072), 4096, 3072)
+        assertEquals(1536.0, k3.cy, 1e-9)
+        // portrait-shaped crop (3:4 of the 4:3 array) crops horizontally instead
+        val k4 = intrinsicsForJpeg(2801.094, 2801.094, 2048.0, 1536.0, intArrayOf(0, 0, 4096, 3072), 2304, 3072)
+        assertEquals(1152.0, k4.cx, 1e-9); assertEquals(1536.0, k4.cy, 1e-9)
+    }
+
+    @Test
     fun realCaptureGravityGivesTheExpectedUpVector() {
         // measured on the real phone (vivo V2319, landscape, sensor orientation 90)
         val up = upInSensorFrame(Vec3(9.796918869018555, -0.13361075520515442, 0.20583276450634003), 90)
