@@ -131,6 +131,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         DeviceChoice(host, host, false, "Could not talk to this device. If it asks to allow debugging, accept on its screen and scan again.")
     }
 
+    fun cancelScan() {
+        scanJob?.cancel()
+        connect.value = ConnectState.Idle
+    }
+
     fun connectManually(host: String) {
         val h = host.trim()
         if (h.isEmpty()) return
