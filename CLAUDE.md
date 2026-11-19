@@ -76,3 +76,15 @@ Unknown camera yaw is assumed 0 (phone parallel to the wall) unless learned.
 ## Learning
 `data/Learning.kt`: accepted result -> fit aspect, yaw, roll-bias (EMA over sessions); rejected -> nudge one parameter in the
 direction that improves the predicted picture (step halves on reversal). Params persist in `profile.json`, sessions in history.
+
+## Status, open items and wider context
+- The app is complete and tested on the JVM (53 tests, live tests against the real projector pass). It has **not yet been run on a
+  phone**: camera, sensors, Wi-Fi scan and dadb on Android are untested. If something fails on a device, ask for
+  Settings -> Activity log. Most likely trouble spots: CameraX binding with three use cases (a fallback exists), ADB key
+  generation on Android (falls back to no key, fine for this no-auth projector), Android 17 local-network permission.
+- No git remote is configured yet; the user will add one.
+- Fixed design decisions: BR marker offset from the corner (mute indicator), corner offsets capped at 320/180 px in the solver,
+  hard limits 400/220 in `Panel`, outlier rejection only for gross deviations, photos stay on the phone.
+- The wider project (the user's projector, what was changed on it, backups, research prototype, laptop setup) is described in
+  `../PROJECT_STATE.md`, which lives outside this repo and may not exist elsewhere. Read it first if it is there.
+
