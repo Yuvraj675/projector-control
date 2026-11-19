@@ -15,6 +15,7 @@ data class Pt(val x: Double, val y: Double) {
 
 /** A 3-vector (used for directions in camera space). */
 data class Vec3(val x: Double, val y: Double, val z: Double) {
+    operator fun plus(o: Vec3) = Vec3(x + o.x, y + o.y, z + o.z)
     operator fun minus(o: Vec3) = Vec3(x - o.x, y - o.y, z - o.z)
     operator fun times(k: Double) = Vec3(x * k, y * k, z * k)
     operator fun unaryMinus() = Vec3(-x, -y, -z)
