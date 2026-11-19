@@ -99,6 +99,7 @@ fun PlacementDiagram(modifier: Modifier = Modifier) {
     val warn = MaterialTheme.appColors.warning
     val ink = MaterialTheme.colorScheme.onSurfaceVariant
     val surface = MaterialTheme.colorScheme.surfaceVariant
+    val projector = MaterialTheme.colorScheme.secondary
     Canvas(modifier.fillMaxWidth().aspectRatio(1.7f)) {
         val w = size.width
         val h = size.height
@@ -125,7 +126,7 @@ fun PlacementDiagram(modifier: Modifier = Modifier) {
             drawLine(warn, Offset(x, h * 0.08f + 14.dp.toPx()), Offset(x, py - 2.dp.toPx()), 1.dp.toPx(), pathEffect = dashed())
         }
         // projector, off to the side
-        drawRoundRect(ink.copy(alpha = 0.8f), Offset(w * 0.8f, h * 0.7f), Size(w * 0.1f, h * 0.12f), CornerRadius(6.dp.toPx()))
+        drawRoundRect(projector, Offset(w * 0.8f, h * 0.7f), Size(w * 0.1f, h * 0.12f), CornerRadius(6.dp.toPx()))
     }
 }
 
@@ -159,23 +160,5 @@ fun FramingDiagram(modifier: Modifier = Modifier) {
             bracket(w * 0.09f, h * 0.1f, 1f, 1f); bracket(w * 0.91f, h * 0.1f, -1f, 1f)
             bracket(w * 0.09f, h * 0.9f, 1f, -1f); bracket(w * 0.91f, h * 0.9f, -1f, -1f)
         }
-    }
-}
-
-/** A tilt gauge: a bubble that should sit in the green centre. */
-@Composable
-fun LevelDiagram(modifier: Modifier = Modifier) {
-    val ok = MaterialTheme.appColors.success
-    val ink = MaterialTheme.colorScheme.onSurfaceVariant
-    Canvas(modifier.fillMaxWidth().aspectRatio(5f)) {
-        val w = size.width
-        val h = size.height
-        val y = h / 2
-        drawRoundRect(ink.copy(alpha = 0.18f), Offset(w * 0.06f, y - 14.dp.toPx()), Size(w * 0.88f, 28.dp.toPx()), CornerRadius(14.dp.toPx()))
-        drawRoundRect(ok.copy(alpha = 0.28f), Offset(w * 0.5f - 26.dp.toPx(), y - 14.dp.toPx()), Size(52.dp.toPx(), 28.dp.toPx()), CornerRadius(14.dp.toPx()))
-        drawLine(ink, Offset(w * 0.5f - 26.dp.toPx(), y - 14.dp.toPx()), Offset(w * 0.5f - 26.dp.toPx(), y + 14.dp.toPx()), 2.dp.toPx())
-        drawLine(ink, Offset(w * 0.5f + 26.dp.toPx(), y - 14.dp.toPx()), Offset(w * 0.5f + 26.dp.toPx(), y + 14.dp.toPx()), 2.dp.toPx())
-        drawCircle(ok, 11.dp.toPx(), Offset(w * 0.5f, y))
-        drawCircle(Color.White.copy(alpha = 0.5f), 4.dp.toPx(), Offset(w * 0.5f - 3.dp.toPx(), y - 3.dp.toPx()))
     }
 }

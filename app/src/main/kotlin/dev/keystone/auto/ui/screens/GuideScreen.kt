@@ -23,8 +23,8 @@ import dev.keystone.auto.ui.*
 private const val PAGES = 3
 
 @Composable
-fun GuideScreen(vm: AppViewModel) {
-    var page by rememberSaveable { mutableIntStateOf(0) }
+fun GuideScreen(vm: AppViewModel, initialPage: Int = 0) {
+    var page by rememberSaveable { mutableIntStateOf(initialPage) }
     val settings by vm.settings.collectAsState()
 
     ScreenScaffold(
@@ -71,6 +71,12 @@ fun GuideScreen(vm: AppViewModel) {
 
                     1 -> {
                         PlacementDiagram()
+                        Spacer(Modifier.height(8.dp))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                            LegendItem(MaterialTheme.colorScheme.primary, "Picture on the wall")
+                            LegendItem(MaterialTheme.colorScheme.onSurfaceVariant, "You + phone")
+                            LegendItem(MaterialTheme.colorScheme.secondary, "Projector")
+                        }
                         Spacer(Modifier.height(12.dp))
                         Text("Where to stand", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onBackground)
                         Spacer(Modifier.height(6.dp))
@@ -81,18 +87,33 @@ fun GuideScreen(vm: AppViewModel) {
 
                     else -> {
                         FramingDiagram()
-                        Spacer(Modifier.height(10.dp))
-                        LevelDiagram()
+                        Spacer(Modifier.height(12.dp))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
+                            StatusPill("4 circles", true)
+                            StatusPill("Tilt -0.4°  Roll +0.6°", true)
+                            StatusPill("Steady", true)
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Hint("These three chips turn green when the shot is ready.", center = true)
                         Spacer(Modifier.height(12.dp))
                         Text("How to hold the phone", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onBackground)
                         Spacer(Modifier.height(6.dp))
                         NumberedStep(1, "Sideways, parallel to the wall", "Hold it like you're taking a flat photo of a poster. Don't angle it left or right.")
-                        NumberedStep(2, "Keep the level bar green", "It shows the phone's tilt. Aim the camera at the middle of the picture, with the phone upright.")
+                        NumberedStep(2, "Keep the tilt chip green", "It turns green when the phone is level. Aim the camera at the middle of the picture, with the phone upright.")
                         NumberedStep(3, "All four white circles in view", "Leave a little space around the picture. Don't zoom.")
                         NumberedStep(4, "Hold still", "When everything shows ready, the app takes the photo by itself. Lower the phone and raise it again between photos.")
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun LegendItem(color: androidx.compose.ui.graphics.Color, label: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(10.dp).clip(CircleShape).background(color))
+        Spacer(Modifier.width(6.dp))
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

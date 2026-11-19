@@ -43,6 +43,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.compose.ui.unit.dp
 import dev.keystone.auto.AppViewModel
+import dev.keystone.auto.CaptureItem
 import dev.keystone.auto.core.elevationDeg
 import dev.keystone.auto.core.rollDeg
 import dev.keystone.auto.core.upInSensorFrame
@@ -69,6 +70,7 @@ private class LiveState {
     var cameraReady by mutableStateOf(false)
     var error by mutableStateOf<String?>(null)
     var markersOk by mutableStateOf(false)
+    var manualOnly by mutableStateOf(false)         // live circle detection is unavailable on this phone
     var elev by mutableDoubleStateOf(0.0)
     var roll by mutableDoubleStateOf(0.0)
     var steady by mutableStateOf(false)
@@ -162,7 +164,11 @@ private fun CameraContent(vm: AppViewModel) {
         rig.bind(
             owner, previewView, settings.exposureStops,
             onFrame = { live.onFrame(it) },
-            onReady = { live.cameraReady = true; if (it == null) live.error = "This phone doesn't report its camera details, so accuracy may suffer." },
+            onReady = {
+                live.cameraReady = true
+                if (!rig.liveAnalysis) { live.markersOk = true; live.manualOnly = true }   // no live detection: do not gate on it
+                if (it == null) live.error = "This phone doesn't report its camera details, so accuracy may suffer."
+            },
             onError = { live.error = it },
         )
         onDispose { gravity.stop(); rig.release() }
@@ -194,7 +200,7 @@ private fun CameraContent(vm: AppViewModel) {
             val ready = live.cameraReady && live.markersOk && live.levelOk && live.steady && !shooting && !vm.processing.value
             if (ready) {
                 if (readySince == 0L) readySince = now
-                if (autoCapture && now - readySince > 1200 && now > cooldownUntil) { readySince = 0L; shoot() }
+                if (autoCapture && !live.manualOnly && now - readySince > 1200 && now > cooldownUntil) { readySince = 0L; shoot() }
             } else readySince = 0L
         }
     }
@@ -202,25 +208,63 @@ private fun CameraContent(vm: AppViewModel) {
     val items = session?.items.orEmpty()
     val target = if (resultMode) 1 else session?.target ?: 4
     val have = if (resultMode) 0 else session?.usableCount ?: 0
-    val last = items.lastOrNull()
     val allGood = live.markersOk && live.levelOk && live.steady
+    val instruction = when {
+        !live.cameraReady -> "Starting the camera…"
+        processing -> "Analysing the photo…"
+        live.manualOnly && !live.levelOk -> "Level the phone: tilt ${"%+.1f".format(live.elev)}° up/down, roll ${"%+.1f".format(live.roll)}°"
+        live.manualOnly -> "Make sure all four white circles are in view, then tap the shutter"
+        !live.markersOk -> "Aim at the picture: all four white circles in view, with a little margin"
+        !live.levelOk -> "Level the phone: tilt ${"%+.1f".format(live.elev)}° up/down, roll ${"%+.1f".format(live.roll)}°"
+        !live.steady -> "Hold still…"
+        autoCapture -> "Perfect. Taking the photo…"
+        else -> "Perfect. Tap the shutter"
+    }
 
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         AndroidView({ previewView }, Modifier.fillMaxSize())
+        CaptureOverlay(
+            title = if (resultMode) "Photo of the result" else "Photo ${minOf(have + 1, target)} of $target",
+            markersOk = live.markersOk, levelOk = live.levelOk, steady = live.steady, elev = live.elev, roll = live.roll,
+            instruction = instruction, cameraError = live.error, notice = notice, items = items,
+            autoCapture = autoCapture, resultMode = resultMode, processing = processing,
+            shutterEnabled = live.cameraReady && !processing && !shooting,
+            onBack = { vm.back() }, onShowPattern = { vm.showPatternAgain() }, onSkipResult = { vm.skipResultPhoto() },
+            onToggleAuto = { vm.updateSettings(settings.copy(autoCapture = !settings.autoCapture)) },
+            onShutter = { shoot() }, onRemove = { vm.removeCapture(it) },
+        )
+    }
+}
 
+/** Everything drawn over the camera preview. Pure: it only shows what it is given, so it can be rendered without a camera. */
+@Composable
+internal fun CaptureOverlay(
+    title: String, markersOk: Boolean, levelOk: Boolean, steady: Boolean, elev: Double, roll: Double,
+    instruction: String, cameraError: String?, notice: String?, items: List<CaptureItem>,
+    autoCapture: Boolean, resultMode: Boolean, processing: Boolean, shutterEnabled: Boolean,
+    onBack: () -> Unit, onShowPattern: () -> Unit, onSkipResult: () -> Unit, onToggleAuto: () -> Unit,
+    onShutter: () -> Unit, onRemove: (Int) -> Unit,
+) {
+    val allGood = markersOk && levelOk && steady
+    val last = items.lastOrNull()
+    Box(Modifier.fillMaxSize()) {
         // framing guide
         val guide = if (allGood) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.55f)
         Canvas(Modifier.fillMaxSize()) {
             val w = size.width; val h = size.height
-            val l = w * 0.14f; val r = w * 0.86f; val t = h * 0.14f; val b = h * 0.86f
-            val len = 36.dp.toPx(); val sw = 4.dp.toPx()
+            // a 16:9 guide in the clear band between the top status bar and the bottom controls
+            val gh = h * 0.40f
+            val gw = minOf(gh * 16f / 9f, w * 0.7f)
+            val cy = h * 0.41f
+            val l = w / 2 - gw / 2; val r = w / 2 + gw / 2; val t = cy - gh / 2; val b = cy + gh / 2
+            val len = 28.dp.toPx(); val sw = 4.dp.toPx()
             fun corner(x: Float, y: Float, dx: Float, dy: Float) {
                 drawLine(guide, Offset(x, y), Offset(x + dx * len, y), sw, StrokeCap.Round)
                 drawLine(guide, Offset(x, y), Offset(x, y + dy * len), sw, StrokeCap.Round)
             }
             corner(l, t, 1f, 1f); corner(r, t, -1f, 1f); corner(l, b, 1f, -1f); corner(r, b, -1f, -1f)
-            drawLine(guide.copy(alpha = 0.7f), Offset(w / 2 - 22.dp.toPx(), h / 2), Offset(w / 2 + 22.dp.toPx(), h / 2), 2.dp.toPx())
-            drawLine(guide.copy(alpha = 0.7f), Offset(w / 2, h / 2 - 22.dp.toPx()), Offset(w / 2, h / 2 + 22.dp.toPx()), 2.dp.toPx())
+            drawLine(guide.copy(alpha = 0.7f), Offset(w / 2 - 22.dp.toPx(), cy), Offset(w / 2 + 22.dp.toPx(), cy), 2.dp.toPx())
+            drawLine(guide.copy(alpha = 0.7f), Offset(w / 2, cy - 22.dp.toPx()), Offset(w / 2, cy + 22.dp.toPx()), 2.dp.toPx())
         }
 
         // top: back, title, status
@@ -229,25 +273,22 @@ private fun CameraContent(vm: AppViewModel) {
                 .windowInsetsPadding(WindowInsets.systemBars).padding(horizontal = 12.dp).padding(bottom = 24.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { vm.back() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White) }
-                Text(
-                    if (resultMode) "Photo of the result" else "Photo ${minOf(have + 1, target)} of $target",
-                    color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
-                )
+                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White) }
+                Text(title, color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                StatusPill("4 circles", live.markersOk)
+                StatusPill("4 circles", markersOk)
                 Spacer(Modifier.width(8.dp))
-                StatusPill("Level ${"%+.1f".format(live.elev)}° ${"%+.1f".format(live.roll)}°", live.levelOk)
+                StatusPill("Tilt ${"%+.1f".format(elev)}°  Roll ${"%+.1f".format(roll)}°", levelOk)
                 Spacer(Modifier.width(8.dp))
-                StatusPill("Steady", live.steady)
+                StatusPill("Steady", steady)
             }
         }
 
         // messages
         Column(Modifier.align(Alignment.TopCenter).windowInsetsPadding(WindowInsets.systemBars).padding(top = 64.dp).padding(horizontal = 80.dp)) {
-            live.error?.let { Banner(it, BannerKind.Error) }
+            cameraError?.let { Banner(it, BannerKind.Error) }
             notice?.let { Banner(it, BannerKind.Info) }
-            if (notice == null && last != null && live.error == null) {
+            if (notice == null && last != null && cameraError == null) {
                 last.problem?.let { Banner("Last photo: $it", BannerKind.Error) } ?: last.warning?.let { Banner("Last photo: $it", BannerKind.Warning) }
             }
         }
@@ -259,15 +300,6 @@ private fun CameraContent(vm: AppViewModel) {
                 .windowInsetsPadding(WindowInsets.systemBars).padding(horizontal = 16.dp).padding(top = 28.dp, bottom = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            val instruction = when {
-                !live.cameraReady -> "Starting the camera…"
-                processing -> "Analysing the photo…"
-                !live.markersOk -> "Aim at the picture: all four white circles in view, with a little margin"
-                !live.levelOk -> "Level the phone: tilt ${"%+.1f".format(live.elev)}° up/down, roll ${"%+.1f".format(live.roll)}°"
-                !live.steady -> "Hold still…"
-                autoCapture -> "Perfect. Taking the photo…"
-                else -> "Perfect. Tap the shutter"
-            }
             Text(
                 instruction, color = if (allGood) MaterialTheme.colorScheme.primary else Color.White,
                 style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center,
@@ -275,17 +307,17 @@ private fun CameraContent(vm: AppViewModel) {
             Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
-                    TextAction("Show pattern again", { vm.showPatternAgain() }, color = Color.White)
-                    if (resultMode) TextAction("Skip the result photo", { vm.skipResultPhoto() }, color = Color.White.copy(alpha = 0.8f))
-                    TextAction(if (autoCapture) "Auto-capture: on" else "Auto-capture: off", { vm.updateSettings(settings.copy(autoCapture = !settings.autoCapture)) }, color = Color.White.copy(alpha = 0.8f))
+                    TextAction("Show pattern again", onShowPattern, color = Color.White)
+                    if (resultMode) TextAction("Skip the result photo", onSkipResult, color = Color.White.copy(alpha = 0.8f))
+                    TextAction(if (autoCapture) "Auto-capture: on" else "Auto-capture: off", onToggleAuto, color = Color.White.copy(alpha = 0.8f))
                 }
-                Shutter(enabled = live.cameraReady && !processing && !shooting, ready = allGood, onClick = { shoot() })
+                Shutter(enabled = shutterEnabled, ready = allGood, onClick = onShutter)
                 Row(Modifier.weight(1f), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                     items.takeLast(4).forEach { item ->
                         Box(
                             Modifier.padding(start = 6.dp).size(width = 64.dp, height = 40.dp).clip(RoundedCornerShape(8.dp))
                                 .border(2.dp, if (item.usable) MaterialTheme.appColors.success else MaterialTheme.colorScheme.error, RoundedCornerShape(8.dp))
-                                .clickable(enabled = !processing) { vm.removeCapture(item.id) },
+                                .clickable(enabled = !processing) { onRemove(item.id) },
                         ) {
                             item.thumb?.let { Image(it.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
                         }

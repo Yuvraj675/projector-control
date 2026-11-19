@@ -24,6 +24,10 @@ import java.util.concurrent.Executors
 class CameraRig(private val context: Context) {
     @Volatile var meta: CameraMeta? = null
         private set
+
+    /** False if this phone could not run live analysis next to preview and capture (the user then shoots manually). */
+    @Volatile var liveAnalysis: Boolean = true
+        private set
     private var capture: ImageCapture? = null
     private var camera: Camera? = null
     private var provider: ProcessCameraProvider? = null
@@ -64,7 +68,14 @@ class CameraRig(private val context: Context) {
                     }
                 }
                 p.unbindAll()
-                val cam = p.bindToLifecycle(owner, CameraSelector.DEFAULT_BACK_CAMERA, preview, cap, analysis)
+                val cam = try {
+                    p.bindToLifecycle(owner, CameraSelector.DEFAULT_BACK_CAMERA, preview, cap, analysis)
+                } catch (e: IllegalArgumentException) {
+                    // Some phones cannot run all three at once: keep the preview and the shutter, drop the live detection.
+                    liveAnalysis = false
+                    p.unbindAll()
+                    p.bindToLifecycle(owner, CameraSelector.DEFAULT_BACK_CAMERA, preview, cap)
+                }
                 camera = cam
                 capture = cap
                 // The projection is bright: expose below auto so the circles keep clean edges.

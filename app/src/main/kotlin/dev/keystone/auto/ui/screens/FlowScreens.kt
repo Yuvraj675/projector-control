@@ -148,7 +148,8 @@ fun DoneScreen(vm: AppViewModel) {
     ScreenScaffold(
         title = "All done", step = 3,
         bottomBar = {
-            PrimaryButton("Finish and go back to the projector's home screen", { vm.goHome() })
+            PrimaryButton("Finish", { vm.goHome() })
+            Hint("Returns the projector to its home screen.", Modifier.align(Alignment.CenterHorizontally).padding(top = 6.dp), center = true)
             TextAction("Undo and restore the previous keystone", { vm.undo() }, Modifier.align(Alignment.CenterHorizontally), color = MaterialTheme.colorScheme.onSurfaceVariant)
         },
     ) {
@@ -187,10 +188,11 @@ private fun CornerTable(before: Offsets, after: Offsets) {
     val names = listOf("Top-left" to (0 to 1), "Top-right" to (2 to 3), "Bottom-left" to (4 to 5), "Bottom-right" to (6 to 7))
     val b = before.toMap().values.toList()
     val a = after.toMap().values.toList()
+    Hint("How far each corner is pulled in from the panel's corner, in pixels (across, down).", Modifier.padding(bottom = 8.dp))
     Row(Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
         Text("Corner", Modifier.weight(1.3f), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("Before (x, y)", Modifier.weight(1f), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("After (x, y)", Modifier.weight(1f), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("Before", Modifier.weight(1f), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("After", Modifier.weight(1f), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     names.forEach { (name, idx) ->
         Row(Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
