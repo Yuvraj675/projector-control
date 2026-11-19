@@ -352,7 +352,7 @@ private fun Shutter(enabled: Boolean, ready: Boolean, onClick: () -> Unit) {
 private fun PermissionView(asked: Boolean, onRequest: () -> Unit, onSettings: () -> Unit, onBack: () -> Unit) {
     ScreenScaffold(title = "Camera access", onBack = onBack) {
         AppCard {
-            Text("AutoKeystone needs the camera", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
+            Text("Auto keystone needs the camera", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(8.dp))
             Hint("It photographs the test pattern on the wall to measure the projector's keystone. Photos are analysed on your phone and are never uploaded or kept.")
             Spacer(Modifier.height(16.dp))

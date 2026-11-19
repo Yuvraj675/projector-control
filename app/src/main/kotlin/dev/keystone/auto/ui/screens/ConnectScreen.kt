@@ -23,7 +23,7 @@ fun ConnectScreen(vm: AppViewModel) {
     var manual by remember { mutableStateOf(false) }
 
     ScreenScaffold(
-        title = "AutoKeystone",
+        title = "ProjectorConnect",
         step = 0,
         actions = {
             IconButton(onClick = { vm.go(Screen.Settings) }) {
@@ -33,9 +33,9 @@ fun ConnectScreen(vm: AppViewModel) {
     ) {
         ProjectorHero(Modifier.padding(top = 4.dp))
         Spacer(Modifier.height(16.dp))
-        Text("Straighten your projector's picture with your phone", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
+        Text("Your phone is now your projector's remote", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
         Spacer(Modifier.height(8.dp))
-        Hint("Take a few photos of the wall and AutoKeystone corrects the trapezium for you. No computer needed.")
+        Hint("Control it like a mouse, type and speak, install apps and straighten the picture. All from your phone, no computer needed.")
         Spacer(Modifier.height(20.dp))
 
         notice?.let {
@@ -106,7 +106,7 @@ fun ConnectScreen(vm: AppViewModel) {
                 DividerLine()
                 KeyValue("Picture area in use", "${(st.keystone.panelUse() * 100).toInt()}% of the panel")
                 Spacer(Modifier.height(14.dp))
-                PrimaryButton("Start keystone fix", { vm.go(Screen.Guide) })
+                PrimaryButton("Open", { vm.go(Screen.Home) })
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     TextAction("Scan again", { vm.findProjector() })

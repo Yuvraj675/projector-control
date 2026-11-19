@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import dev.keystone.auto.CaptureItem
 import dev.keystone.auto.ui.screens.CaptureOverlay
-import dev.keystone.auto.ui.theme.AutoKeystoneTheme
+import dev.keystone.auto.ui.theme.ProjectorConnectTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,7 +30,7 @@ class CaptureSnapshotTest {
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     private fun snap(name: String, content: @Composable () -> Unit) {
-        rule.setContent { AutoKeystoneTheme(true) { Box(Modifier.fillMaxSize().background(Color(0xFF2A2F3A))) { content() } } }
+        rule.setContent { ProjectorConnectTheme(true) { Box(Modifier.fillMaxSize().background(Color(0xFF2A2F3A))) { content() } } }
         rule.waitForIdle()
         val view = rule.activity.window.decorView
         val w = view.width.takeIf { it > 0 } ?: 2673

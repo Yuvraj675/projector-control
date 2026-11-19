@@ -1,4 +1,4 @@
-# CLAUDE.md — AutoKeystone
+# CLAUDE.md — ProjectorConnect (formerly AutoKeystone)
 
 Engineering notes for working on this repository.
 
@@ -10,7 +10,7 @@ Engineering notes for working on this repository.
 - Keep `README.md` and this file current whenever behaviour, layout or commands change.
 
 ## What it is
-An Android app (Kotlin, Jetpack Compose, CameraX) that fixes the keystone of a Hisilicon "bigfish"/Hi3751 projector
+An Android app (Kotlin, Jetpack Compose, CameraX) called **ProjectorConnect**: a phone remote for an Android projector (mouse/keyboard/remote keys, apps, APK install, links, power and status) that also contains **Auto keystone**, which fixes the keystone of a Hisilicon "bigfish"/Hi3751 projector
 (Newlink/Zhiying firmware). The projector advertises auto keystone but has no camera or tilt sensor, so the phone does the
 sensing and the projector is driven over ADB (network, port 5555) by a built-in ADB client (`dadb`), with no computer.
 
@@ -19,15 +19,19 @@ sensing and the projector is driven over ADB (network, port 5555) by a built-in 
 app/src/main/kotlin/dev/keystone/auto/
   MainActivity.kt, AppViewModel.kt, UiState.kt   single activity; AppViewModel runs the whole flow, UiState holds the
                                                  sealed Screen / ConnectState / Session / VerifyState / DoneState types
-  core/      pure Kotlin maths (no Android): Geometry (Pt, Mat3, homography), Keystone (Panel model, Offsets),
+  core/      pure Kotlin maths (no Android): AirMouse (gyro -> pointer, PadMotion), Geometry (Pt, Mat3, homography), Keystone (Panel model, Offsets),
              Solver (largest rectangle), Pose (gravity + intrinsics -> levelled view), Pipeline (per-capture solve, combine)
   vision/    pure Kotlin image processing: GrayImage, Mask ops, MarkerDetector (finds the 4 pattern discs)
-  link/      ADB over TCP: AdbConnection (dadb), Projector (read/apply keystone, helper, pattern app), AdbScanner + Subnet
+  link/      ADB over TCP: AdbConnection (dadb; run, openStream for a live stdin, push), Projector (keystone, helper, pattern app,
+             firmware Auto switch), RemoteInput (+InputProtocol/RemoteKey: virtual mouse/keyboard via the projector's uinput),
+             ProjectorTools (apps, links, power, status, APK/bundle install), AdbScanner + Subnet
   data/      Learning (accept/reject -> aspect, yaw, roll bias), Codec (JSON for profile + history)
-  platform/  Android glue: Store (settings, profile, history, original keystone), Network (Wi-Fi subnet), AppLog,
+  platform/  Android glue: Store (settings, profile, history, original keystone), Network (Wi-Fi subnet), AppLog, GyroPointer,
              CameraRig/CameraMeta (CameraX + Camera2 intrinsics), GravityTracker, CaptureProcessor (photo -> measurement)
-  ui/        Compose: theme/Theme, Components, Illustrations (code-drawn diagrams), Root (screen switch),
-             screens/ Connect, Guide, Capture (+ CaptureOverlay), FlowScreens (Working, Verify, Feedback, ResultPhoto, Done),
+  ui/        Compose: theme/Theme, Components (older), Kit (Tile, RoundKey, Segmented, ToastHost), Icons (own line-icon set, no icon
+             library), Illustrations, Root (screen switch + toast),
+             screens/ Home, Remote (touchpad/air/D-pad), Keyboard (type, speak, links), Apps (+Install), Device (projector panel),
+             Connect, Guide, Capture (+ CaptureOverlay), FlowScreens (Working, Verify, Feedback, ResultPhoto, Done),
              SettingsScreens (Settings, History, Log)
 app/src/main/assets/projector/   ksall.jar (helper run ON the projector) and pattern.apk (test pattern) - built, committed
 projector/helper/KsAll.java      source of the helper (calls Hisilicon AdvancedPictureSetting through app_process)
@@ -36,9 +40,21 @@ tools/build-assets.sh            rebuilds ksall.jar and pattern.apk into app ass
 docs/screenshots/                README images, produced from the UI snapshot tests
 ```
 
-## The flow (AppViewModel)
-Connect (scan / remembered host / manual IP -> connect, push helper, install pattern app, remember original keystone) ->
-Guide -> Capture (N photos, each analysed immediately) -> Working (solve, sanity-check, apply) -> Verify
+## The remote (how the phone becomes a mouse)
+The projector has `/system/bin/uinput` (Android 12 evdev format) and the shell user is in group `uhid`, so no root is needed.
+`RemoteInput` runs `uinput -` over one ADB shell stream and writes JSON lines: `register` (name, vid/pid, `configuration`
+lists of UI_SET_EVBIT/KEYBIT/RELBIT) then `inject` with flat `[type,code,value,...]` events ending in a SYN `[0,0,0]`.
+Verified on the real projector: the mouse registers as a CURSOR device and moves Android's pointer, the keyboard delivers
+KEYCODE_* (Home=172, Volume, letters with Shift) and both vanish when stdin closes. Registration takes ~1.6 s. Keys above
+248 (580 = recent apps) are declared explicitly. Typing uses a US map (`InputProtocol.keyFor`); other characters are skipped
+and reported. All writes go through one thread; pointer deltas are merged every 12 ms. `AppViewModel` starts it on entering
+Remote/Keyboard and closes it 45 s after leaving (`REMOTE_IDLE_MS`). Sharing text to the app (`ACTION_SEND`) opens a link.
+Installs push each APK to `/data/local/tmp/pc-install-*`, run `pm install` / `pm install-multiple` (bundles are unzipped on the
+phone), and always remove the folder. The air mouse maths (`AirMouse`) is unit-tested but the feel is untested on hardware.
+
+## The keystone flow (AppViewModel)
+Connect (scan / remembered host / manual IP -> connect, push helper, install pattern app, remember original keystone) -> Home
+(tile: Auto keystone) -> Guide -> Capture (N photos, each analysed immediately) -> Working (solve, sanity-check, apply) -> Verify
 (Looks correct -> optional result photo -> learn -> Done; Not quite -> Feedback chip -> adjust -> re-solve from the same
 photos -> Verify again; Undo any time). Photos retaken after a rejection are measured against the keystone that is on the
 projector at that moment (`Session.keystoneAtStart` is updated). All projector calls go through `proj {}` which reconnects once.
@@ -83,13 +99,18 @@ Unknown camera yaw is assumed 0 (phone parallel to the wall) unless learned.
 direction that improves the predicted picture (step halves on reversal). Params persist in `profile.json`, sessions in history.
 
 ## Status, open items and wider context
-- The app is complete and tested on the JVM (53 tests, live tests against the real projector pass). It has **not yet been run on a
-  phone**: camera, sensors, Wi-Fi scan and dadb on Android are untested. If something fails on a device, ask for
-  Settings -> Activity log. Most likely trouble spots: CameraX binding with three use cases (a fallback exists), ADB key
-  generation on Android (falls back to no key, fine for this no-auth projector), Android 17 local-network permission.
+- Version 0.2.0 (renamed from AutoKeystone; the application id `dev.keystone.auto` and the Gradle module names are unchanged on
+  purpose, so the new APK installs over the old one and keeps the learned profile, history and ADB key). 83 JVM tests pass; the
+  live tests (`KS_PROJECTOR=<ip>`: `LiveToolsTest`, the read-only `readsTheRealProjector`) pass against the real projector.
+  **Do not run `readsTheRealProjector` when firmware Auto keystone is on**: its no-op `applyKeystone` now switches Auto off.
+- **Not yet run on a phone**: camera, sensors (gyro air mouse, gravity), speech recogniser, Wi-Fi scan, dadb on Android, the
+  file picker/install path, and the touch feel. If something fails ask for Settings -> Activity log and the screen.
+- Firmware Auto keystone (see above) was found on in a real session and blocks every setter; Projector -> Keystone shows it and
+  can switch it off. Why it switched on is unknown.
+- Ideas not built: screenshot/mirror the projector, file transfer to the projector, per-app shortcuts on Home, non-ASCII typing
+  (needs an IME or clipboard route), a launcher widget/quick-settings tile for the remote, CEC/HDMI control.
 - No git remote is configured yet; the user will add one.
 - Fixed design decisions: BR marker offset from the corner (mute indicator), corner offsets capped at 320/180 px in the solver,
   hard limits 400/220 in `Panel`, outlier rejection only for gross deviations, photos stay on the phone.
 - The wider project (the user's projector, what was changed on it, backups, research prototype, laptop setup) is described in
   `../PROJECT_STATE.md`, which lives outside this repo and may not exist elsewhere. Read it first if it is there.
-

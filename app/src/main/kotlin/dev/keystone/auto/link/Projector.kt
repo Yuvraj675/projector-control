@@ -34,6 +34,11 @@ data class ProjectorInfo(
 
 /** Everything the app needs from the projector, on top of any [Shell]. */
 class Projector(private val sh: Shell, private val assets: ProjectorAssets, val host: String) {
+    /** App, link, power and status helpers. */
+    val tools = ProjectorTools(sh)
+
+    /** The raw connection, for the live input devices. */
+    val shell: Shell get() = sh
 
     fun info(): ProjectorInfo {
         fun prop(name: String) = sh.run("getprop $name").out.trim()
@@ -87,6 +92,12 @@ class Projector(private val sh: Shell, private val assets: ProjectorAssets, val 
     }
 
     fun readKeystone(): Offsets = runHelper("get")
+
+    /** Is the firmware's own Auto keystone on? (While it is, nothing can be applied.) */
+    fun firmwareAutoOn(): Boolean { runHelper("get"); return autoWasOn }
+
+    /** Switches the firmware's Auto keystone off. Returns true when it is off afterwards. */
+    fun switchFirmwareAutoOff(): Boolean { runHelper("manual"); return !autoWasOn }
 
     /**
      * Moves the corners to `target`. The projector's setters are relative steps, so we read the current values,

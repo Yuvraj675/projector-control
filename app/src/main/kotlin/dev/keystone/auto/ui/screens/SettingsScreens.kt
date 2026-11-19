@@ -33,6 +33,32 @@ fun SettingsScreen(vm: AppViewModel) {
     val version = remember { runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "?" }
 
     ScreenScaffold(title = "Settings", onBack = { vm.back() }) {
+        SectionTitle("Remote")
+        AppCard {
+            Text("Touchpad speed: ${"%.1f".format(settings.pointerSpeed)}×", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+            Slider(value = settings.pointerSpeed.toFloat(), onValueChange = { vm.updateSettings(settings.copy(pointerSpeed = Math.round(it * 10) / 10.0)) }, valueRange = 0.4f..2.5f)
+            DividerLine()
+            Text("Air mouse speed: ${"%.1f".format(settings.airSpeed)}×", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+            Slider(value = settings.airSpeed.toFloat(), onValueChange = { vm.updateSettings(settings.copy(airSpeed = Math.round(it * 10) / 10.0)) }, valueRange = 0.4f..2.5f)
+            DividerLine()
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Natural scrolling", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Hint("The page follows your fingers, like on a phone.")
+                }
+                Switch(settings.naturalScroll, { vm.updateSettings(settings.copy(naturalScroll = it)) })
+            }
+            DividerLine()
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Vibrate on tap", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Hint("A light tick when you press a remote key.")
+                }
+                Switch(settings.haptics, { vm.updateSettings(settings.copy(haptics = it)) })
+            }
+        }
+
+        Spacer(Modifier.height(20.dp))
         SectionTitle("Taking photos")
         AppCard {
             Text("Photos per session: ${settings.captureCount}", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
@@ -59,7 +85,7 @@ fun SettingsScreen(vm: AppViewModel) {
         }
 
         Spacer(Modifier.height(20.dp))
-        SectionTitle("What the app has learned")
+        SectionTitle("What Auto keystone has learned")
         AppCard {
             KeyValue("Preferred shape", "%.2f : 1".format(profile.params.aspect))
             KeyValue("Viewing angle", "%+.1f°".format(profile.params.yawDeg))
@@ -79,7 +105,7 @@ fun SettingsScreen(vm: AppViewModel) {
             SecondaryButton("Restore the original keystone", { vm.restoreOriginal() }, enabled = connected != null && hasOriginal)
             Hint("Puts back the keystone the projector had the first time this app connected to it.", Modifier.padding(top = 6.dp))
             Spacer(Modifier.height(10.dp))
-            SecondaryButton("Forget this projector", { vm.forgetProjector(); vm.go(Screen.Connect) })
+            SecondaryButton("Forget this projector", { vm.forgetProjector() })
         }
 
         Spacer(Modifier.height(20.dp))
@@ -90,7 +116,7 @@ fun SettingsScreen(vm: AppViewModel) {
             Text("Activity log", Modifier.fillMaxWidth().clickable { vm.go(Screen.Log) }.padding(vertical = 8.dp), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
         }
         Spacer(Modifier.height(20.dp))
-        Hint("AutoKeystone $version. Photos are analysed on your phone and are not uploaded or kept.", center = true)
+        Hint("ProjectorConnect $version. Photos are analysed on your phone and are not uploaded or kept.", center = true)
     }
 
     if (confirmReset) {

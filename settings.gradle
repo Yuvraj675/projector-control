@@ -12,6 +12,6 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "AutoKeystone"
+rootProject.name = "ProjectorConnect"
 include ':app'
 include ':pattern'

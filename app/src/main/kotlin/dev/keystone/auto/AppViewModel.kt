@@ -46,6 +46,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val busy = MutableStateFlow<String?>(null)       // blocking overlay text
     val hasOriginal = MutableStateFlow(false)
     val resultMode = MutableStateFlow(false)         // the camera is taking the optional result photo
+    val toast = MutableStateFlow<String?>(null)      // a short message shown over any screen
+    val remoteState = MutableStateFlow<RemoteState>(RemoteState.Idle)
+    val apps = MutableStateFlow<AppsState>(AppsState.Loading)
+    val install = MutableStateFlow<InstallState>(InstallState.Idle)
+    val device = MutableStateFlow(DeviceState(null, null))
 
     // ---- private session state ----------------------------------------------------------------------------
     private var conn: AdbConnection? = null
@@ -56,6 +61,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private var feedbackScale = 1.0
     private var nextCaptureId = 1
     private var scanJob: kotlinx.coroutines.Job? = null
+    private var remote: RemoteInput? = null
+    private var remoteIdleJob: kotlinx.coroutines.Job? = null
+    private var pendingShare: String? = null
 
     init {
         // One-tap path: if we remember a projector, try it straight away.
@@ -63,20 +71,31 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     // ---- navigation ----------------------------------------------------------------------------------------
-    fun go(s: Screen) { _screen.value = s }
+    fun go(s: Screen) {
+        _screen.value = s
+        // the virtual mouse/keyboard stays on the projector while the remote screens are open, then goes away a little later
+        remoteIdleJob?.cancel()
+        if (s != Screen.Remote && s != Screen.Keyboard && remote != null) {
+            remoteIdleJob = viewModelScope.launch { kotlinx.coroutines.delay(REMOTE_IDLE_MS); closeRemote() }
+        }
+    }
+
+    private fun connected() = connect.value is ConnectState.Connected
+    private fun homeOrConnect() = if (connected()) Screen.Home else Screen.Connect
 
     /** Handles the system back button; returns false if the app should let the system close it. */
     fun back(): Boolean {
         when (_screen.value) {
-            Screen.Connect -> return false
-            Screen.Guide -> go(Screen.Connect)
+            Screen.Connect, Screen.Home -> return false
+            Screen.Guide, Screen.Remote, Screen.Keyboard, Screen.Apps, Screen.Device -> go(Screen.Home)
+            Screen.Install -> if (install.value !is InstallState.Working) go(Screen.Apps)
             Screen.Capture -> if (resultMode.value) { resultMode.value = false; go(Screen.Verify) } else go(Screen.Guide)
             Screen.Working -> Unit
             Screen.Verify -> Unit                                   // the user must say whether it looks right
             Screen.Feedback -> go(Screen.Verify)
             Screen.ResultPhoto -> go(Screen.Verify)
             Screen.Done -> goHome()
-            Screen.Settings, Screen.History, Screen.Log -> go(Screen.Connect)
+            Screen.Settings, Screen.History, Screen.Log -> go(homeOrConnect())
         }
         return true
     }
@@ -159,7 +178,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             AppLog.d("connected: $info")
             if (!info.supported) {
                 c.close()
-                connect.value = ConnectState.Failed(info.unsupportedReason ?: "This projector isn't supported.", "AutoKeystone works with projectors that use the Hisilicon TV API (Newlink/Zhiying, Hi3751).")
+                connect.value = ConnectState.Failed(info.unsupportedReason ?: "This projector isn't supported.", "ProjectorConnect works with projectors that use the Hisilicon TV API (Newlink/Zhiying, Hi3751).")
                 return@withLock
             }
             connect.value = ConnectState.Connecting(host, "Preparing the projector…")
@@ -173,6 +192,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             conn = c
             projector = p
             connect.value = ConnectState.Connected(info, ks)
+            if (_screen.value == Screen.Connect) go(Screen.Home)
+            pendingShare?.let { pendingShare = null; openLink(it) }
         } catch (e: Exception) {
             AppLog.e("connect to $host failed", e)
             connect.value = ConnectState.Failed(friendly(e), "Check that the projector is on, on the same Wi-Fi, and that network debugging is enabled.")
@@ -180,6 +201,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun closeLocked() {
+        closeRemote()
         conn?.close()
         conn = null
         projector = null
@@ -188,6 +210,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun disconnect() {
         viewModelScope.launch(io) { lock.withLock { closeLocked() } }
         connect.value = ConnectState.Idle
+        go(Screen.Connect)
     }
 
     /** Runs a projector call, reconnecting once if the connection dropped (the projector may have slept). */
@@ -408,7 +431,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 verify.value = null
                 session.value = null
                 refreshConnected()
-                go(Screen.Connect)
+                go(Screen.Home)
             } catch (e: Exception) {
                 notice.value = "Couldn't restore it: ${friendly(e)}"
             } finally {
@@ -437,7 +460,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             verify.value = null
             done.value = null
             refreshConnected()
-            go(Screen.Connect)
+            go(Screen.Home)
         }
     }
 
@@ -484,8 +507,194 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // ---- remote: the phone as mouse, keyboard and remote -----------------------------------------------------
+    fun startRemote() {
+        if (remote?.isOpen == true) { remoteState.value = RemoteState.Ready; return }
+        if (remoteState.value == RemoteState.Starting) return
+        remoteState.value = RemoteState.Starting
+        viewModelScope.launch(io) {
+            try {
+                val c = conn ?: throw ProjectorException("Not connected to a projector.")
+                closeRemote(keepState = true)
+                val r = RemoteInput(c)
+                r.start()
+                remote = r
+                remoteState.value = RemoteState.Ready
+                AppLog.d("remote: virtual mouse and keyboard ready")
+            } catch (e: Exception) {
+                AppLog.e("remote start", e)
+                remoteState.value = RemoteState.Failed(friendly(e))
+            }
+        }
+    }
+
+    private fun closeRemote(keepState: Boolean = false) {
+        remote?.close()
+        remote = null
+        if (!keepState) remoteState.value = RemoteState.Idle
+    }
+
+    /** The live input, or null (and the screen shows the reconnect prompt) when the link has dropped. */
+    private fun live(): RemoteInput? {
+        val r = remote
+        if (r != null && r.isOpen) return r
+        if (remoteState.value == RemoteState.Ready) remoteState.value = RemoteState.Failed("The connection to the projector dropped.")
+        return null
+    }
+
+    fun pointerMove(dx: Double, dy: Double) { live()?.move(dx, dy) }
+    fun scrollBy(notches: Double) { live()?.scroll(notches) }
+    fun click(button: Int = Evdev.BTN_LEFT) { live()?.click(button) }
+    fun buttonDown() { live()?.buttonDown() }
+    fun buttonUp() { live()?.buttonUp() }
+    fun press(key: Int) { live()?.key(key) }
+
+    /** Types on the projector; tells the user about characters a US keyboard can't produce. */
+    fun typeText(text: String) {
+        val skipped = live()?.type(text) ?: return
+        if (skipped.isNotEmpty()) toast.value = "Couldn't type: ${skipped.distinct().joinToString(" ")} (only English letters, digits and symbols are supported)"
+    }
+
+    // ---- projector tools: apps, links, power, status -----------------------------------------------------------
+    private fun fail(what: String, e: Exception) {
+        AppLog.e(what, e)
+        toast.value = "$what: ${friendly(e)}"
+    }
+
+    fun loadApps() {
+        apps.value = AppsState.Loading
+        viewModelScope.launch(io) {
+            try { apps.value = AppsState.Loaded(proj { it.tools.listApps() }) }
+            catch (e: Exception) { AppLog.e("list apps", e); apps.value = AppsState.Failed(friendly(e)) }
+        }
+    }
+
+    fun launchApp(app: ProjectorApp) {
+        viewModelScope.launch(io) {
+            try { toast.value = if (proj { it.tools.launch(app) }) "Opening ${app.label}…" else "${app.label} didn't open" }
+            catch (e: Exception) { fail("Couldn't open ${app.label}", e) }
+        }
+    }
+
+    fun stopApp(app: ProjectorApp) {
+        viewModelScope.launch(io) {
+            try { proj { it.tools.forceStop(app.packageName) }; toast.value = "${app.label} stopped" } catch (e: Exception) { fail("Couldn't stop ${app.label}", e) }
+        }
+    }
+
+    fun uninstallApp(app: ProjectorApp) {
+        viewModelScope.launch(io) {
+            try {
+                val ok = proj { it.tools.uninstall(app.packageName) }
+                toast.value = if (ok) "${app.label} removed" else "${app.label} couldn't be removed"
+                if (ok) loadApps()
+            } catch (e: Exception) { fail("Couldn't remove ${app.label}", e) }
+        }
+    }
+
+    /** Opens a link (or a shared YouTube address) on the projector. */
+    fun openLink(text: String) {
+        if (!connected()) { pendingShare = text; toast.value = "Connect to the projector and the link will open."; return }
+        viewModelScope.launch(io) {
+            try { toast.value = if (proj { it.tools.openUrl(text) }) "Opened on the projector" else "That doesn't look like a web link" }
+            catch (e: Exception) { fail("Couldn't open the link", e) }
+        }
+    }
+
+    fun searchYoutube(query: String) {
+        viewModelScope.launch(io) {
+            try { toast.value = if (proj { it.tools.searchYoutube(query) }) "Searching YouTube for “$query”" else "YouTube didn't open" }
+            catch (e: Exception) { fail("Couldn't search", e) }
+        }
+    }
+
+    /** The user chose a file in the system picker: send it to the projector and install it. */
+    fun installFrom(uri: android.net.Uri) {
+        val resolver = getApplication<Application>().contentResolver
+        val name = runCatching {
+            resolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
+        }.getOrNull() ?: uri.lastPathSegment ?: "app.apk"
+        go(Screen.Install)
+        if (!Regex(".*\\.(apk|apks|apkm|xapk)$", RegexOption.IGNORE_CASE).matches(name)) {
+            install.value = InstallState.Done(name, false, "That doesn't look like an app file. Choose an .apk (or an .apkm / .apks / .xapk bundle).")
+            return
+        }
+        install.value = InstallState.Working(name, "Preparing…")
+        viewModelScope.launch(io) {
+            try {
+                val source = object : InstallSource {
+                    override val name = name
+                    override fun open() = resolver.openInputStream(uri) ?: throw ProjectorException("Couldn't read that file.")
+                }
+                val r = proj { it.tools.install(source) { step -> install.value = InstallState.Working(name, step) } }
+                AppLog.d("install $name: ${r.ok} ${r.message}")
+                install.value = InstallState.Done(name, r.ok, r.message)
+                if (r.ok) loadApps()
+            } catch (e: Exception) {
+                AppLog.e("install", e)
+                install.value = InstallState.Done(name, false, friendly(e))
+            }
+        }
+    }
+
+    fun refreshDevice() {
+        device.value = device.value.copy(loading = true)
+        viewModelScope.launch(io) {
+            try {
+                val st = proj { it.tools.status() }
+                val auto = proj { it.firmwareAutoOn() }
+                device.value = DeviceState(st, auto)
+            } catch (e: Exception) {
+                AppLog.e("device status", e)
+                device.value = device.value.copy(loading = false)
+                toast.value = "Couldn't read the projector: ${friendly(e)}"
+            }
+        }
+    }
+
+    fun switchFirmwareAutoOff() {
+        viewModelScope.launch(io) {
+            try {
+                val ok = proj { it.switchFirmwareAutoOff() }
+                toast.value = if (ok) "Auto keystone is off" else "The projector kept Auto keystone on. Turn it off in its own settings."
+                refreshDevice()
+            } catch (e: Exception) { fail("Couldn't change it", e) }
+        }
+    }
+
+    fun freeMemory() {
+        viewModelScope.launch(io) {
+            try { proj { it.tools.freeMemory() }; toast.value = "Background apps stopped"; refreshDevice() } catch (e: Exception) { fail("Couldn't free memory", e) }
+        }
+    }
+
+    enum class Power { Sleep, Wake, Reboot }
+
+    fun power(p: Power) {
+        viewModelScope.launch(io) {
+            try {
+                when (p) {
+                    Power.Sleep -> proj { it.tools.sleep() }
+                    Power.Wake -> proj { it.tools.wake() }
+                    Power.Reboot -> proj { it.tools.reboot() }
+                }
+                toast.value = when (p) { Power.Sleep -> "Projector screen off"; Power.Wake -> "Projector awake"; Power.Reboot -> "Restarting the projector…" }
+                if (p == Power.Reboot) disconnect()
+            } catch (e: Exception) { fail("Couldn't do that", e) }
+        }
+    }
+
+    fun openProjectorSettings(action: String) {
+        viewModelScope.launch(io) { try { proj { it.tools.openSettings(action) } } catch (e: Exception) { fail("Couldn't open settings", e) } }
+    }
+
     override fun onCleared() {
         super.onCleared()
+        closeRemote()
         try { conn?.close() } catch (_: Exception) { }
+    }
+
+    private companion object {
+        const val REMOTE_IDLE_MS = 45_000L
     }
 }

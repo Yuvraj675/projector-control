@@ -13,6 +13,10 @@ data class Settings(
     val captureCount: Int = 4,
     val autoCapture: Boolean = true,
     val exposureStops: Double = -2.0,    // exposure compensation while photographing the bright pattern
+    val pointerSpeed: Double = 1.0,      // touchpad sensitivity
+    val airSpeed: Double = 1.0,          // air-mouse (gyroscope) sensitivity
+    val naturalScroll: Boolean = true,   // two-finger scroll moves the content with the fingers
+    val haptics: Boolean = true,
 ) {
     companion object {
         const val MIN_CAPTURES = 3
@@ -33,11 +37,16 @@ class Store(private val context: Context) {
         captureCount = prefs.getInt("captureCount", 4).coerceIn(Settings.MIN_CAPTURES, Settings.MAX_CAPTURES),
         autoCapture = prefs.getBoolean("autoCapture", true),
         exposureStops = prefs.getFloat("exposureStops", -2f).toDouble(),
+        pointerSpeed = prefs.getFloat("pointerSpeed", 1f).toDouble().coerceIn(0.4, 2.5),
+        airSpeed = prefs.getFloat("airSpeed", 1f).toDouble().coerceIn(0.4, 2.5),
+        naturalScroll = prefs.getBoolean("naturalScroll", true),
+        haptics = prefs.getBoolean("haptics", true),
     )
 
     fun saveSettings(s: Settings) {
         prefs.edit().putInt("captureCount", s.captureCount).putBoolean("autoCapture", s.autoCapture)
-            .putFloat("exposureStops", s.exposureStops.toFloat()).apply()
+            .putFloat("exposureStops", s.exposureStops.toFloat()).putFloat("pointerSpeed", s.pointerSpeed.toFloat())
+            .putFloat("airSpeed", s.airSpeed.toFloat()).putBoolean("naturalScroll", s.naturalScroll).putBoolean("haptics", s.haptics).apply()
     }
 
     fun loadProfile(): Profile = File(dir, "profile.json").takeIf { it.exists() }?.let { Codec.profileFromJson(it.readText()) } ?: Profile()

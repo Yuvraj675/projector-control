@@ -13,7 +13,7 @@ import dev.keystone.auto.data.HistoryEntry
 import dev.keystone.auto.link.ProjectorInfo
 import dev.keystone.auto.platform.AppLog
 import dev.keystone.auto.ui.screens.*
-import dev.keystone.auto.ui.theme.AutoKeystoneTheme
+import dev.keystone.auto.ui.theme.ProjectorConnectTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,7 +35,7 @@ class UiSnapshotTest {
     private fun vm() = AppViewModel(ApplicationProvider.getApplicationContext<Application>())
 
     private fun snap(name: String, dark: Boolean = true, content: @Composable () -> Unit) {
-        rule.setContent { AutoKeystoneTheme(dark) { content() } }
+        rule.setContent { ProjectorConnectTheme(dark) { content() } }
         rule.waitForIdle()
         // draw the real window content into a bitmap (captureToImage waits for a hardware draw that Robolectric never runs)
         val view = rule.activity.window.decorView
@@ -118,5 +118,51 @@ class UiSnapshotTest {
     @Test fun log() {
         AppLog.clear(); AppLog.d("scan: network=LocalNet(ip=192.0.2.50, prefixLength=24)"); AppLog.d("scan: 253 hosts, ADB open on [192.0.2.13]"); AppLog.d("connected: Hisilicon HiDPTAndroid Hi3751V350")
         snap("16_log") { LogScreen(vm()) }
+    }
+
+    // ---- ProjectorConnect: home, remote, keyboard, apps, install, projector --------------------------------------
+    private fun connectedVm(): AppViewModel = vm().also { it.connect.value = ConnectState.Connected(info, ks) }
+
+    @Test fun home() = snap("20_home") { HomeScreen(connectedVm()) }
+
+    @Test fun homeLight() = snap("20_home_light", dark = false) { HomeScreen(connectedVm()) }
+
+    @Test fun remoteTouchpad() { val v = connectedVm(); v.remoteState.value = RemoteState.Ready; snap("21_remote_touchpad") { RemoteScreen(v, 0, autoStart = false) } }
+
+    @Test fun remoteAir() { val v = connectedVm(); v.remoteState.value = RemoteState.Ready; snap("22_remote_air") { RemoteScreen(v, 1, autoStart = false) } }
+
+    @Test fun remoteDpad() { val v = connectedVm(); v.remoteState.value = RemoteState.Ready; snap("23_remote_dpad") { RemoteScreen(v, 2, autoStart = false) } }
+
+    @Test fun remoteConnecting() { val v = connectedVm(); v.remoteState.value = RemoteState.Starting; snap("24_remote_connecting") { RemoteScreen(v, 0, autoStart = false) } }
+
+    @Test fun remoteFailed() { val v = connectedVm(); v.remoteState.value = RemoteState.Failed("The connection to the projector dropped."); snap("25_remote_failed") { RemoteScreen(v, 0, autoStart = false) } }
+
+    @Test fun keyboard() { val v = connectedVm(); v.remoteState.value = RemoteState.Ready; snap("26_keyboard") { KeyboardScreen(v, autoStart = false) } }
+
+    @Test fun apps() {
+        val v = connectedVm()
+        fun app(p: String, l: String, third: Boolean) = dev.keystone.auto.link.ProjectorApp(p, "$p/.Main", l, third, true)
+        v.apps.value = AppsState.Loaded(listOf(
+            app("com.google.android.youtube.tv", "YouTube", true), app("in.startv.hotstar", "JioHotstar", true), app("com.stremio.one", "Stremio", true),
+            app("org.videolan.vlc", "VLC", true), app("org.localsend.localsend_app", "LocalSend", true), app("com.playfy.tv", "Playfy", true),
+            app("com.android.vending", "Play Store", false), app("com.newlink.filemanager", "Files", false), app("com.newlink.cast", "Cast", false),
+        ))
+        snap("27_apps") { AppsScreen(v) }
+    }
+
+    @Test fun installWorking() { val v = connectedVm(); v.install.value = InstallState.Working("JioHotstar_26.10.apkm", "Sending part 2…"); snap("28_install_working") { InstallScreen(v) } }
+
+    @Test fun installDone() { val v = connectedVm(); v.install.value = InstallState.Done("VLC-3.6.apk", true, "Installed."); snap("29_install_done") { InstallScreen(v) } }
+
+    @Test fun installFailed() {
+        val v = connectedVm()
+        v.install.value = InstallState.Done("netflix-arm64.apk", false, "This app isn't built for the projector's 32-bit processor. Look for an armeabi-v7a (arm32) version.")
+        snap("30_install_failed") { InstallScreen(v) }
+    }
+
+    @Test fun device() {
+        val v = connectedVm()
+        v.device.value = DeviceState(dev.keystone.auto.link.ProjectorStatus(972, 219, 3463, 2372, "HiDPTAndroid Hi3751V350", "12", "armeabi-v7a"), true)
+        snap("31_device") { DeviceScreen(v) }
     }
 }

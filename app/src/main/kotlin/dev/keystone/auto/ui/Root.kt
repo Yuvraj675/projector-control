@@ -38,6 +38,12 @@ fun AppRoot(vm: AppViewModel, finish: () -> Unit) {
         ) { s ->
             when (s) {
                 Screen.Connect -> ConnectScreen(vm)
+                Screen.Home -> HomeScreen(vm)
+                Screen.Remote -> RemoteScreen(vm)
+                Screen.Keyboard -> KeyboardScreen(vm)
+                Screen.Apps -> AppsScreen(vm)
+                Screen.Install -> InstallScreen(vm)
+                Screen.Device -> DeviceScreen(vm)
                 Screen.Guide -> GuideScreen(vm)
                 Screen.Capture -> CaptureScreen(vm)
                 Screen.Working -> WorkingScreen(vm)
@@ -51,6 +57,7 @@ fun AppRoot(vm: AppViewModel, finish: () -> Unit) {
             }
         }
         busy?.let { BusyOverlay(it) }
+        ToastHost(vm)
     }
 }
 
