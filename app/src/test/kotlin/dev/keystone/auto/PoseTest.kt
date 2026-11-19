@@ -7,28 +7,6 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 
-/** A simulated camera looking at a vertical wall: world x right, y down, z forward (towards the wall). */
-private class SimCamera(val k: Intrinsics, pitchDeg: Double, rollDeg: Double, yawDeg: Double = 0.0) {
-    private val right: Vec3
-    private val down: Vec3
-    private val fwd: Vec3
-
-    init {
-        val p = Math.toRadians(pitchDeg); val y = Math.toRadians(yawDeg); val r = Math.toRadians(rollDeg)
-        // heading (yaw) about the vertical, then elevation
-        val f0 = Vec3(sin(y) * cos(p), -sin(p), cos(y) * cos(p))
-        val x0 = Vec3(cos(y), 0.0, -sin(y))
-        val d0 = f0.cross(x0)
-        fwd = f0
-        right = x0 * cos(r) + d0 * sin(r)
-        down = x0 * (-sin(r)) + d0 * cos(r)
-    }
-
-    fun toCamera(v: Vec3) = Vec3(v.dot(right), v.dot(down), v.dot(fwd))
-    fun project(world: Vec3): Pt { val c = toCamera(world); return Pt(k.fx * c.x / c.z + k.cx, k.fy * c.y / c.z + k.cy) }
-    fun upCam(): Vec3 = toCamera(Vec3(0.0, -1.0, 0.0)).unit()
-}
-
 class PoseTest {
     private val k = intrinsicsForJpeg(2801.094, 2801.094, 2048.0, 1536.0, intArrayOf(0, 0, 4096, 3072), 4096, 2304)
 
