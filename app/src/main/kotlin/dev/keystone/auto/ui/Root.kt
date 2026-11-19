@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.keystone.auto.AppViewModel
 import dev.keystone.auto.Screen
+import dev.keystone.auto.ui.screens.CaptureScreen
 import dev.keystone.auto.ui.screens.ConnectScreen
 import dev.keystone.auto.ui.screens.GuideScreen
 
@@ -40,6 +41,7 @@ fun AppRoot(vm: AppViewModel, finish: () -> Unit) {
             when (s) {
                 Screen.Connect -> ConnectScreen(vm)
                 Screen.Guide -> GuideScreen(vm)
+                Screen.Capture -> CaptureScreen(vm)
                 else -> ScreenScaffold(title = s.toString()) { Text("Coming next") }
             }
         }
