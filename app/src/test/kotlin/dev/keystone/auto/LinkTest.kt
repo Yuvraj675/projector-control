@@ -169,6 +169,23 @@ class LiveProjectorTest {
         }
     }
 
+    /** The phone connects with a generated key pair: make sure that path works against a no-auth projector too. */
+    @Test
+    fun connectsWithAGeneratedKeyPair() {
+        val host = System.getenv("KS_PROJECTOR")
+        org.junit.Assume.assumeTrue("KS_PROJECTOR not set", host != null)
+        val dir = File(System.getProperty("java.io.tmpdir"), "ks-key-test-${System.nanoTime()}")
+        try {
+            val kp = loadOrCreateKeyPair(dir)
+            assertTrue(File(dir, "adbkey").exists() && File(dir, "adbkey.pub").exists())
+            AdbConnection.connect(host!!, keyPair = kp).use { conn ->
+                val k = Projector(conn, RepoAssets(), host).readKeystone()
+                println("LIVE keystone via key-pair connection: ${k.toMap()}")
+                assertTrue(k.withinLimits())
+            }
+        } finally { dir.deleteRecursively() }
+    }
+
     /** KS_SCAN="<own ip>/<prefix>" scans that subnet for ADB (port 5555); the projector must show up. */
     @Test
     fun scansTheSubnetAndFindsTheProjector() {

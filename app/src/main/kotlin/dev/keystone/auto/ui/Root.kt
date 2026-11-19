@@ -21,9 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.keystone.auto.AppViewModel
 import dev.keystone.auto.Screen
-import dev.keystone.auto.ui.screens.CaptureScreen
-import dev.keystone.auto.ui.screens.ConnectScreen
-import dev.keystone.auto.ui.screens.GuideScreen
+import dev.keystone.auto.ui.screens.*
 
 @Composable
 fun AppRoot(vm: AppViewModel, finish: () -> Unit) {
@@ -42,7 +40,14 @@ fun AppRoot(vm: AppViewModel, finish: () -> Unit) {
                 Screen.Connect -> ConnectScreen(vm)
                 Screen.Guide -> GuideScreen(vm)
                 Screen.Capture -> CaptureScreen(vm)
-                else -> ScreenScaffold(title = s.toString()) { Text("Coming next") }
+                Screen.Working -> WorkingScreen(vm)
+                Screen.Verify -> VerifyScreen(vm)
+                Screen.Feedback -> FeedbackScreen(vm)
+                Screen.ResultPhoto -> ResultPhotoScreen(vm)
+                Screen.Done -> DoneScreen(vm)
+                Screen.Settings -> SettingsScreen(vm)
+                Screen.History -> HistoryScreen(vm)
+                Screen.Log -> LogScreen(vm)
             }
         }
         busy?.let { BusyOverlay(it) }

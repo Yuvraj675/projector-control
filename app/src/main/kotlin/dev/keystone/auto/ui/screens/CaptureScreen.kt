@@ -276,6 +276,7 @@ private fun CameraContent(vm: AppViewModel) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                     TextAction("Show pattern again", { vm.showPatternAgain() }, color = Color.White)
+                    if (resultMode) TextAction("Skip the result photo", { vm.skipResultPhoto() }, color = Color.White.copy(alpha = 0.8f))
                     TextAction(if (autoCapture) "Auto-capture: on" else "Auto-capture: off", { vm.updateSettings(settings.copy(autoCapture = !settings.autoCapture)) }, color = Color.White.copy(alpha = 0.8f))
                 }
                 Shutter(enabled = live.cameraReady && !processing && !shooting, ready = allGood, onClick = { shoot() })

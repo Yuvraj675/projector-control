@@ -260,6 +260,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 val out = CaptureProcessor.process(file, gravity, meta, keystone)
                 AppLog.d("photo: usable=${out.usable} elev=${"%.1f".format(out.elevationDeg)} roll=${"%.1f".format(out.rollDeg)} problem=${out.problem} warning=${out.warning}")
                 if (isResult) {
+                    if (out.measurement == null) {
+                        notice.value = (out.problem ?: "Couldn't read that photo.") + " Try again, or skip the result photo."
+                        return@launch
+                    }
                     resultMode.value = false
                     finishAccepted(out.measurement)
                     return@launch
@@ -383,8 +387,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun retakePhotos() {
-        verify.value = verify.value?.copy(round = verify.value?.round ?: 0)
-        session.value = session.value?.copy(items = emptyList())
+        // The projector now holds the keystone we applied, so the new photos are measured against that one.
+        val applied = verify.value?.applied
+        session.value = session.value?.let { it.copy(keystoneAtStart = applied ?: it.keystoneAtStart, items = emptyList()) }
         lastFeedback = null
         feedbackScale = 1.0
         notice.value = "Let's take the photos again."
@@ -410,6 +415,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 busy.value = null
             }
         }
+    }
+
+    /** Show the projector's normal screen for a moment so the user can judge the picture with real content. */
+    fun peekHome() {
+        viewModelScope.launch(io) { try { proj { it.showHome() } } catch (_: Exception) { } }
+    }
+
+    /** Forget the remembered projector (the next start scans again). */
+    fun forgetProjector() {
+        store.lastHost = null
+        disconnect()
+        notice.value = "Forgot the saved projector."
     }
 
     /** Back to the projector's normal screen and to the start of the app. */
