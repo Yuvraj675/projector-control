@@ -20,6 +20,8 @@ class FakeProjector(var offsets: Offsets, private val assets: ProjectorAssets, v
     var helperOnDevice: ByteArray? = null
     var patternVersion: Int? = null
     var refuseDeltas = false
+    var autoOn = false          // firmware Auto keystone: getters read 0 and setters are refused until it is switched off
+    var autoCannotBeDisabled = false
     val log = ArrayList<String>()
 
     fun pushHelper(b: ByteArray) { helperOnDevice = b }
@@ -40,8 +42,10 @@ class FakeProjector(var offsets: Offsets, private val assets: ProjectorAssets, v
             cmd.startsWith("service check hitvservice") -> ok(if (hasTvApi) "Service hitvservice: found\n" else "Service hitvservice: not found\n")
             cmd.startsWith("md5sum ") -> helperOnDevice?.let { ok("${md5(it)}  /data/local/tmp/ksall.jar\n") } ?: ok("")
             cmd.contains("app_process") && cmd.contains(" get") -> ok(fmt())
+            cmd.contains("app_process") && cmd.contains(" manual") -> { if (!autoCannotBeDisabled) autoOn = false; ok(fmt()) }
             cmd.contains("app_process") && cmd.contains(" delta") -> {
-                if (!refuseDeltas) {
+                if (autoOn && !autoCannotBeDisabled) autoOn = false      // the real helper switches Auto off before writing
+                if (!refuseDeltas && !autoOn) {
                     val v = offsets.toList().toMutableList()
                     Regex("(X[1-4]|Y[1-4])=(-?\\d+)").findAll(cmd.substringAfter("delta")).forEach {
                         val i = Offsets.KEYS.indexOf(it.groupValues[1]); v[i] = maxOf(0.0, v[i] + it.groupValues[2].toInt())
@@ -57,7 +61,8 @@ class FakeProjector(var offsets: Offsets, private val assets: ProjectorAssets, v
         }
     }
 
-    private fun fmt() = Offsets.KEYS.zip(offsets.toList()).joinToString(" ") { "${it.first}=${it.second.toInt()}" } + "\n"
+    private fun fmt() = Offsets.KEYS.zip((if (autoOn) Offsets.NONE else offsets).toList()).joinToString(" ") { "${it.first}=${it.second.toInt()}" } +
+        " AUTO=${if (autoOn) 1 else 0}\n"
 }
 
 class LinkTest {
@@ -105,6 +110,23 @@ class LinkTest {
         val fake = FakeProjector(d, assets).also { it.refuseDeltas = true }
         try { Projector(fake, assets, "h").applyKeystone(d.copy(x1 = 120.0)); fail("expected failure") }
         catch (e: ProjectorException) { assertTrue(e.message!!.contains("did not accept")) }
+    }
+
+    /** Real-device failure: the firmware's Auto keystone was on, every setter was refused and the getters read all zeros. */
+    @Test
+    fun switchesFirmwareAutoModeOffBeforeApplying() {
+        val fake = FakeProjector(d, assets).also { it.autoOn = true }
+        val p = Projector(fake, assets, "h")
+        val target = d.copy(x2 = 283.0, x4 = 285.0)
+        assertEquals(target.toList(), p.applyKeystone(target).toList())
+        assertFalse(fake.autoOn)
+    }
+
+    @Test
+    fun explainsItWhenAutoModeWillNotSwitchOff() {
+        val fake = FakeProjector(d, assets).also { it.autoOn = true; it.autoCannotBeDisabled = true }
+        try { Projector(fake, assets, "h").applyKeystone(d.copy(x1 = 120.0)); fail("expected failure") }
+        catch (e: ProjectorException) { assertTrue(e.message!!.contains("Auto keystone")) }
     }
 
     @Test

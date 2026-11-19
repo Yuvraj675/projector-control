@@ -48,6 +48,11 @@ projector at that moment (`Session.keystoneAtStart` is updated). All projector c
   BL=(X3,720-Y3) BR=(1280-X4,720-Y4). Panel is 1280x720.
 - Values are set through `AdvancedPictureSetting.setXnKeystoneOffset(int)` which is **relative** (adds to the current value);
   `getXnKeystonePosition()` reads the absolute value. Values never go below 0. The helper `KsAll get|delta` wraps this.
+- **Firmware Auto mode** (`getAutoKeystone()==1`, prop `persist.newlink.autokeystone_onoff=1`) breaks everything: logcat shows
+  `ZYKeystoneService AutoKeystone Not Mix-Auto Now!` and `adjustKeystoneOffset Illegal Value of N, Out of Range[0, -1]`, every
+  corner setter is refused and the getters read all zeros. It got switched on during a real session (cause unknown). The helper now
+  calls `setAutoKeystone(0)` before `delta`/`manual` and prints `AUTO=<0|1>`; `Projector.applyKeystone` uses that. Seen in the
+  phone log as "did not accept the new keystone (... got all 0)".
 - Needs `/system/framework/HitvShare.jar`, `HitvManager.jar` and the `hitvservice` service, so only this firmware family works.
 - Screenshots (`screencap`) include the keystone warp, which is how the model was verified.
 - The firmware draws a mute indicator in the bottom-right of the frame; the pattern keeps its BR marker clear of it.
