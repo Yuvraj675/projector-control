@@ -32,9 +32,11 @@ class MirrorDecoder(private val width: Int, private val height: Int, private val
 
     fun stop() {
         running = false
-        thread?.interrupt()
-        thread?.join(500)
+        val t = thread
         thread = null
+        t?.interrupt()
+        // The codec must be released before its Surface is used again, so wait for it.
+        try { t?.join(3000) } catch (_: InterruptedException) { }
         queue.clear()
     }
 
@@ -43,10 +45,12 @@ class MirrorDecoder(private val width: Int, private val height: Int, private val
             val c = MediaCodec.createDecoderByType(MediaFormat.MIMETYPE_VIDEO_AVC)
             val f = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, width, height)
             if (android.os.Build.VERSION.SDK_INT >= 30) f.setInteger(MediaFormat.KEY_LOW_LATENCY, 1)
+            f.setInteger(MediaFormat.KEY_MAX_WIDTH, 1280)        // the stream size changes with the quality: allow a new size without reconfiguring
+            f.setInteger(MediaFormat.KEY_MAX_HEIGHT, 720)
             c.configure(f, surface, null, 0)
             c.start()
             c
-        } catch (e: Exception) { AppLog.e("mirror decoder", e); return }
+        } catch (e: Throwable) { AppLog.e("mirror decoder", e); return }
         val info = MediaCodec.BufferInfo()
         var pts = 0L
         var first = true
@@ -71,8 +75,8 @@ class MirrorDecoder(private val width: Int, private val height: Int, private val
                 }
             }
         } catch (_: InterruptedException) {
-        } catch (e: Exception) { AppLog.e("mirror decoder loop", e) }
-        finally { try { codec.stop() } catch (_: Exception) { }; try { codec.release() } catch (_: Exception) { } }
+        } catch (e: Throwable) { AppLog.e("mirror decoder loop", e) }
+        finally { try { codec.stop() } catch (_: Throwable) { }; try { codec.release() } catch (_: Throwable) { } }
     }
 
     private companion object { const val MAX_BACKLOG = 40 }

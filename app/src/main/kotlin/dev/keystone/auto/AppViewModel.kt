@@ -863,12 +863,20 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         store.mirrorSharp = sharp
         val c = conn ?: return
         if (screenMirror == null) return
-        viewModelScope.launch(io) { screenMirror?.close(); screenMirror = newScreenMirror(c) }
+        viewModelScope.launch(io) { try { screenMirror?.close(); screenMirror = newScreenMirror(c) } catch (e: Exception) { AppLog.e("mirror quality", e) } }
     }
 
     /** Starts streaming the projector's screen into [sink] (the decoder) and opens the virtual touch screen. */
     fun startMirror(sink: (ByteArray, Boolean) -> Unit) {
-        if (mirror.value is MirrorState.Starting || mirror.value is MirrorState.Live) { mirrorSink = sink; return }
+        if (mirror.value is MirrorState.Starting) { mirrorSink = sink; return }
+        if (mirror.value is MirrorState.Live) {
+            // The picture was rebuilt (rotation, a new surface): a static screen sends one key frame only at the start of a stream,
+            // so start a new stream to give the new decoder one.
+            mirrorSink = sink
+            val c = conn ?: return
+            viewModelScope.launch(io) { try { screenMirror?.close(); screenMirror = newScreenMirror(c) } catch (e: Exception) { AppLog.e("mirror restart", e) } }
+            return
+        }
         mirror.value = MirrorState.Starting
         mirrorSink = sink
         viewModelScope.launch(io) {

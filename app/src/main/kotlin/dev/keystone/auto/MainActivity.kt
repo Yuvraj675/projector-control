@@ -20,6 +20,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        dev.keystone.auto.platform.CrashLog.install(filesDir)
         enableEdgeToEdge()
         if (savedInstanceState == null) handleShare(intent)
         setContent {

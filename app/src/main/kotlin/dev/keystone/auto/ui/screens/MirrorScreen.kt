@@ -64,7 +64,7 @@ fun MirrorScreen(vm: AppViewModel) {
 
     // The decoder needs the surface before the first frames arrive, so start both together.
     LaunchedEffect(surface) { begin() }
-    // A different stream size needs a fresh decoder.
+    // A different stream size: the stream is restarted by the view model, the decoder starts clean to meet its key frame.
     var firstSharp by remember { mutableStateOf(true) }
     LaunchedEffect(sharp) { if (firstSharp) firstSharp = false else surface?.let { decoder.start(it) } }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -74,7 +74,7 @@ fun MirrorScreen(vm: AppViewModel) {
             if (e == Lifecycle.Event.ON_START) begin()
         }
         lifecycle.addObserver(obs)
-        onDispose { lifecycle.removeObserver(obs); decoder.stop(); surface?.release(); vm.stopMirror() }
+        onDispose { lifecycle.removeObserver(obs); decoder.stop(); vm.stopMirror() }
     }
 
     // Landscape: turn the phone's screen sideways and hide the system bars; always put both back on the way out.
@@ -93,7 +93,9 @@ fun MirrorScreen(vm: AppViewModel) {
     BackHandler(enabled = landscape) { landscape = false }
 
     val picture: @Composable (Modifier) -> Unit = { modifier ->
-        Picture(vm, state, modifier, onSurface = { surface = it }, onSurfaceGone = { decoder.stop(); surface = null },
+        Picture(vm, state, modifier, onSurface = { surface = it },
+            // Only the surface in use going away matters: a rebuilt picture (rotation) creates the new one before the old one is destroyed.
+            onSurfaceGone = { gone -> if (surface === gone) { decoder.stop(); surface = null } },
             onRetry = { end(); begin() })
     }
 
@@ -135,7 +137,7 @@ fun MirrorScreen(vm: AppViewModel) {
 @Composable
 private fun Picture(
     vm: AppViewModel, state: MirrorState, modifier: Modifier,
-    onSurface: (Surface) -> Unit, onSurfaceGone: () -> Unit, onRetry: () -> Unit,
+    onSurface: (Surface) -> Unit, onSurfaceGone: (Surface) -> Unit, onRetry: () -> Unit,
 ) {
     Box(modifier.clip(RoundedCornerShape(12.dp)).background(androidx.compose.ui.graphics.Color.Black), contentAlignment = Alignment.Center) {
         val quad = (state as? MirrorState.Live)?.quad
@@ -145,10 +147,11 @@ private fun Picture(
             factory = { ctx ->
                 TextureView(ctx).also { tv ->
                     tv.keepScreenOn = true
+                    var mine: Surface? = null
                     tv.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
-                        override fun onSurfaceTextureAvailable(st: SurfaceTexture, w: Int, h: Int) { onSurface(Surface(st)) }
+                        override fun onSurfaceTextureAvailable(st: SurfaceTexture, w: Int, h: Int) { mine = Surface(st).also(onSurface) }
                         override fun onSurfaceTextureSizeChanged(st: SurfaceTexture, w: Int, h: Int) {}
-                        override fun onSurfaceTextureDestroyed(st: SurfaceTexture): Boolean { onSurfaceGone(); return true }
+                        override fun onSurfaceTextureDestroyed(st: SurfaceTexture): Boolean { mine?.let { onSurfaceGone(it); runCatching { it.release() } }; mine = null; return true }
                         override fun onSurfaceTextureUpdated(st: SurfaceTexture) {}
                     }
                     tv.addOnLayoutChangeListener { v, l, t, r, b, _, _, _, _ -> applyQuad(v as TextureView, quadNow, r - l, b - t) }

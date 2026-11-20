@@ -26,3 +26,22 @@ object AppLog {
 
     fun text() = _lines.value.joinToString("\n")
 }
+
+
+/** Writes an uncaught crash to a file and shows it in the Activity log on the next start, so a crash is never lost. */
+object CrashLog {
+    private const val FILE = "last_crash.txt"
+
+    fun install(dir: java.io.File) {
+        val previous = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { t, e ->
+            try { java.io.File(dir, FILE).writeText("${Date()} thread=${t.name}\n" + e.stackTraceToString().take(6000)) } catch (_: Throwable) { }
+            previous?.uncaughtException(t, e)
+        }
+        val f = java.io.File(dir, FILE)
+        if (f.exists()) {
+            runCatching { AppLog.e("The app crashed last time:\n" + f.readText()) }
+            f.delete()
+        }
+    }
+}
