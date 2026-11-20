@@ -100,6 +100,7 @@ Unknown camera yaw is assumed 0 (phone parallel to the wall) unless learned.
 direction that improves the predicted picture (step halves on reversal). Params persist in `profile.json`, sessions in history.
 
 ## Status, open items and wider context
+- Version 0.3.1: the app no longer writes the firmware's Auto keystone setting; keystone limits lowered to 230/220.
 - Version 0.3.0 adds: connection watchdog (`AppViewModel.startWatchdog`, `link/Reconnect.kt`), saved keystones (`data/SavedKeystones.kt`), sleep timer on the projector (`ProjectorTools.scheduleSleep`), volume-key passthrough (`MainActivity.onKeyDown`), memory guard, diagnostics (`link/Diagnostics.kt`), screenshot (`Shell.pull`), send-file-and-play (`ProjectorTools.sendAndOpen`), pinned apps, remote-only mode (`ProjectorInfo.supported == false` still connects, no keystone), recovery card. 101 JVM tests; none of the new features have been run on a phone or the real projector yet.
 - Version 0.2.0 (renamed from AutoKeystone; the application id `dev.keystone.auto` and the Gradle module names are unchanged on
   purpose, so the new APK installs over the old one and keeps the learned profile, history and ADB key). 83 JVM tests pass; the

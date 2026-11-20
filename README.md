@@ -6,7 +6,7 @@
 
 ![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF?logo=kotlin&logoColor=white)
-![Version](https://img.shields.io/badge/version-0.3.0-blue)
+![Version](https://img.shields.io/badge/version-0.3.1-blue)
 ![Tests](https://img.shields.io/badge/JVM%20tests-101%20passing-brightgreen)
 ![Projector](https://img.shields.io/badge/projector-Android%20TV%20%2F%20box%20with%20ADB-lightgrey)
 
