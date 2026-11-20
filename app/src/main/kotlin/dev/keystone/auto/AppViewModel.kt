@@ -723,6 +723,25 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** A video, photo or song shared to the app: copy it to the projector and play it there. */
+    fun sendFile(uri: android.net.Uri, mime: String?) {
+        if (!connected()) { toast.value = "Connect to the projector first, then share the file again."; return }
+        val resolver = getApplication<Application>().contentResolver
+        val name = runCatching {
+            resolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
+        }.getOrNull() ?: uri.lastPathSegment ?: "file"
+        viewModelScope.launch(io) {
+            try {
+                val source = object : InstallSource {
+                    override val name = name
+                    override fun open() = resolver.openInputStream(uri) ?: throw ProjectorException("Couldn't read that file.")
+                }
+                val r = proj { it.tools.sendAndOpen(source, mime) { step -> busy.value = step } }
+                toast.value = r.message
+            } catch (e: Exception) { fail("Couldn't send the file", e) } finally { busy.value = null }
+        }
+    }
+
     /** The user chose a file in the system picker: send it to the projector and install it. */
     fun installFrom(uri: android.net.Uri) {
         val resolver = getApplication<Application>().contentResolver

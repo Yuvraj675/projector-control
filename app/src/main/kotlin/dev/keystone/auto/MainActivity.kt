@@ -52,6 +52,13 @@ class MainActivity : ComponentActivity() {
     /** A link shared from another app opens on the projector. */
     private fun handleShare(intent: Intent?) {
         if (intent?.action != Intent.ACTION_SEND) return
+        val type = intent.type.orEmpty()
+        if (type.startsWith("video/") || type.startsWith("audio/") || type.startsWith("image/")) {
+            @Suppress("DEPRECATION")
+            val uri = if (android.os.Build.VERSION.SDK_INT >= 33) intent.getParcelableExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java) else intent.getParcelableExtra(Intent.EXTRA_STREAM)
+            uri?.let { vm.sendFile(it, type) }
+            return
+        }
         intent.getStringExtra(Intent.EXTRA_TEXT)?.let { vm.openLink(it) }
     }
 }

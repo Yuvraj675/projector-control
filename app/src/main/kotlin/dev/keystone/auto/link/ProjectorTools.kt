@@ -58,6 +58,25 @@ class ProjectorTools(private val sh: Shell) {
         return !r.out.contains("Error", true) && !r.out.contains("unable to resolve", true)
     }
 
+    /**
+     * Copies a phone file (video, photo, music) to the projector's Download/ProjectorConnect folder and opens it in
+     * whatever player the projector has. Returns the path on the projector.
+     */
+    fun sendAndOpen(source: InstallSource, mime: String?, onStep: (String) -> Unit = {}): InstallResult {
+        val name = safeFileName(source.name)
+        val dir = "/sdcard/Download/ProjectorConnect"
+        val remote = "$dir/$name"
+        sh.run("mkdir -p ${dir.shellQuote()}")
+        onStep("Sending $name…")
+        sh.push(source.open(), remote)
+        onStep("Opening it…")
+        val type = (mime?.takeIf { it.contains('/') && !it.endsWith("/*") } ?: mimeFor(name))
+        val r = sh.run("am start -a android.intent.action.VIEW -d ${("file://$remote").shellQuote()} -t ${type.shellQuote()} 2>&1")
+        val failed = r.out.contains("Error", true) || r.out.contains("unable to resolve", true) || r.out.contains("Exception", true)
+        return if (failed) InstallResult(false, "Sent, but the projector has no app that opens $type. It is in Download/ProjectorConnect.")
+        else InstallResult(true, "Playing on the projector.")
+    }
+
     fun searchYoutube(query: String): Boolean =
         openUrl("https://www.youtube.com/results?search_query=" + java.net.URLEncoder.encode(query, "UTF-8"))
 
@@ -159,6 +178,22 @@ class ProjectorTools(private val sh: Shell) {
         fun isLowOnMemory(st: ProjectorStatus) = st.ramTotalMb > 0 && st.ramFreeMb < LOW_MEMORY_MB
 
         fun isPng(b: ByteArray) = b.size > 8 && b[0] == 0x89.toByte() && b[1] == 'P'.code.toByte() && b[2] == 'N'.code.toByte() && b[3] == 'G'.code.toByte()
+
+        /** A file name that is safe in a shell path: no folders, no odd characters. */
+        fun safeFileName(raw: String): String {
+            val base = raw.substringAfterLast('/').substringAfterLast('\\')
+            val clean = base.replace(Regex("[^A-Za-z0-9._ -]"), "_").trim().trim('.').take(80)
+            return clean.ifBlank { "file" }
+        }
+
+        fun mimeFor(name: String): String = when (name.substringAfterLast('.', "").lowercase()) {
+            "mp4", "m4v" -> "video/mp4"; "mkv" -> "video/x-matroska"; "webm" -> "video/webm"; "avi" -> "video/x-msvideo"
+            "mov" -> "video/quicktime"; "3gp" -> "video/3gpp"
+            "mp3" -> "audio/mpeg"; "m4a", "aac" -> "audio/mp4"; "flac" -> "audio/flac"; "ogg", "opus" -> "audio/ogg"; "wav" -> "audio/x-wav"
+            "jpg", "jpeg" -> "image/jpeg"; "png" -> "image/png"; "webp" -> "image/webp"; "gif" -> "image/gif"
+            "pdf" -> "application/pdf"
+            else -> "*/*"
+        }
 
         const val SLEEP_FILE = "/data/local/tmp/pc-sleep"
 

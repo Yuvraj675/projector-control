@@ -177,4 +177,24 @@ class RemoteToolsTest {
         assertTrue(ProjectorTools.isPng(byteArrayOf(0x89.toByte(), 'P'.code.toByte(), 'N'.code.toByte(), 'G'.code.toByte(), 13, 10, 26, 10, 0)))
         assertFalse(ProjectorTools.isPng("not an image at all".toByteArray()))
     }
+
+    @Test
+    fun sendFileNamesAreSafeAndTypesKnown() {
+        assertEquals("evil___x_.mp4", ProjectorTools.safeFileName("evil;\$(x).mp4"))
+        assertEquals("passwd", ProjectorTools.safeFileName("../../etc/passwd"))
+        assertEquals("file", ProjectorTools.safeFileName("..."))
+        assertEquals("video/x-matroska", ProjectorTools.mimeFor("Movie.MKV"))
+        assertEquals("*/*", ProjectorTools.mimeFor("noextension"))
+    }
+
+    @Test
+    fun sendingAFileCopiesItThenOpensItByType() {
+        val sh = RecordingShell()
+        val src = object : InstallSource { override val name = "My Film.mp4"; override fun open() = ByteArrayInputStream(ByteArray(10)) }
+        val r = ProjectorTools(sh).sendAndOpen(src, "video/*")
+        assertTrue(r.ok)
+        assertEquals(setOf("/sdcard/Download/ProjectorConnect/My Film.mp4"), sh.pushed.keys)
+        val open = sh.commands.last()
+        assertTrue(open.contains("-t 'video/mp4'") && open.contains("file:///sdcard/Download/ProjectorConnect/My Film.mp4"))
+    }
 }
