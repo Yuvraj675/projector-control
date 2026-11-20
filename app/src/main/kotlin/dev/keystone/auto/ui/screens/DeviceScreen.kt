@@ -90,6 +90,13 @@ fun DeviceScreen(vm: AppViewModel) {
         }
 
         Spacer(Modifier.height(20.dp))
+        SectionTitle("Help")
+        AppCard {
+            SecondaryButton("Copy a diagnostics report", { vm.copyDiagnostics() })
+            Hint("Connection speed, memory, temperature and settings in one block of text. It never includes the projector's address.", Modifier.padding(top = 6.dp))
+        }
+
+        Spacer(Modifier.height(20.dp))
         SectionTitle("Open on the projector")
         AppCard {
             ListRow(Ico.Wifi, "Wi-Fi") { vm.openProjectorSettings("android.settings.WIFI_SETTINGS") }

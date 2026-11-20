@@ -797,6 +797,27 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Gathers a shareable diagnostics report and puts it on the phone's clipboard. */
+    fun copyDiagnostics() {
+        viewModelScope.launch(io) {
+            try {
+                val c = connect.value as? ConnectState.Connected ?: throw ProjectorException("Not connected to a projector.")
+                val t0 = System.nanoTime()
+                proj { it.shell.run("echo ok") }
+                val ping = (System.nanoTime() - t0) / 1_000_000
+                val st = runCatching { proj { it.tools.status() } }.getOrNull()
+                val temp = runCatching { proj { it.tools.temperatureC() } }.getOrNull()
+                val auto = runCatching { proj { it.firmwareAutoOn() } }.getOrNull()
+                val app = getApplication<Application>()
+                val version = runCatching { app.packageManager.getPackageInfo(app.packageName, 0).versionName }.getOrNull() ?: "?"
+                val text = Diagnostics.report(DiagnosticsInput(c.info, st, ping, temp, auto, link.value, version, "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"))
+                val cm = app.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                cm.setPrimaryClip(android.content.ClipData.newPlainText("ProjectorConnect report", text))
+                toast.value = "Report copied. Paste it wherever you need it."
+            } catch (e: Exception) { fail("Couldn't build the report", e) }
+        }
+    }
+
     fun refreshSleepTimer() {
         viewModelScope.launch(io) { try { sleepLeft.value = proj { it.tools.sleepRemainingSeconds() } } catch (_: Exception) { } }
     }

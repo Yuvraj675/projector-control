@@ -95,6 +95,9 @@ class ProjectorTools(private val sh: Shell) {
         return parseStatus(mem, df, prop("ro.product.model"), prop("ro.build.version.release"), prop("ro.product.cpu.abilist"))
     }
 
+    /** Board temperature in °C when the projector reports one. */
+    fun temperatureC(): Double? = Diagnostics.parseTemperature(sh.run("cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null").out)
+
     // ---- installing ----------------------------------------------------------------------------------------
 
     /**
