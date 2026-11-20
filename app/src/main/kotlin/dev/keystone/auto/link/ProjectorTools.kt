@@ -126,6 +126,22 @@ class ProjectorTools(private val sh: Shell) {
         }
     }
 
+    // ---- recovery (undo the launcher changes made to this projector) -----------------------------------------------
+
+    fun hasPackage(pkg: String): Boolean = sh.run("pm path ${pkg.shellQuote()}").out.contains("package:")
+
+    /** Gives the Home button back to the projector's original launcher. Returns true when Android accepted it. */
+    fun restoreStockHome(): Boolean {
+        val r = sh.run("cmd package set-home-activity $STOCK_HOME 2>&1")
+        return !r.out.contains("Error", true) && !r.out.contains("Exception", true)
+    }
+
+    /** Puts the accessibility service list back to the firmware's two stock services (removes the launcher's Home-key helper). */
+    fun restoreStockAccessibility(): Boolean {
+        val r = sh.run("settings put secure enabled_accessibility_services ${STOCK_ACCESSIBILITY.shellQuote()} 2>&1; settings put secure accessibility_enabled 1 2>&1; settings get secure enabled_accessibility_services")
+        return r.out.contains("NewLinkAccessibilityService") && !r.out.contains("tvhome")
+    }
+
     /** Board temperature in °C when the projector reports one. */
     fun temperatureC(): Double? = Diagnostics.parseTemperature(sh.run("cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null").out)
 
@@ -194,6 +210,10 @@ class ProjectorTools(private val sh: Shell) {
             "pdf" -> "application/pdf"
             else -> "*/*"
         }
+
+        const val CUSTOM_LAUNCHER = "com.gathin.tvhome"
+        const val STOCK_HOME = "com.newlink.nlprovision/.MainActivity"
+        const val STOCK_ACCESSIBILITY = "com.newlink.accessibility/com.newlink.accessibility.NewLinkAccessibilityService:com.hisilicon.rmservice/com.hisilicon.rmservice.HiRMService"
 
         const val SLEEP_FILE = "/data/local/tmp/pc-sleep"
 

@@ -792,7 +792,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val st = proj { it.tools.status() }
                 val auto = if ((connect.value as? ConnectState.Connected)?.info?.supported == false) null else proj { it.firmwareAutoOn() }
-                device.value = DeviceState(st, auto)
+                device.value = DeviceState(st, auto, customLauncher = proj { it.tools.hasPackage(ProjectorTools.CUSTOM_LAUNCHER) })
             } catch (e: Exception) {
                 AppLog.e("device status", e)
                 device.value = device.value.copy(loading = false)
@@ -863,6 +863,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 if (png == null) toast.value = "The projector didn't give a picture."
                 else shot.value = android.graphics.BitmapFactory.decodeByteArray(png, 0, png.size)?.asImageBitmap()
             } catch (e: Exception) { fail("Couldn't capture the screen", e) } finally { busy.value = null }
+        }
+    }
+
+    /** Undo for the custom launcher: Home goes back to the stock launcher, and the Home-key helper service is removed. */
+    fun restoreStockLauncher() {
+        viewModelScope.launch(io) {
+            busy.value = "Restoring the projector's original home screen…"
+            try {
+                val home = proj { it.tools.restoreStockHome() }
+                val acc = proj { it.tools.restoreStockAccessibility() }
+                toast.value = if (home && acc) "Original home screen restored" else "Partly restored (home: ${if (home) "ok" else "failed"}, services: ${if (acc) "ok" else "failed"})"
+            } catch (e: Exception) { fail("Couldn't restore it", e) } finally { busy.value = null }
         }
     }
 

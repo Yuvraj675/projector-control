@@ -19,6 +19,7 @@ fun DeviceScreen(vm: AppViewModel) {
     val info = (connect as? ConnectState.Connected)?.info
     val saved by vm.saved.collectAsState()
     var confirmReboot by remember { mutableStateOf(false) }
+    var confirmRestore by remember { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
     var saveName by remember { mutableStateOf("") }
     LaunchedEffect(Unit) { vm.refreshDevice(); vm.refreshSleepTimer() }
@@ -101,6 +102,15 @@ fun DeviceScreen(vm: AppViewModel) {
             Hint("Connection speed, memory, temperature and settings in one block of text. It never includes the projector's address.", Modifier.padding(top = 6.dp))
         }
 
+        if (device.customLauncher) {
+            Spacer(Modifier.height(20.dp))
+            SectionTitle("Recovery")
+            AppCard {
+                SecondaryButton("Restore the original home screen", { confirmRestore = true })
+                Hint("Use this if the Home button misbehaves. It switches Home back to the projector's own launcher. Nothing is uninstalled.", Modifier.padding(top = 6.dp))
+            }
+        }
+
         Spacer(Modifier.height(20.dp))
         SectionTitle("Open on the projector")
         AppCard {
@@ -130,6 +140,14 @@ fun DeviceScreen(vm: AppViewModel) {
         text = { OutlinedTextField(saveName, { saveName = it }, singleLine = true, placeholder = { Text("e.g. Bedroom ceiling") }) },
         confirmButton = { TextButton(onClick = { saving = false; vm.saveCurrentKeystone(saveName) }) { Text("Save") } },
         dismissButton = { TextButton(onClick = { saving = false }) { Text("Cancel") } },
+    )
+
+    if (confirmRestore) AlertDialog(
+        onDismissRequest = { confirmRestore = false },
+        title = { Text("Restore the original home screen?") },
+        text = { Text("The Home button will open the projector's own launcher again, and the custom launcher's Home-key helper is switched off. You can undo this by reinstalling the launcher.") },
+        confirmButton = { TextButton(onClick = { confirmRestore = false; vm.restoreStockLauncher() }) { Text("Restore") } },
+        dismissButton = { TextButton(onClick = { confirmRestore = false }) { Text("Cancel") } },
     )
 
     if (confirmReboot) AlertDialog(

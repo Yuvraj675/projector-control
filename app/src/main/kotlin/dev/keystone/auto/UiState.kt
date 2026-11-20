@@ -101,4 +101,4 @@ sealed interface InstallState {
 }
 
 /** What the Projector screen shows. */
-data class DeviceState(val status: ProjectorStatus?, val firmwareAutoKeystone: Boolean?, val loading: Boolean = false)
+data class DeviceState(val status: ProjectorStatus?, val firmwareAutoKeystone: Boolean?, val loading: Boolean = false, val customLauncher: Boolean = false)

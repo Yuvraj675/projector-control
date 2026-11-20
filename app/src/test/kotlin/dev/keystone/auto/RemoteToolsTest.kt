@@ -206,4 +206,14 @@ class RemoteToolsTest {
         assertEquals("https://youtu.be/x", ProjectorTools.normaliseUrl("youtu.be/x"))
         assertNull(ProjectorTools.normaliseUrl("javascript:alert(1)"))
     }
+
+    @Test
+    fun recoveryCommandsMatchTheSavedBackups() {
+        val sh = RecordingShell { if (it.startsWith("settings put")) "com.newlink.accessibility/com.newlink.accessibility.NewLinkAccessibilityService:com.hisilicon.rmservice/com.hisilicon.rmservice.HiRMService" else "" }
+        val t = ProjectorTools(sh)
+        assertTrue(t.restoreStockHome())
+        assertEquals("cmd package set-home-activity com.newlink.nlprovision/.MainActivity 2>&1", sh.commands[0])
+        assertTrue(t.restoreStockAccessibility())
+        assertTrue(sh.commands[1].contains("NewLinkAccessibilityService:com.hisilicon.rmservice/com.hisilicon.rmservice.HiRMService"))
+    }
 }
