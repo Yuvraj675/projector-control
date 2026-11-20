@@ -24,6 +24,10 @@ of Hisilicon-based projectors (Newlink / Zhiying firmware on a Hi3751 board, the
 | **Share to open** | Share a YouTube or web link from any app to ProjectorConnect and it opens on the projector. |
 | **Projector** | Memory and storage, screen off / wake, free up memory, restart, shortcuts to the projector's Wi-Fi and display settings, and the firmware Auto-keystone switch. |
 | **Auto keystone** | The camera-based correction described below. |
+| **Stays connected** | Pings the projector, reconnects with backoff (and rescans Wi-Fi if its address changed), shows a "Reconnecting" chip. Switches the firmware's own Auto keystone off on connect. |
+| **Saved keystones** | Name the current picture setup ("Bedroom ceiling") and switch between setups in one tap (Projector screen). |
+| **Send to projector** | Share a video, photo or song to the app: it is copied to the projector and opened in its player. Magnet and Stremio links open too. |
+| **Quality of life** | Phone volume buttons control the projector on the remote screens, sleep timer that runs on the projector, pin apps to Home, "see the projector's screen", memory guard before launching apps, copyable diagnostics report, in-app recovery of the original home screen, remote-only mode for non-Hisilicon projectors. |
 
 ## Why Auto keystone
 

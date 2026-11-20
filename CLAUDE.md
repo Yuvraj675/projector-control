@@ -99,6 +99,7 @@ Unknown camera yaw is assumed 0 (phone parallel to the wall) unless learned.
 direction that improves the predicted picture (step halves on reversal). Params persist in `profile.json`, sessions in history.
 
 ## Status, open items and wider context
+- Version 0.3.0 adds: connection watchdog (`AppViewModel.startWatchdog`, `link/Reconnect.kt`), Auto-keystone switch-off on connect, saved keystones (`data/SavedKeystones.kt`), sleep timer on the projector (`ProjectorTools.scheduleSleep`), volume-key passthrough (`MainActivity.onKeyDown`), memory guard, diagnostics (`link/Diagnostics.kt`), screenshot (`Shell.pull`), send-file-and-play (`ProjectorTools.sendAndOpen`), pinned apps, remote-only mode (`ProjectorInfo.supported == false` still connects, no keystone), recovery card. 101 JVM tests; none of the new features have been run on a phone or the real projector yet.
 - Version 0.2.0 (renamed from AutoKeystone; the application id `dev.keystone.auto` and the Gradle module names are unchanged on
   purpose, so the new APK installs over the old one and keeps the learned profile, history and ADB key). 83 JVM tests pass; the
   live tests (`KS_PROJECTOR=<ip>`: `LiveToolsTest`, the read-only `readsTheRealProjector`) pass against the real projector.
@@ -107,8 +108,8 @@ direction that improves the predicted picture (step halves on reversal). Params 
   file picker/install path, and the touch feel. If something fails ask for Settings -> Activity log and the screen.
 - Firmware Auto keystone (see above) was found on in a real session and blocks every setter; Projector -> Keystone shows it and
   can switch it off. Why it switched on is unknown.
-- Ideas not built: screenshot/mirror the projector, file transfer to the projector, per-app shortcuts on Home, non-ASCII typing
-  (needs an IME or clipboard route), a launcher widget/quick-settings tile for the remote, CEC/HDMI control.
+- Ideas not built: live mirroring (only a screenshot exists), non-ASCII typing (needs an IME or clipboard route on the projector),
+  a launcher widget/quick-settings tile for the remote, CEC/HDMI control, multi-projector switcher, quick keystone re-check after moving.
 - No git remote is configured yet; the user will add one.
 - Fixed design decisions: BR marker offset from the corner (mute indicator), corner offsets capped at 320/180 px in the solver,
   hard limits 400/220 in `Panel`, outlier rejection only for gross deviations, photos stay on the phone.
