@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.keystone.auto.AppViewModel
 import dev.keystone.auto.Screen
+import dev.keystone.auto.link.LinkState
 import dev.keystone.auto.ui.screens.*
 
 @Composable
@@ -57,6 +58,12 @@ fun AppRoot(vm: AppViewModel, finish: () -> Unit) {
             }
         }
         busy?.let { BusyOverlay(it) }
+        val link by vm.link.collectAsState()
+        if (link == LinkState.Reconnecting && screen != Screen.Connect) {
+            Box(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.systemBars).padding(top = 6.dp), contentAlignment = Alignment.TopCenter) {
+                StatusPill("Reconnecting to the projector…", false)
+            }
+        }
         ToastHost(vm)
     }
 }

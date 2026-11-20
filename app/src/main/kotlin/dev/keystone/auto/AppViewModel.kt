@@ -51,6 +51,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val apps = MutableStateFlow<AppsState>(AppsState.Loading)
     val install = MutableStateFlow<InstallState>(InstallState.Idle)
     val device = MutableStateFlow(DeviceState(null, null))
+    val link = MutableStateFlow(LinkState.Online)    // is the projector answering? (the watchdog keeps this current)
 
     // ---- private session state ----------------------------------------------------------------------------
     private var conn: AdbConnection? = null
@@ -64,6 +65,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private var remote: RemoteInput? = null
     private var remoteIdleJob: kotlinx.coroutines.Job? = null
     private var pendingShare: String? = null
+    private var watchdog: kotlinx.coroutines.Job? = null
 
     init {
         // One-tap path: if we remember a projector, try it straight away.
@@ -199,6 +201,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             conn = c
             projector = p
             connect.value = ConnectState.Connected(info, ks)
+            link.value = LinkState.Online
+            startWatchdog()
             if (_screen.value == Screen.Connect) go(Screen.Home)
             if (autoFixed) toast.value = "Switched off the projector's own Auto keystone so the picture can be corrected."
             pendingShare?.let { pendingShare = null; openLink(it) }
@@ -216,6 +220,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun disconnect() {
+        watchdog?.cancel()
         viewModelScope.launch(io) { lock.withLock { closeLocked() } }
         connect.value = ConnectState.Idle
         go(Screen.Connect)
@@ -235,6 +240,63 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             conn = c
             projector = np
             block(np)
+        }
+    }
+
+    // ---- keeping the link alive -----------------------------------------------------------------------------
+    /** Pings the projector now and then; when it stops answering, reconnects (rescanning the Wi-Fi if its IP changed). */
+    private fun startWatchdog() {
+        watchdog?.cancel()
+        watchdog = viewModelScope.launch(io) {
+            var failures = 0
+            while (true) {
+                kotlinx.coroutines.delay(if (failures == 0) PING_MS else Backoff.delayMs(failures))
+                if (!connected()) return@launch
+                val alive = if (lock.tryLock()) {
+                    try { runCatching { conn?.run("echo ok")?.out?.contains("ok") == true }.getOrDefault(false) } finally { lock.unlock() }
+                } else true                                              // busy with a real call: it is clearly alive
+                if (alive) {
+                    if (failures > 0) { AppLog.d("watchdog: link is back"); link.value = LinkState.Online; resumeRemote() }
+                    failures = 0
+                    continue
+                }
+                failures++
+                link.value = LinkState.Reconnecting
+                AppLog.d("watchdog: projector not answering (failure $failures)")
+                if (recoverLink(failures)) { failures = 0; link.value = LinkState.Online; resumeRemote() }
+            }
+        }
+    }
+
+    private fun resumeRemote() {
+        if (_screen.value == Screen.Remote || _screen.value == Screen.Keyboard) startRemote()
+    }
+
+    /** One attempt to get the projector back: same address first, then (every few failures) a scan for a changed one. */
+    private suspend fun recoverLink(failures: Int): Boolean = lock.withLock {
+        val p = projector ?: return false
+        var host: String? = if (AdbScanner.portOpen(p.host, AdbConnection.DEFAULT_PORT, 1200)) p.host else null
+        if (host == null && Backoff.shouldRescan(failures)) {
+            val net = Network.local(getApplication())
+            if (net != null) {
+                for (h in AdbScanner.scan(Subnet.hosts(net.ip, net.prefixLength))) {
+                    val same = runCatching { AdbConnection.connect(h, keyPair = keyPair(), connectTimeoutMs = 2500, socketTimeoutMs = 8000).use { Projector(it, assets, h).stableId() == projectorId } }.getOrDefault(false)
+                    if (same) { host = h; break }
+                }
+            }
+        }
+        if (host == null) return false
+        try {
+            closeRemote(keepState = true)
+            conn?.close()
+            val c = AdbConnection.connect(host, keyPair = keyPair())
+            conn = c
+            projector = Projector(c, assets, host)
+            if (host != p.host) { store.lastHost = host; AppLog.d("projector moved from ${p.host} to $host"); toast.value = "The projector's address changed; reconnected." }
+            true
+        } catch (e: Exception) {
+            AppLog.e("recover link", e)
+            false
         }
     }
 
@@ -704,5 +766,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private companion object {
         const val REMOTE_IDLE_MS = 45_000L
+        const val PING_MS = 8_000L
     }
 }
