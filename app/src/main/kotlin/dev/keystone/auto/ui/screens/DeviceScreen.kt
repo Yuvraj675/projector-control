@@ -44,9 +44,7 @@ fun DeviceScreen(vm: AppViewModel) {
         AppCard {
             when (device.firmwareAutoKeystone) {
                 true -> {
-                    Banner("The projector's own Auto keystone is on. It stops the app from changing the keystone.", BannerKind.Warning)
-                    Spacer(Modifier.height(12.dp))
-                    PrimaryButton("Switch it off", { vm.switchFirmwareAutoOff() })
+                    Banner("The projector's own Auto keystone is on. It stops the app from changing the keystone. Turn it off in the projector's own keystone settings.", BannerKind.Warning)
                 }
                 false -> Row { StatusPill("Auto keystone off", true); Spacer(Modifier.width(10.dp)); Hint("The app can adjust the picture.") }
                 null -> Hint("Checking…")

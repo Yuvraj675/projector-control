@@ -194,20 +194,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             if (limited) AppLog.d("limited mode: ${info.unsupportedReason}")
             connect.value = ConnectState.Connecting(host, "Preparing the projector…")
             var ks = Offsets.fromList(List(8) { 0.0 })
-            var autoFixed = false
+            var autoOn = false
             if (!limited) {
                 p.ensureHelper { b, path -> c.push(b, path) }
                 if (p.ensurePatternApp { b, path -> c.push(b, path) }) AppLog.d("installed the test pattern app")
-                // The firmware's own Auto keystone refuses every setter and makes the getters read 0: switch it off first,
-                // so the "original keystone" we remember is a real one.
-                if (p.firmwareAutoOn()) {
-                    autoFixed = p.switchFirmwareAutoOff()
-                    AppLog.d("firmware Auto keystone was on; switched off=$autoFixed")
-                }
+                // Read only: we never change the firmware's Auto keystone setting. While it is on the getters read 0,
+                // so don't remember that as the "original keystone".
                 ks = p.readKeystone()
+                autoOn = p.autoWasOn
+                if (autoOn) AppLog.d("firmware Auto keystone is on (left as it is)")
             }
             projectorId = p.stableId()
-            if (!limited) store.saveOriginalIfMissing(projectorId, ks)
+            if (!limited && !autoOn) store.saveOriginalIfMissing(projectorId, ks)
             hasOriginal.value = store.originalKeystone(projectorId) != null
             saved.value = store.savedKeystones(projectorId)
             store.lastHost = host
@@ -220,7 +218,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             startWatchdog()
             if (_screen.value == Screen.Connect) go(Screen.Home)
             if (limited) toast.value = "Connected. This projector has no Hisilicon keystone, so you get the remote, apps and files."
-            else if (autoFixed) toast.value = "Switched off the projector's own Auto keystone so the picture can be corrected."
+            else if (autoOn) toast.value = "The projector's own Auto keystone is on, so keystone changes will be refused. Turn it off in the projector's settings."
             pendingShare?.let { pendingShare = null; openLink(it) }
         } catch (e: Exception) {
             AppLog.e("connect to $host failed", e)
@@ -798,16 +796,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 device.value = device.value.copy(loading = false)
                 toast.value = "Couldn't read the projector: ${friendly(e)}"
             }
-        }
-    }
-
-    fun switchFirmwareAutoOff() {
-        viewModelScope.launch(io) {
-            try {
-                val ok = proj { it.switchFirmwareAutoOff() }
-                toast.value = if (ok) "Auto keystone is off" else "The projector kept Auto keystone on. Turn it off in its own settings."
-                refreshDevice()
-            } catch (e: Exception) { fail("Couldn't change it", e) }
         }
     }
 

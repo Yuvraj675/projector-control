@@ -96,9 +96,6 @@ class Projector(private val sh: Shell, private val assets: ProjectorAssets, val 
     /** Is the firmware's own Auto keystone on? (While it is, nothing can be applied.) */
     fun firmwareAutoOn(): Boolean { runHelper("get"); return autoWasOn }
 
-    /** Switches the firmware's Auto keystone off. Returns true when it is off afterwards. */
-    fun switchFirmwareAutoOff(): Boolean { runHelper("manual"); return !autoWasOn }
-
     /**
      * Moves the corners to `target`. The projector's setters are relative steps, so we read the current values,
      * send the differences and verify by reading back (one corrective retry).
@@ -107,17 +104,14 @@ class Projector(private val sh: Shell, private val assets: ProjectorAssets, val 
         val t = target.rounded()
         if (!t.withinLimits()) throw ProjectorException("Refusing to apply values outside the safe range: ${t.toMap()}")
         var cur = readKeystone()
-        if (autoWasOn) {                                   // firmware Auto mode refuses every corner setter: turn it off first
-            cur = runHelper("manual")
-            if (autoWasOn) throw ProjectorException("The projector's own Auto keystone is on and could not be switched off. Switch it to manual in the projector's keystone settings.")
-            cur = readKeystone()
-        }
+        // Firmware Auto mode refuses every corner setter. We never touch that setting: the user controls it on the projector.
+        if (autoWasOn) throw ProjectorException("The projector's own Auto keystone is on. Switch it to manual in the projector's keystone settings.")
         repeat(3) {
             val delta = t.toList().zip(cur.toList()).map { (a, b) -> Math.round(a - b).toInt() }
             if (delta.all { it == 0 }) return cur
             val args = "delta " + Offsets.KEYS.zip(delta).filter { it.second != 0 }.joinToString(" ") { "${it.first}=${it.second}" }
             cur = runHelper(args)
-            if (autoWasOn) throw ProjectorException("The projector's own Auto keystone switched itself on and refused the values. Switch it to manual in the projector's keystone settings.")
+            if (autoWasOn) throw ProjectorException("The projector's own Auto keystone is on and refused the values. Switch it to manual in the projector's keystone settings.")
             if (cur.toList().zip(t.toList()).all { (a, b) -> Math.abs(a - b) <= 1.0 }) return cur
         }
         throw ProjectorException("The projector did not accept the new keystone (wanted ${t.toMap()}, got ${cur.toMap()}).")
