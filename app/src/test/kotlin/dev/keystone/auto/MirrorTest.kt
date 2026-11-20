@@ -77,4 +77,27 @@ class MirrorTest {
         assertTrue(ScreenMirror(shell, onUnit = { _, _ -> }, onProblem = {}).command.contains("--size 640x360 --bit-rate 1500000"))
         assertTrue(ScreenMirror(shell, MirrorQuality.Sharp, onUnit = { _, _ -> }, onProblem = {}).command.contains("--size 960x540 --bit-rate 3000000"))
     }
+
+    /** Real crash from the phone: closing a running mirror interrupted its thread while it waited, and nothing caught that. */
+    @Test
+    fun closingARunningMirrorNeverThrowsInItsThread() {
+        for (endsOnClose in listOf(true, false)) {
+            val crashes = java.util.concurrent.CopyOnWriteArrayList<Throwable>()
+            val previous = Thread.getDefaultUncaughtExceptionHandler()
+            Thread.setDefaultUncaughtExceptionHandler { _, e -> crashes += e }
+            try {
+                val shell = object : dev.keystone.auto.link.Shell {
+                    override fun run(cmd: String) = dev.keystone.auto.link.ShellResult("", "", 0)
+                    override fun openOutput(cmd: String, onData: (ByteArray) -> Unit, onEnd: () -> Unit): AutoCloseable =
+                        AutoCloseable { if (endsOnClose) onEnd() }              // false: the stream never reports its end
+                }
+                repeat(5) {
+                    val m = ScreenMirror(shell, onUnit = { _, _ -> }, onProblem = {})
+                    m.start(); Thread.sleep(60); m.close()
+                }
+                Thread.sleep(500)
+                assertTrue("uncaught: $crashes", crashes.isEmpty())
+            } finally { Thread.setDefaultUncaughtExceptionHandler(previous) }
+        }
+    }
 }

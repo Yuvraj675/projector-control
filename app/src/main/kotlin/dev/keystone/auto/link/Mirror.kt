@@ -96,14 +96,23 @@ class ScreenMirror(
 
     val command get() = "screenrecord --size ${width}x$height --bit-rate $bitRate --time-limit $SEGMENT_SECONDS --output-format=h264 -"
 
+    @Volatile private var latch: java.util.concurrent.CountDownLatch? = null
+
     fun start() {
         thread = Thread {
-            var quick = 0
-            while (!closed) {
-                val ended = java.util.concurrent.CountDownLatch(1)
-                val splitter = NalSplitter { u, k -> if (!closed) onUnit(u, k) }
-                val lastData = java.util.concurrent.atomic.AtomicLong(0)
-                val flusher = java.util.concurrent.Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "mirror-flush").apply { isDaemon = true } }
+            try { loop() } catch (_: InterruptedException) { } catch (e: Throwable) { if (!closed) onProblem("The screen stream stopped: ${e.message}") }
+        }.apply { isDaemon = true; name = "screen-mirror"; start() }
+    }
+
+    private fun loop() {
+        var quick = 0
+        while (!closed) {
+            val ended = java.util.concurrent.CountDownLatch(1)
+            latch = ended
+            val splitter = NalSplitter { u, k -> if (!closed) onUnit(u, k) }
+            val lastData = java.util.concurrent.atomic.AtomicLong(0)
+            val flusher = java.util.concurrent.Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "mirror-flush").apply { isDaemon = true } }
+            try {
                 flusher.scheduleWithFixedDelay({
                     val t = lastData.get()
                     if (t != 0L && System.nanoTime() - t > QUIET_NS && lastData.compareAndSet(t, 0L)) splitter.flush()
@@ -112,22 +121,22 @@ class ScreenMirror(
                 var gotData = false
                 try {
                     current = sh.openOutput(command, { b -> gotData = true; splitter.push(b); lastData.set(System.nanoTime()) }, { ended.countDown() })
-                } catch (e: Exception) { onProblem("Couldn't start the projector's screen stream."); return@Thread }
-                ended.await()
-                flusher.shutdownNow()
-                if (closed) break
+                } catch (e: Exception) { if (!closed) onProblem("Couldn't start the projector's screen stream."); return }
+                if (closed) { try { current?.close() } catch (_: Exception) { }; return }
+                ended.await()                                    // close() counts this down too, so it never needs an interrupt
+                if (closed) return
                 // screenrecord stops by itself after its time limit; a run that dies at once means it cannot work here.
                 if (System.currentTimeMillis() - began < 2500 && !gotData) quick++ else quick = 0
-                if (quick >= 3) { onProblem("The projector didn't start its screen stream."); break }
-                try { Thread.sleep(150) } catch (_: InterruptedException) { break }
-            }
-        }.apply { isDaemon = true; name = "screen-mirror"; start() }
+                if (quick >= 3) { onProblem("The projector didn't start its screen stream."); return }
+            } finally { flusher.shutdownNow() }
+            Thread.sleep(150)
+        }
     }
 
     override fun close() {
         closed = true
         try { current?.close() } catch (_: Exception) { }
-        thread?.interrupt()
+        latch?.countDown()
     }
 
     companion object {
