@@ -54,6 +54,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val install = MutableStateFlow<InstallState>(InstallState.Idle)
     val device = MutableStateFlow(DeviceState(null, null))
     val saved = MutableStateFlow<List<SavedKeystone>>(emptyList())   // named keystones for the connected projector
+    val sleepLeft = MutableStateFlow<Int?>(null)     // seconds until the projector's screen turns off
     val link = MutableStateFlow(LinkState.Online)    // is the projector answering? (the watchdog keeps this current)
 
     // ---- private session state ----------------------------------------------------------------------------
@@ -788,6 +789,21 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 toast.value = when (p) { Power.Sleep -> "Projector screen off"; Power.Wake -> "Projector awake"; Power.Reboot -> "Restarting the projector…" }
                 if (p == Power.Reboot) disconnect()
             } catch (e: Exception) { fail("Couldn't do that", e) }
+        }
+    }
+
+    fun refreshSleepTimer() {
+        viewModelScope.launch(io) { try { sleepLeft.value = proj { it.tools.sleepRemainingSeconds() } } catch (_: Exception) { } }
+    }
+
+    /** Screen off in [minutes] (null cancels). The countdown runs on the projector. */
+    fun setSleepTimer(minutes: Int?) {
+        viewModelScope.launch(io) {
+            try {
+                if (minutes == null) { proj { it.tools.cancelSleep() }; toast.value = "Sleep timer cancelled" }
+                else { proj { it.tools.scheduleSleep(minutes) }; toast.value = "Screen turns off in $minutes min" }
+                sleepLeft.value = proj { it.tools.sleepRemainingSeconds() }
+            } catch (e: Exception) { fail("Couldn't set the timer", e) }
         }
     }
 

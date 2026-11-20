@@ -65,6 +65,22 @@ class ProjectorTools(private val sh: Shell) {
     fun wake() { sh.run("input keyevent KEYCODE_WAKEUP") }
     fun reboot() { sh.run("reboot") }
 
+    /**
+     * Turns the screen off after [minutes]. The countdown runs ON the projector, so it still fires when the phone is
+     * away or the app is closed. One timer at a time: a new one replaces the old one.
+     */
+    fun scheduleSleep(minutes: Int) {
+        require(minutes in 1..600) { "Sleep timer must be 1-600 minutes" }
+        cancelSleep()
+        val script = "E=\$((\$(date +%s)+${minutes * 60})); echo \$\$ \$E > $SLEEP_FILE; sleep ${minutes * 60}; rm -f $SLEEP_FILE; input keyevent KEYCODE_SLEEP"
+        sh.run("nohup sh -c '$script' >/dev/null 2>&1 </dev/null &")
+    }
+
+    fun cancelSleep() { sh.run("[ -f $SLEEP_FILE ] && kill \$(cut -d' ' -f1 $SLEEP_FILE) 2>/dev/null; rm -f $SLEEP_FILE") }
+
+    /** Seconds until the projector's screen turns off, or null when no timer is running. */
+    fun sleepRemainingSeconds(): Int? = parseSleepRemaining(sh.run("cat $SLEEP_FILE 2>/dev/null; echo; date +%s").out)
+
     /** Frees memory on this 1 GB device by stopping everything that is not in front. */
     fun freeMemory() { sh.run("am kill-all") }
 
@@ -122,6 +138,16 @@ class ProjectorTools(private val sh: Shell) {
     }
 
     companion object {
+        const val SLEEP_FILE = "/data/local/tmp/pc-sleep"
+
+        /** Input is "<pid> <end epoch>" (maybe missing) then a blank line, then the current epoch. */
+        fun parseSleepRemaining(out: String): Int? {
+            val lines = out.lines().map { it.trim() }.filter { it.isNotEmpty() }
+            val now = lines.lastOrNull()?.toLongOrNull() ?: return null
+            val end = lines.dropLast(1).lastOrNull()?.split(' ')?.getOrNull(1)?.toLongOrNull() ?: return null
+            return (end - now).coerceAtLeast(0).toInt().takeIf { it > 0 }
+        }
+
         /** Our own helper and the projector's launchers are not things to start from here. */
         val HIDDEN = setOf("dev.keystone.pattern", "com.gathin.tvhome", "com.newlink.overseaslauncher", "com.zhiying.bluetoothmodelservice")
 

@@ -145,4 +145,22 @@ class RemoteToolsTest {
         assertTrue(sh.commands.last().startsWith("rm -rf"))
         assertFalse(ProjectorTools(RecordingShell()).install(src("x.apkm", zip("readme.txt" to 5))).ok)
     }
+
+    @Test
+    fun sleepTimerRunsOnTheProjectorAndReplacesTheOldOne() {
+        val sh = RecordingShell()
+        ProjectorTools(sh).scheduleSleep(30)
+        assertTrue(sh.commands[0].contains("kill"))                       // old timer cancelled first
+        val start = sh.commands[1]
+        assertTrue(start.startsWith("nohup sh -c '") && start.endsWith("&"))
+        assertTrue(start.contains("sleep 1800") && start.contains("KEYCODE_SLEEP") && start.contains("</dev/null"))
+        assertThrows(IllegalArgumentException::class.java) { ProjectorTools(sh).scheduleSleep(0) }
+    }
+
+    @Test
+    fun sleepRemainingIsParsedFromTheProjectorsClock() {
+        assertEquals(600, ProjectorTools.parseSleepRemaining("1234 1600\n\n1000\n"))
+        assertNull(ProjectorTools.parseSleepRemaining("\n1000\n"))             // no timer file
+        assertNull(ProjectorTools.parseSleepRemaining("1234 900\n\n1000\n"))  // already past
+    }
 }

@@ -20,7 +20,7 @@ fun DeviceScreen(vm: AppViewModel) {
     var confirmReboot by remember { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
     var saveName by remember { mutableStateOf("") }
-    LaunchedEffect(Unit) { vm.refreshDevice() }
+    LaunchedEffect(Unit) { vm.refreshDevice(); vm.refreshSleepTimer() }
 
     ScreenScaffold(
         title = "Projector", onBack = { vm.back() },
@@ -74,6 +74,15 @@ fun DeviceScreen(vm: AppViewModel) {
                 SecondaryButton("Wake", { vm.power(AppViewModel.Power.Wake) }, Modifier.weight(1f))
             }
             Spacer(Modifier.height(10.dp))
+            val left by vm.sleepLeft.collectAsState()
+            Text("Sleep timer", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+            Hint(left?.let { "Screen turns off in ${(it + 59) / 60} min." } ?: "Turn the screen off by itself, even if you close the app.")
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(30, 60, 90).forEach { m -> SecondaryButton("$m min", { vm.setSleepTimer(m) }, Modifier.weight(1f)) }
+            }
+            if (left != null) { Spacer(Modifier.height(8.dp)); SecondaryButton("Cancel timer", { vm.setSleepTimer(null) }) }
+            Spacer(Modifier.height(14.dp))
             SecondaryButton("Free up memory", { vm.freeMemory() })
             Hint("Stops background apps. The projector only has 1 GB of memory, so this can make everything feel faster.", Modifier.padding(top = 6.dp))
             Spacer(Modifier.height(10.dp))
