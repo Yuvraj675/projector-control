@@ -5,6 +5,8 @@ import dev.keystone.auto.core.Offsets
 import dev.keystone.auto.data.Codec
 import dev.keystone.auto.data.HistoryEntry
 import dev.keystone.auto.data.Profile
+import dev.keystone.auto.data.SavedKeystone
+import dev.keystone.auto.data.SavedKeystones
 import org.json.JSONObject
 import java.io.File
 
@@ -73,6 +75,13 @@ class Store(private val context: Context) {
         val f = originalFile(id)
         if (!f.exists()) f.writeText(Codec.offsetsToJson(o).toString(2))
     }
+
+    private fun savedFile(id: String) = File(dir, "saved_$id.json")
+
+    /** Keystones the user saved by name for this projector. */
+    fun savedKeystones(id: String): List<SavedKeystone> = savedFile(id).takeIf { it.exists() }?.let { SavedKeystones.fromJson(it.readText()) } ?: emptyList()
+
+    fun writeSavedKeystones(id: String, list: List<SavedKeystone>) = savedFile(id).writeText(SavedKeystones.toJson(list))
 
     fun keyDir(): File = File(context.filesDir, "adb").also { it.mkdirs() }
 }

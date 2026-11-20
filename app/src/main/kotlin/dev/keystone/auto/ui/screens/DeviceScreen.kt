@@ -3,6 +3,7 @@ package dev.keystone.auto.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.keystone.auto.AppViewModel
@@ -15,7 +16,10 @@ fun DeviceScreen(vm: AppViewModel) {
     val device by vm.device.collectAsState()
     val connect by vm.connect.collectAsState()
     val info = (connect as? ConnectState.Connected)?.info
+    val saved by vm.saved.collectAsState()
     var confirmReboot by remember { mutableStateOf(false) }
+    var saving by remember { mutableStateOf(false) }
+    var saveName by remember { mutableStateOf("") }
     LaunchedEffect(Unit) { vm.refreshDevice() }
 
     ScreenScaffold(
@@ -47,6 +51,22 @@ fun DeviceScreen(vm: AppViewModel) {
         }
 
         Spacer(Modifier.height(20.dp))
+        SectionTitle("Saved keystones")
+        AppCard {
+            if (saved.isEmpty()) Hint("Moved the projector? Save the picture setup for each place (bedroom ceiling, living room table...) and switch with one tap.")
+            saved.forEachIndexed { i, k ->
+                if (i > 0) DividerLine()
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) { Text(k.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface) }
+                    TextButton(onClick = { vm.applySavedKeystone(k) }) { Text("Apply") }
+                    TextButton(onClick = { vm.deleteSavedKeystone(k) }) { Text("Delete") }
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            SecondaryButton("Save the current keystone", { saveName = ""; saving = true })
+        }
+
+        Spacer(Modifier.height(20.dp))
         SectionTitle("Power and memory")
         AppCard {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -71,6 +91,14 @@ fun DeviceScreen(vm: AppViewModel) {
         }
         Spacer(Modifier.height(8.dp))
     }
+
+    if (saving) AlertDialog(
+        onDismissRequest = { saving = false },
+        title = { Text("Save this keystone") },
+        text = { OutlinedTextField(saveName, { saveName = it }, singleLine = true, placeholder = { Text("e.g. Bedroom ceiling") }) },
+        confirmButton = { TextButton(onClick = { saving = false; vm.saveCurrentKeystone(saveName) }) { Text("Save") } },
+        dismissButton = { TextButton(onClick = { saving = false }) { Text("Cancel") } },
+    )
 
     if (confirmReboot) AlertDialog(
         onDismissRequest = { confirmReboot = false },

@@ -9,6 +9,8 @@ import dev.keystone.auto.data.Feedback
 import dev.keystone.auto.data.HistoryEntry
 import dev.keystone.auto.data.Learning
 import dev.keystone.auto.data.Profile
+import dev.keystone.auto.data.SavedKeystone
+import dev.keystone.auto.data.SavedKeystones
 import dev.keystone.auto.link.*
 import dev.keystone.auto.platform.*
 import kotlinx.coroutines.Dispatchers
@@ -51,6 +53,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val apps = MutableStateFlow<AppsState>(AppsState.Loading)
     val install = MutableStateFlow<InstallState>(InstallState.Idle)
     val device = MutableStateFlow(DeviceState(null, null))
+    val saved = MutableStateFlow<List<SavedKeystone>>(emptyList())   // named keystones for the connected projector
     val link = MutableStateFlow(LinkState.Online)    // is the projector answering? (the watchdog keeps this current)
 
     // ---- private session state ----------------------------------------------------------------------------
@@ -197,6 +200,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             projectorId = p.stableId()
             store.saveOriginalIfMissing(projectorId, ks)
             hasOriginal.value = store.originalKeystone(projectorId) != null
+            saved.value = store.savedKeystones(projectorId)
             store.lastHost = host
             conn = c
             projector = p
@@ -557,6 +561,39 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun history(): List<HistoryEntry> = store.loadHistory().reversed()
 
     fun clearHistory() = store.clearHistory()
+
+    /** Saves what is on the projector right now under a name ("Bedroom ceiling"). */
+    fun saveCurrentKeystone(name: String) {
+        viewModelScope.launch(io) {
+            try {
+                val now = proj { it.readKeystone() }
+                val n = name.trim().ifBlank { SavedKeystones.defaultName(saved.value) }.take(30)
+                val list = SavedKeystones.put(saved.value, SavedKeystone(n, now, System.currentTimeMillis()))
+                store.writeSavedKeystones(projectorId, list)
+                saved.value = list
+                toast.value = "Saved “$n”"
+            } catch (e: Exception) { fail("Couldn't save the keystone", e) }
+        }
+    }
+
+    fun applySavedKeystone(item: SavedKeystone) {
+        viewModelScope.launch(io) {
+            busy.value = "Applying “${item.name}”…"
+            try {
+                val before = proj { it.readKeystone() }
+                proj { it.applyKeystone(item.offsets) }
+                store.addHistory(HistoryEntry(System.currentTimeMillis(), projectorId, before, item.offsets, profile.value.params, 0, 0.0, "saved:${item.name}"))
+                toast.value = "Applied “${item.name}”"
+                refreshConnected()
+            } catch (e: Exception) { fail("Couldn't apply it", e) } finally { busy.value = null }
+        }
+    }
+
+    fun deleteSavedKeystone(item: SavedKeystone) {
+        val list = SavedKeystones.remove(saved.value, item.name)
+        store.writeSavedKeystones(projectorId, list)
+        saved.value = list
+    }
 
     /** Restore the keystone the projector had the first time this app met it. */
     fun restoreOriginal() {
