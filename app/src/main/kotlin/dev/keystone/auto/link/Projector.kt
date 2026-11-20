@@ -87,7 +87,9 @@ class Projector(private val sh: Shell, private val assets: ProjectorAssets, val 
         val r = sh.run("${ProjectorBundle.CLASSPATH} app_process /system/bin ${ProjectorBundle.HELPER_CLASS} $args 2>&1")
         val values = Regex("(X[1-4]|Y[1-4])=(-?\\d+)").findAll(r.out).associate { it.groupValues[1] to it.groupValues[2].toInt() }
         if (!Offsets.KEYS.all { it in values }) throw ProjectorException("Unexpected reply from the keystone helper: ${r.text.take(200)}")
-        autoWasOn = Regex("AUTO=1").containsMatchIn(r.out)
+        // The helper's AUTO= is the raw getAutoKeystone() value, which is non-zero on this firmware even in manual mode
+        // (verified on the projector), so it cannot tell. The firmware's own toggle is this property.
+        autoWasOn = sh.run("getprop persist.newlink.autokeystone_onoff").out.trim() == "1"
         return Offsets.fromMap(values)
     }
 

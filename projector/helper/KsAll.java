@@ -6,7 +6,7 @@ import java.lang.reflect.Method;
  *   KsAll delta X1=5 Y3=-10 ...    -> adds the given steps (setXnKeystoneOffset/setYnKeystoneOffset are RELATIVE),
  *                                     then prints the new values
  *
- * Every reply ends with AUTO=<0|1> (read only: this helper never changes the firmware's Auto keystone setting).
+ * Every reply ends with AUTO=<1 if getAutoKeystone() != 0> (informational only: it is non-zero even in manual mode on the real firmware).
  * While the firmware's own Auto keystone is on, the four-corner setters are refused and the getters read 0.
  */
 public class KsAll {

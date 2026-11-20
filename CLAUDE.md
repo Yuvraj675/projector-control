@@ -68,7 +68,7 @@ projector at that moment (`Session.keystoneAtStart` is updated). All projector c
   `ZYKeystoneService AutoKeystone Not Mix-Auto Now!` and `adjustKeystoneOffset Illegal Value of N, Out of Range[0, -1]`, every
   corner setter is refused and the getters read all zeros. It got switched on during a real session (cause unknown). **The app must never write this
   setting** (0.2.0/0.3.0 called `setAutoKeystone(0)` and 0.3.0 users then always got "keystone values couldn't be accepted"; removed).
-  The helper only reads it and prints `AUTO=<0|1>`; `Projector.applyKeystone` refuses with an explanation if it is on. Seen in the
+  The helper's `AUTO=` is the raw `getAutoKeystone()` and is **1 even in manual mode** (verified live on 2026-11-21, with `persist.newlink.autokeystone_onoff=0` and working setters), so `Projector.runHelper` decides from `getprop persist.newlink.autokeystone_onoff` instead; `applyKeystone` refuses with an explanation only if that is 1. Seen in the
   phone log as "did not accept the new keystone (... got all 0)".
 - Needs `/system/framework/HitvShare.jar`, `HitvManager.jar` and the `hitvservice` service, so only this firmware family works.
 - Screenshots (`screencap`) include the keystone warp, which is how the model was verified.
@@ -100,6 +100,7 @@ Unknown camera yaw is assumed 0 (phone parallel to the wall) unless learned.
 direction that improves the predicted picture (step halves on reversal). Params persist in `profile.json`, sessions in history.
 
 ## Status, open items and wider context
+- Version 0.3.2: Auto keystone detection uses the firmware property, not the helper's raw value (0.3.1 always thought Auto was on).
 - Version 0.3.1: the app no longer writes the firmware's Auto keystone setting; keystone limits lowered to 230/220.
 - Version 0.3.0 adds: connection watchdog (`AppViewModel.startWatchdog`, `link/Reconnect.kt`), saved keystones (`data/SavedKeystones.kt`), sleep timer on the projector (`ProjectorTools.scheduleSleep`), volume-key passthrough (`MainActivity.onKeyDown`), memory guard, diagnostics (`link/Diagnostics.kt`), screenshot (`Shell.pull`), send-file-and-play (`ProjectorTools.sendAndOpen`), pinned apps, remote-only mode (`ProjectorInfo.supported == false` still connects, no keystone), recovery card. 101 JVM tests; none of the new features have been run on a phone or the real projector yet.
 - Version 0.2.0 (renamed from AutoKeystone; the application id `dev.keystone.auto` and the Gradle module names are unchanged on

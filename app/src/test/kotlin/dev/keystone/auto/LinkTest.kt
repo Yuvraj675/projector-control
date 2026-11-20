@@ -31,6 +31,7 @@ class FakeProjector(var offsets: Offsets, private val assets: ProjectorAssets, v
         log += cmd
         fun ok(s: String) = ShellResult(s, "", 0)
         return when {
+            cmd.startsWith("getprop persist.newlink.autokeystone_onoff") -> ok(if (autoOn) "1\n" else "0\n")
             cmd.startsWith("getprop ro.product.model") -> ok("HiDPTAndroid Hi3751V350\n")
             cmd.startsWith("getprop ro.product.manufacturer") -> ok("Hisilicon\n")
             cmd.startsWith("getprop ro.build.version.release") -> ok("12\n")
@@ -59,7 +60,7 @@ class FakeProjector(var offsets: Offsets, private val assets: ProjectorAssets, v
     }
 
     private fun fmt() = Offsets.KEYS.zip((if (autoOn) Offsets.NONE else offsets).toList()).joinToString(" ") { "${it.first}=${it.second.toInt()}" } +
-        " AUTO=${if (autoOn) 1 else 0}\n"
+        " AUTO=1\n"   // real firmware: raw getAutoKeystone() is non-zero even in manual mode
 }
 
 class LinkTest {
