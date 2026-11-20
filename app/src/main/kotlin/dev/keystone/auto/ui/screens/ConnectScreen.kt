@@ -51,6 +51,7 @@ fun ConnectScreen(vm: AppViewModel) {
                 SecondaryButton("Enter IP address", { manual = true })
                 Spacer(Modifier.height(16.dp))
                 Hint("Your phone and projector must be on the same Wi-Fi, and network debugging (ADB) must be on in the projector.")
+                AdbHelp()
             }
 
             is ConnectState.Scanning -> AppCard {
@@ -121,11 +122,31 @@ fun ConnectScreen(vm: AppViewModel) {
                 PrimaryButton("Try again", { vm.findProjector() })
                 Spacer(Modifier.height(10.dp))
                 SecondaryButton("Enter IP address", { manual = true })
+                AdbHelp()
             }
         }
     }
 
     if (manual) ManualIpDialog(onDismiss = { manual = false }, onConnect = { manual = false; vm.connectManually(it) })
+}
+
+/** A collapsible guide for the step where most first-time users get stuck. */
+@Composable
+private fun AdbHelp() {
+    var open by remember { mutableStateOf(false) }
+    TextAction(if (open) "Hide: how to turn on network debugging" else "How do I turn on network debugging?", { open = !open })
+    if (open) AppCard {
+        listOf(
+            "1. On the projector open Settings → About (or System) and find the Build number.",
+            "2. Press OK on it 7 times until it says you are a developer.",
+            "3. Go back to Settings → Developer options.",
+            "4. Switch on USB debugging, and ADB over network / Wireless debugging if you see it.",
+            "5. Make sure the projector is on the same Wi-Fi as this phone, then tap Find my projector.",
+            "6. If the projector asks \"Allow debugging?\", choose Always allow.",
+        ).forEach { Hint(it, Modifier.padding(vertical = 3.dp)) }
+        Spacer(Modifier.height(6.dp))
+        Hint("Some projectors hide Developer options. A settings launcher app (for example \"Project Settings\") can open them.")
+    }
 }
 
 @Composable
