@@ -197,4 +197,13 @@ class RemoteToolsTest {
         val open = sh.commands.last()
         assertTrue(open.contains("-t 'video/mp4'") && open.contains("file:///sdcard/Download/ProjectorConnect/My Film.mp4"))
     }
+
+    @Test
+    fun magnetAndStremioLinksPassThrough() {
+        assertEquals("magnet:?xt=urn:btih:abc", ProjectorTools.normaliseUrl("magnet:?xt=urn:btih:abc"))
+        assertEquals("stremio:///detail/movie/tt1", ProjectorTools.normaliseUrl(" stremio:///detail/movie/tt1 "))
+        assertNull(ProjectorTools.normaliseUrl("magnet:?xt=a b"))
+        assertEquals("https://youtu.be/x", ProjectorTools.normaliseUrl("youtu.be/x"))
+        assertNull(ProjectorTools.normaliseUrl("javascript:alert(1)"))
+    }
 }

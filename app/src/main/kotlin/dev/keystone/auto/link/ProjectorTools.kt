@@ -232,9 +232,10 @@ class ProjectorTools(private val sh: Shell) {
             else -> text.lineSequence().firstOrNull { it.contains("Failure") || it.contains("Error") }?.trim() ?: "The projector refused to install it: ${text.take(160)}"
         }
 
-        /** Accepts "youtu.be/x", "https://…" and rejects anything that is not a web link. */
+        /** Accepts "youtu.be/x", "https://…", magnet and stremio links; rejects anything else. */
         fun normaliseUrl(raw: String): String? {
-            val t = raw.trim().lines().firstOrNull { it.contains('.') }?.trim() ?: return null
+            val t = raw.trim().lines().firstOrNull { it.contains('.') || it.startsWith("magnet:") || it.startsWith("stremio:") }?.trim() ?: return null
+            if (t.startsWith("magnet:?") || t.startsWith("stremio://")) return t.takeIf { x -> x.none { it.isWhitespace() } }
             if (t.any { it.isWhitespace() }) return null
             val withScheme = if (Regex("^[a-zA-Z][a-zA-Z0-9+.-]*://").containsMatchIn(t)) t else "https://$t"
             return withScheme.takeIf { it.startsWith("http://") || it.startsWith("https://") }

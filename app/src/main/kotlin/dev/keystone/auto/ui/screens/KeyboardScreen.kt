@@ -83,6 +83,8 @@ fun KeyboardScreen(vm: AppViewModel, autoStart: Boolean = true) {
                 }
                 Switch(live, { live = it })
             }
+            Spacer(Modifier.height(10.dp))
+            SecondaryButton("Type my phone's clipboard", { clipboardText(context)?.let { vm.typeText(it) } ?: run { vm.toast.value = "The clipboard is empty" } })
             if (!live) {
                 Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
