@@ -83,5 +83,10 @@ class Store(private val context: Context) {
 
     fun writeSavedKeystones(id: String, list: List<SavedKeystone>) = savedFile(id).writeText(SavedKeystones.toJson(list))
 
+    /** Apps the user pinned to Home for one-tap launching. */
+    var pinnedApps: Set<String>
+        get() = prefs.getStringSet("pinnedApps", emptySet()) ?: emptySet()
+        set(v) { prefs.edit().putStringSet("pinnedApps", v).apply() }
+
     fun keyDir(): File = File(context.filesDir, "adb").also { it.mkdirs() }
 }

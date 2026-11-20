@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,6 +21,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.keystone.auto.AppViewModel
+import dev.keystone.auto.AppsState
 import dev.keystone.auto.ConnectState
 import dev.keystone.auto.Screen
 import dev.keystone.auto.ui.*
@@ -48,6 +50,16 @@ fun HomeScreen(vm: AppViewModel) {
 
             DeviceCard(name = info?.displayName ?: "Projector", detail = info?.host ?: "", onClick = { vm.go(Screen.Device) })
             Spacer(Modifier.height(14.dp))
+
+            val apps by vm.apps.collectAsState()
+            val pinned by vm.pinned.collectAsState()
+            val quick = (apps as? AppsState.Loaded)?.apps?.filter { it.packageName in pinned }.orEmpty()
+            if (quick.isNotEmpty()) {
+                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    quick.forEach { app -> Box(Modifier.width(84.dp)) { AppTile(app, { vm.launchApp(app) }, { vm.togglePin(app) }) } }
+                }
+                Spacer(Modifier.height(10.dp))
+            }
 
             Row(Modifier.fillMaxWidth().height(212.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Tile("Remote", "Touchpad, air mouse, D-pad", Ico.Pointer, { vm.go(Screen.Remote) }, Modifier.weight(1.2f).fillMaxHeight(), accent = true, big = true)

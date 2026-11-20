@@ -61,6 +61,7 @@ fun AppsScreen(vm: AppViewModel) {
         }
     }
 
+    val pinned by vm.pinned.collectAsState()
     menu?.let { app ->
         AlertDialog(
             onDismissRequest = { menu = null },
@@ -69,6 +70,7 @@ fun AppsScreen(vm: AppViewModel) {
             confirmButton = { TextButton(onClick = { vm.launchApp(app); menu = null }) { Text("Open") } },
             dismissButton = {
                 Row {
+                    TextButton(onClick = { vm.togglePin(app); menu = null }) { Text(if (app.packageName in pinned) "Unpin" else "Pin to Home") }
                     TextButton(onClick = { vm.stopApp(app); menu = null }) { Text("Stop") }
                     if (app.thirdParty) TextButton(onClick = { vm.uninstallApp(app); menu = null }) { Text("Uninstall", color = MaterialTheme.colorScheme.error) }
                 }
@@ -79,7 +81,7 @@ fun AppsScreen(vm: AppViewModel) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun AppTile(app: ProjectorApp, onOpen: () -> Unit, onMore: () -> Unit) {
+internal fun AppTile(app: ProjectorApp, onOpen: () -> Unit, onMore: () -> Unit) {
     val hue = remember(app.packageName) { (app.packageName.hashCode().toUInt() % 360u).toFloat() }
     val tone = Color.hsv(hue, 0.45f, 0.92f)
     Column(

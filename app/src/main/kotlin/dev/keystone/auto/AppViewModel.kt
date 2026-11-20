@@ -57,6 +57,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val saved = MutableStateFlow<List<SavedKeystone>>(emptyList())   // named keystones for the connected projector
     val sleepLeft = MutableStateFlow<Int?>(null)     // seconds until the projector's screen turns off
     val shot = MutableStateFlow<androidx.compose.ui.graphics.ImageBitmap?>(null)   // last screenshot of the projector
+    val pinned = MutableStateFlow(store.pinnedApps)   // packages shown as one-tap shortcuts on Home
     val link = MutableStateFlow(LinkState.Online)    // is the projector answering? (the watchdog keeps this current)
 
     // ---- private session state ----------------------------------------------------------------------------
@@ -209,6 +210,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             projector = p
             connect.value = ConnectState.Connected(info, ks)
             link.value = LinkState.Online
+            loadApps()                                          // so pinned apps are ready on Home
             runCatching { p.tools.wake() }                      // a sleeping projector would ignore everything else
             startWatchdog()
             if (_screen.value == Screen.Connect) go(Screen.Home)
@@ -678,6 +680,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             try { apps.value = AppsState.Loaded(proj { it.tools.listApps() }) }
             catch (e: Exception) { AppLog.e("list apps", e); apps.value = AppsState.Failed(friendly(e)) }
         }
+    }
+
+    fun togglePin(app: ProjectorApp) {
+        val now = if (app.packageName in pinned.value) pinned.value - app.packageName else pinned.value + app.packageName
+        pinned.value = now
+        store.pinnedApps = now
+        toast.value = if (app.packageName in now) "${app.label} pinned to Home" else "${app.label} unpinned"
     }
 
     fun launchApp(app: ProjectorApp) {
