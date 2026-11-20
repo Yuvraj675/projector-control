@@ -138,6 +138,11 @@ class ProjectorTools(private val sh: Shell) {
     }
 
     companion object {
+        /** Below this much free memory (MB) a heavy app is likely to stall this 1 GB projector. */
+        const val LOW_MEMORY_MB = 250
+
+        fun isLowOnMemory(st: ProjectorStatus) = st.ramTotalMb > 0 && st.ramFreeMb < LOW_MEMORY_MB
+
         const val SLEEP_FILE = "/data/local/tmp/pc-sleep"
 
         /** Input is "<pid> <end epoch>" (maybe missing) then a blank line, then the current epoch. */

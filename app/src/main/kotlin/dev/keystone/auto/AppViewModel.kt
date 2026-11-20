@@ -207,6 +207,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             projector = p
             connect.value = ConnectState.Connected(info, ks)
             link.value = LinkState.Online
+            runCatching { p.tools.wake() }                      // a sleeping projector would ignore everything else
             startWatchdog()
             if (_screen.value == Screen.Connect) go(Screen.Home)
             if (autoFixed) toast.value = "Switched off the projector's own Auto keystone so the picture can be corrected."
@@ -679,7 +680,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun launchApp(app: ProjectorApp) {
         viewModelScope.launch(io) {
-            try { toast.value = if (proj { it.tools.launch(app) }) "Opening ${app.label}…" else "${app.label} didn't open" }
+            try {
+                // memory guard: on a 1 GB projector, clear the background first when memory is low
+                val freed = proj { p -> if (ProjectorTools.isLowOnMemory(p.tools.status())) { p.tools.freeMemory(); true } else false }
+                toast.value = if (proj { it.tools.launch(app) }) (if (freed) "Freed memory, opening ${app.label}…" else "Opening ${app.label}…") else "${app.label} didn't open"
+            }
             catch (e: Exception) { fail("Couldn't open ${app.label}", e) }
         }
     }

@@ -163,4 +163,12 @@ class RemoteToolsTest {
         assertNull(ProjectorTools.parseSleepRemaining("\n1000\n"))             // no timer file
         assertNull(ProjectorTools.parseSleepRemaining("1234 900\n\n1000\n"))  // already past
     }
+
+    @Test
+    fun lowMemoryIsDetected() {
+        fun st(free: Int) = ProjectorStatus(1000, free, 8000, 4000, "m", "12", "armeabi-v7a")
+        assertTrue(ProjectorTools.isLowOnMemory(st(120)))
+        assertFalse(ProjectorTools.isLowOnMemory(st(400)))
+        assertFalse(ProjectorTools.isLowOnMemory(ProjectorStatus(0, 0, 0, 0, "", "", "")))   // unreadable status: don't act
+    }
 }
