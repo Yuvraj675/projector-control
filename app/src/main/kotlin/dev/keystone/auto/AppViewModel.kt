@@ -146,7 +146,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
         val choices = open.map { identify(it) }
         val usable = choices.filter { it.supported }
-        if (usable.size == 1) connectTo(usable[0].host) else connect.value = ConnectState.Choose(choices)
+        when {
+            usable.size == 1 -> connectTo(usable[0].host)
+            usable.isEmpty() && choices.size == 1 -> connectTo(choices[0].host)     // the only device: use it as a plain remote
+            else -> connect.value = ConnectState.Choose(choices)
+        }
     }
 
     private fun identify(host: String): DeviceChoice = try {
@@ -185,24 +189,25 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             connect.value = ConnectState.Connecting(host, "Checking the projector…")
             val info = p.info()
             AppLog.d("connected: $info")
-            if (!info.supported) {
-                c.close()
-                connect.value = ConnectState.Failed(info.unsupportedReason ?: "This projector isn't supported.", "ProjectorConnect works with projectors that use the Hisilicon TV API (Newlink/Zhiying, Hi3751).")
-                return@withLock
-            }
+            // Not a Hisilicon projector: keep the remote, apps, links, files and power, but no keystone.
+            val limited = !info.supported
+            if (limited) AppLog.d("limited mode: ${info.unsupportedReason}")
             connect.value = ConnectState.Connecting(host, "Preparing the projector…")
-            p.ensureHelper { b, path -> c.push(b, path) }
-            if (p.ensurePatternApp { b, path -> c.push(b, path) }) AppLog.d("installed the test pattern app")
-            // The firmware's own Auto keystone refuses every setter and makes the getters read 0: switch it off first,
-            // so the "original keystone" we remember is a real one.
+            var ks = Offsets.fromList(List(8) { 0.0 })
             var autoFixed = false
-            if (p.firmwareAutoOn()) {
-                autoFixed = p.switchFirmwareAutoOff()
-                AppLog.d("firmware Auto keystone was on; switched off=$autoFixed")
+            if (!limited) {
+                p.ensureHelper { b, path -> c.push(b, path) }
+                if (p.ensurePatternApp { b, path -> c.push(b, path) }) AppLog.d("installed the test pattern app")
+                // The firmware's own Auto keystone refuses every setter and makes the getters read 0: switch it off first,
+                // so the "original keystone" we remember is a real one.
+                if (p.firmwareAutoOn()) {
+                    autoFixed = p.switchFirmwareAutoOff()
+                    AppLog.d("firmware Auto keystone was on; switched off=$autoFixed")
+                }
+                ks = p.readKeystone()
             }
-            val ks = p.readKeystone()
             projectorId = p.stableId()
-            store.saveOriginalIfMissing(projectorId, ks)
+            if (!limited) store.saveOriginalIfMissing(projectorId, ks)
             hasOriginal.value = store.originalKeystone(projectorId) != null
             saved.value = store.savedKeystones(projectorId)
             store.lastHost = host
@@ -214,7 +219,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             runCatching { p.tools.wake() }                      // a sleeping projector would ignore everything else
             startWatchdog()
             if (_screen.value == Screen.Connect) go(Screen.Home)
-            if (autoFixed) toast.value = "Switched off the projector's own Auto keystone so the picture can be corrected."
+            if (limited) toast.value = "Connected. This projector has no Hisilicon keystone, so you get the remote, apps and files."
+            else if (autoFixed) toast.value = "Switched off the projector's own Auto keystone so the picture can be corrected."
             pendingShare?.let { pendingShare = null; openLink(it) }
         } catch (e: Exception) {
             AppLog.e("connect to $host failed", e)
@@ -546,7 +552,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private suspend fun refreshConnected() {
         val c = connect.value
-        if (c is ConnectState.Connected) {
+        if (c is ConnectState.Connected && c.info.supported) {
             try { connect.value = c.copy(keystone = proj { it.readKeystone() }) } catch (_: Exception) { }
         }
     }
@@ -785,7 +791,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(io) {
             try {
                 val st = proj { it.tools.status() }
-                val auto = proj { it.firmwareAutoOn() }
+                val auto = if ((connect.value as? ConnectState.Connected)?.info?.supported == false) null else proj { it.firmwareAutoOn() }
                 device.value = DeviceState(st, auto)
             } catch (e: Exception) {
                 AppLog.e("device status", e)

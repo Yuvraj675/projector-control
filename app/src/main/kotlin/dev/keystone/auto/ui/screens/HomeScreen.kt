@@ -39,6 +39,7 @@ fun HomeScreen(vm: AppViewModel) {
     val connect by vm.connect.collectAsState()
     val info = (connect as? ConnectState.Connected)?.info
     val pickApk = rememberApkPicker(vm)
+    val limited = info != null && !info.supported      // not a Hisilicon projector: no keystone
 
     AppBackground {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 8.dp, bottom = 24.dp)) {
@@ -71,10 +72,11 @@ fun HomeScreen(vm: AppViewModel) {
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth().height(124.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Tile("Install app", "From an APK file", Ico.Install, pickApk, Modifier.weight(1f).fillMaxHeight())
-                Tile("Auto keystone", "Straighten the picture", Ico.Keystone, { vm.go(Screen.Guide) }, Modifier.weight(1f).fillMaxHeight())
+                if (limited) Tile("Projector", "Memory, power, files", Ico.Projector, { vm.go(Screen.Device) }, Modifier.weight(1f).fillMaxHeight())
+                else Tile("Auto keystone", "Straighten the picture", Ico.Keystone, { vm.go(Screen.Guide) }, Modifier.weight(1f).fillMaxHeight())
             }
             Spacer(Modifier.height(12.dp))
-            Tile("Projector", "Memory, power and settings", Ico.Projector, { vm.go(Screen.Device) }, Modifier.fillMaxWidth().height(84.dp), compact = true)
+            if (!limited) Tile("Projector", "Memory, power and settings", Ico.Projector, { vm.go(Screen.Device) }, Modifier.fillMaxWidth().height(84.dp), compact = true)
 
             Spacer(Modifier.height(18.dp))
             Hint("Tip: share a YouTube or web link to ProjectorConnect from any app and it opens on the projector.", center = true)

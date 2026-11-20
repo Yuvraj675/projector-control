@@ -78,13 +78,13 @@ fun ConnectScreen(vm: AppViewModel) {
             is ConnectState.Choose -> {
                 SectionTitle("Pick your projector")
                 st.devices.forEach { d ->
-                    AppCard(Modifier.padding(bottom = 10.dp).clickable(enabled = d.supported) { vm.connectToChoice(d.host) }) {
+                    AppCard(Modifier.padding(bottom = 10.dp).clickable { vm.connectToChoice(d.host) }) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
                                 Text(d.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                                 Hint(d.host)
                             }
-                            StatusPill(if (d.supported) "Supported" else "Not supported", d.supported)
+                            StatusPill(if (d.supported) "Full support" else "Remote only", d.supported)
                         }
                         if (!d.supported && d.note != null) {
                             Spacer(Modifier.height(8.dp))

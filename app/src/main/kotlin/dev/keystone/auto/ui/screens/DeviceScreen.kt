@@ -37,6 +37,7 @@ fun DeviceScreen(vm: AppViewModel) {
             if (st != null) { Spacer(Modifier.height(10.dp)); Meters(st) } else if (device.loading) { Spacer(Modifier.height(10.dp)); LinearProgressIndicator(Modifier.fillMaxWidth()) }
         }
 
+        if (info?.supported != false) {
         Spacer(Modifier.height(20.dp))
         SectionTitle("Keystone")
         AppCard {
@@ -65,6 +66,7 @@ fun DeviceScreen(vm: AppViewModel) {
             }
             Spacer(Modifier.height(10.dp))
             SecondaryButton("Save the current keystone", { saveName = ""; saving = true })
+        }
         }
 
         Spacer(Modifier.height(20.dp))
