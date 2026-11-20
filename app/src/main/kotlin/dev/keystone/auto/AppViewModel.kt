@@ -849,6 +849,22 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private var screenMirror: ScreenMirror? = null
     private var touch: TouchInput? = null
     @Volatile private var mirrorSink: ((ByteArray, Boolean) -> Unit)? = null
+    val mirrorSharp = MutableStateFlow(store.mirrorSharp)
+
+    private fun newScreenMirror(c: Shell) = ScreenMirror(
+        c, if (mirrorSharp.value) MirrorQuality.Sharp else MirrorQuality.Smooth,
+        onUnit = { u, k -> mirrorSink?.invoke(u, k) }, onProblem = { m -> mirror.value = MirrorState.Failed(m) },
+    ).also { it.start() }
+
+    /** Switches between the light and the sharp stream; the stream restarts, the touch screen stays. */
+    fun setMirrorSharp(sharp: Boolean) {
+        if (mirrorSharp.value == sharp) return
+        mirrorSharp.value = sharp
+        store.mirrorSharp = sharp
+        val c = conn ?: return
+        if (screenMirror == null) return
+        viewModelScope.launch(io) { screenMirror?.close(); screenMirror = newScreenMirror(c) }
+    }
 
     /** Starts streaming the projector's screen into [sink] (the decoder) and opens the virtual touch screen. */
     fun startMirror(sink: (ByteArray, Boolean) -> Unit) {
@@ -867,7 +883,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 val t = TouchInput(c)
                 t.start()
                 touch = t
-                screenMirror = ScreenMirror(c, onUnit = { u, k -> mirrorSink?.invoke(u, k) }, onProblem = { m -> mirror.value = MirrorState.Failed(m) }).also { it.start() }
+                screenMirror = newScreenMirror(c)
                 mirror.value = MirrorState.Live(quad)
                 AppLog.d("mirror: streaming, touch screen ready")
             } catch (e: Exception) {

@@ -100,6 +100,8 @@ Unknown camera yaw is assumed 0 (phone parallel to the wall) unless learned.
 direction that improves the predicted picture (step halves on reversal). Params persist in `profile.json`, sessions in history.
 
 ## Status, open items and wider context
+- Version 0.4.1: screen quality `MirrorQuality` (Smooth 640x360 @1.5 Mbps default, Sharp 960x540 @3 Mbps, `Store.mirrorSharp`), landscape mode, the stream stops on ON_STOP.
+  **Measured on the projector:** while the picture moves, the encoder (`media.codec hw/...omx` service) used 85-140 % of one of 4 cores at 960x540 @3 Mbps; a static screen costs ~0 (screenrecord sends nothing). The 640x360 run was not measured properly (the test screen did not animate), so the saving is expected, not confirmed.
 - Version 0.4.0: **Projector screen** (`ui/screens/MirrorScreen.kt`, `link/Mirror.kt`, `platform/MirrorDecoder.kt`) replaces the screenshot (screencap takes ~5 s on this projector).
   `screenrecord --size 960x540 --bit-rate 3000000 --time-limit 170 --output-format=h264 -` is read over ADB (`Shell.openOutput`), cut into access
   units by `NalSplitter` (it needs `flush()` after a quiet moment: a static screen sends one picture and nothing after it), decoded by MediaCodec onto

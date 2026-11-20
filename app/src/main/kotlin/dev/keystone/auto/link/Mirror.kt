@@ -73,18 +73,26 @@ class NalSplitter(private val emit: (unit: ByteArray, keyFrame: Boolean) -> Unit
     private companion object { const val MAX_PENDING = 8 shl 20 }
 }
 
+/** How much of the projector's encoder the live screen may use. Smooth is the default: the encoder cost grows with the picture size. */
+enum class MirrorQuality(val width: Int, val height: Int, val bitRate: Int) {
+    Smooth(640, 360, 1_500_000),
+    Sharp(960, 540, 3_000_000),
+}
+
 /** Live view of the projector's screen: runs `screenrecord` over ADB and feeds H.264 access units to [onUnit]. */
 class ScreenMirror(
     private val sh: Shell,
-    private val width: Int = 960,
-    private val height: Int = 540,
-    private val bitRate: Int = 3_000_000,
+    quality: MirrorQuality = MirrorQuality.Smooth,
     private val onUnit: (ByteArray, Boolean) -> Unit,
     private val onProblem: (String) -> Unit,
 ) : AutoCloseable {
     @Volatile private var closed = false
     @Volatile private var current: AutoCloseable? = null
     private var thread: Thread? = null
+
+    private val width = quality.width
+    private val height = quality.height
+    private val bitRate = quality.bitRate
 
     val command get() = "screenrecord --size ${width}x$height --bit-rate $bitRate --time-limit $SEGMENT_SECONDS --output-format=h264 -"
 

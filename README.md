@@ -6,7 +6,7 @@
 
 ![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF?logo=kotlin&logoColor=white)
-![Version](https://img.shields.io/badge/version-0.4.0-blue)
+![Version](https://img.shields.io/badge/version-0.4.1-blue)
 ![Tests](https://img.shields.io/badge/JVM%20tests-101%20passing-brightgreen)
 ![Projector](https://img.shields.io/badge/projector-Android%20TV%20%2F%20box%20with%20ADB-lightgrey)
 
@@ -35,7 +35,7 @@ Cheap Android projectors ship with a clumsy remote (or none), hidden settings, a
 - **Apps**: list, open, stop and uninstall apps. **Pin favourites to Home** for one tap launching. A memory guard clears the background first when the projector is low on RAM.
 - **Install apps from the phone**: pick an `.apk` (or an `.apkm` / `.apks` / `.xapk` bundle). Failures are explained in plain words ("built for 64-bit, this projector is 32-bit").
 - **Send to projector**: the **Send file** tile on Home (any file; videos, photos and songs then play), or share a video, photo or song to the app and it is copied to the projector and played there. Share a YouTube, web, magnet or Stremio link and it opens.
-- **Projector screen**: a live view of the projector's screen on your phone that you can touch (tap, drag, two-finger pinch) like a touch screen. The picture is straightened on the phone, so touches land where they look even with keystone on. Also copy a **diagnostics report** (link speed, memory, temperature) for bug reports. The report never contains your IP address.
+- **Projector screen**: a live view of the projector's screen on your phone that you can touch (tap, drag, two-finger pinch) like a touch screen. The picture is straightened on the phone, so touches land where they look even with keystone on. Landscape mode fills the phone's screen; **Smooth** (default) keeps the load on the projector low, **Sharp** looks better but makes its video encoder work harder while the picture moves. Also copy a **diagnostics report** (link speed, memory, temperature) for bug reports. The report never contains your IP address.
 - **Power**: wake, screen off, restart, free up memory, and a **sleep timer** (30/60/90 min) that runs on the projector, so it still works if you close the app.
 - **Stays connected**: it pings the projector, reconnects with backoff, and rescans your Wi-Fi if the projector's IP address changed.
 - **Auto keystone** (Hisilicon projectors): straightens the picture using the phone camera. Save named setups ("Bedroom ceiling", "Living room table") and switch in one tap.

@@ -35,6 +35,11 @@ class Store(private val context: Context) {
         get() = prefs.getString("lastHost", null)
         set(v) { prefs.edit().putString("lastHost", v).apply() }
 
+    /** Projector screen quality: false = smooth (light on the projector), true = sharp. */
+    var mirrorSharp: Boolean
+        get() = prefs.getBoolean("mirrorSharp", false)
+        set(v) { prefs.edit().putBoolean("mirrorSharp", v).apply() }
+
     fun loadSettings() = Settings(
         captureCount = prefs.getInt("captureCount", 4).coerceIn(Settings.MIN_CAPTURES, Settings.MAX_CAPTURES),
         autoCapture = prefs.getBoolean("autoCapture", true),

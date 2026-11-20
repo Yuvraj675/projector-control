@@ -1,7 +1,9 @@
 package dev.keystone.auto
 
 import dev.keystone.auto.link.InputProtocol
+import dev.keystone.auto.link.MirrorQuality
 import dev.keystone.auto.link.NalSplitter
+import dev.keystone.auto.link.ScreenMirror
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -67,5 +69,12 @@ class MirrorTest {
         s.flush()
         assertEquals(1, out.size); assertArrayEquals(sps + pps + idr, out[0].first); assertTrue(out[0].second)
         s.flush(); assertEquals(1, out.size)
+    }
+
+    @Test
+    fun streamIsTheLightOneByDefaultAndTheSharpOneOnRequest() {
+        val shell = object : dev.keystone.auto.link.Shell { override fun run(cmd: String) = dev.keystone.auto.link.ShellResult("", "", 0) }
+        assertTrue(ScreenMirror(shell, onUnit = { _, _ -> }, onProblem = {}).command.contains("--size 640x360 --bit-rate 1500000"))
+        assertTrue(ScreenMirror(shell, MirrorQuality.Sharp, onUnit = { _, _ -> }, onProblem = {}).command.contains("--size 960x540 --bit-rate 3000000"))
     }
 }
