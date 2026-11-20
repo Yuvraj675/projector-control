@@ -1,5 +1,6 @@
 package dev.keystone.auto.link
 
+import dev.keystone.auto.core.Panel
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
@@ -22,6 +23,12 @@ object Evdev {
     const val BTN_LEFT = 272
     const val BTN_RIGHT = 273
     const val BTN_MIDDLE = 274
+    const val EV_ABS = 3
+    const val BTN_TOUCH = 330
+    const val ABS_MT_SLOT = 47
+    const val ABS_MT_POSITION_X = 53
+    const val ABS_MT_POSITION_Y = 54
+    const val ABS_MT_TRACKING_ID = 57
 }
 
 /** Linux key codes (what `uinput` wants) for the keys the app sends. Android maps them with its generic key layout. */
@@ -75,6 +82,44 @@ object InputProtocol {
     fun registerKeyboard(): String =
         """{"id":$KEYBOARD_ID,"command":"register","name":"ProjectorConnect Keyboard","vid":6353,"pid":11331,"bus":"usb","configuration":[""" +
             """{"type":100,"data":[1]},{"type":101,"data":[${KEYBOARD_KEYS.joinToString(",")}]}],"ff_effects_max":0}"""
+
+    const val TOUCH_ID = 3
+    const val TOUCH_NAME = "ProjectorConnect Touch"
+    const val TOUCH_SLOTS = 2
+
+    /** A virtual multi-touch screen (protocol B) the size of the projector's 1280x720 framebuffer. */
+    fun registerTouch(w: Int = 1280, h: Int = 720): String {
+        fun abs(code: Int, max: Int) = """{"code":$code,"info":{"value":0,"minimum":0,"maximum":$max,"fuzz":0,"flat":0,"resolution":0}}"""
+        return """{"id":$TOUCH_ID,"command":"register","name":"$TOUCH_NAME","vid":6353,"pid":11332,"bus":"usb","configuration":[""" +
+            """{"type":100,"data":[1,3]},{"type":101,"data":[${Evdev.BTN_TOUCH}]},""" +
+            """{"type":103,"data":[0,1,${Evdev.ABS_MT_SLOT},${Evdev.ABS_MT_POSITION_X},${Evdev.ABS_MT_POSITION_Y},${Evdev.ABS_MT_TRACKING_ID}]},{"type":110,"data":[1]}],""" +
+            """"abs_info":[${abs(0, w - 1)},${abs(1, h - 1)},${abs(Evdev.ABS_MT_SLOT, TOUCH_SLOTS - 1)},${abs(Evdev.ABS_MT_POSITION_X, w - 1)},""" +
+            """${abs(Evdev.ABS_MT_POSITION_Y, h - 1)},${abs(Evdev.ABS_MT_TRACKING_ID, 65535)}],"ff_effects_max":0}"""
+    }
+
+    private val SYN = listOf(Evdev.EV_SYN, 0, 0)
+
+    /** A finger goes down in [slot] at (x, y); [firstFinger] is true when no other finger is down (it sets BTN_TOUCH). */
+    fun touchDown(slot: Int, trackingId: Int, x: Int, y: Int, firstFinger: Boolean): String {
+        val e = arrayListOf(Evdev.EV_ABS, Evdev.ABS_MT_SLOT, slot, Evdev.EV_ABS, Evdev.ABS_MT_TRACKING_ID, trackingId,
+            Evdev.EV_ABS, Evdev.ABS_MT_POSITION_X, x, Evdev.EV_ABS, Evdev.ABS_MT_POSITION_Y, y)
+        if (firstFinger) e += listOf(Evdev.EV_KEY, Evdev.BTN_TOUCH, 1)
+        return inject(TOUCH_ID, e + SYN)
+    }
+
+    /** Moves of several fingers in one frame: pairs of slot to (x, y). */
+    fun touchMove(points: List<Triple<Int, Int, Int>>): String {
+        val e = ArrayList<Int>()
+        for ((slot, x, y) in points) e += listOf(Evdev.EV_ABS, Evdev.ABS_MT_SLOT, slot, Evdev.EV_ABS, Evdev.ABS_MT_POSITION_X, x, Evdev.EV_ABS, Evdev.ABS_MT_POSITION_Y, y)
+        return inject(TOUCH_ID, e + SYN)
+    }
+
+    /** The finger in [slot] lifts; [lastFinger] is true when it was the only one down (it clears BTN_TOUCH). */
+    fun touchUp(slot: Int, lastFinger: Boolean): String {
+        val e = arrayListOf(Evdev.EV_ABS, Evdev.ABS_MT_SLOT, slot, Evdev.EV_ABS, Evdev.ABS_MT_TRACKING_ID, -1)
+        if (lastFinger) e += listOf(Evdev.EV_KEY, Evdev.BTN_TOUCH, 0)
+        return inject(TOUCH_ID, e + SYN)
+    }
 
     private fun inject(id: Int, events: List<Int>) = """{"id":$id,"command":"inject","events":[${events.joinToString(",")}]}"""
 
@@ -225,5 +270,92 @@ class RemoteInput(private val sh: Shell, private val registerTimeoutMs: Long = R
 
     companion object {
         const val REGISTER_WAIT_MS = 9000L
+    }
+}
+
+
+/**
+ * A virtual touch screen on the projector, alive only while the screen mirror is open (so the projector never sees a touch
+ * screen otherwise). Coordinates are projector framebuffer pixels (1280x720), before the keystone warp.
+ */
+class TouchInput(private val sh: Shell, private val registerTimeoutMs: Long = RemoteInput.REGISTER_WAIT_MS) : AutoCloseable {
+    private var stream: ShellStream? = null
+    private val exec: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "touch-input").apply { isDaemon = true } }
+    private val down = BooleanArray(InputProtocol.TOUCH_SLOTS)
+    private val pending = HashMap<Int, Pair<Int, Int>>()
+    private val lock = Any()
+    private var nextId = 1
+    @Volatile var ready = false
+        private set
+
+    fun start() {
+        val s = sh.openStream(InputProtocol.COMMAND)
+        s.write(InputProtocol.registerTouch() + "\n")
+        stream = s
+        val deadline = System.currentTimeMillis() + registerTimeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            val seen = try { sh.run("dumpsys input | grep -c '${InputProtocol.TOUCH_NAME}'").out.trim().toIntOrNull() ?: 0 } catch (_: Exception) { 0 }
+            if (seen > 0) break
+            Thread.sleep(300)
+        }
+        ready = true
+        exec.scheduleWithFixedDelay({ flush() }, 16, 16, TimeUnit.MILLISECONDS)
+    }
+
+    val isOpen get() = ready && stream?.isOpen == true
+
+    private fun write(line: String) {
+        val s = stream ?: return
+        if (!s.isOpen) return
+        try { s.write(line + "\n") } catch (_: Exception) { ready = false }
+    }
+
+    private fun flush() {
+        val moves: List<Triple<Int, Int, Int>>
+        synchronized(lock) {
+            if (pending.isEmpty()) return
+            moves = pending.filter { down[it.key] }.map { Triple(it.key, it.value.first, it.value.second) }
+            pending.clear()
+        }
+        if (moves.isNotEmpty()) write(InputProtocol.touchMove(moves))
+    }
+
+    private fun clamp(x: Int, y: Int) = x.coerceIn(0, Panel.W.toInt() - 1) to y.coerceIn(0, Panel.H.toInt() - 1)
+
+    fun touchDown(slot: Int, x: Int, y: Int) {
+        if (slot !in down.indices) return
+        val (cx, cy) = clamp(x, y)
+        exec.execute {
+            flush()
+            if (down[slot]) return@execute
+            val first = down.none { it }
+            down[slot] = true
+            write(InputProtocol.touchDown(slot, nextId++ and 0xFFFF, cx, cy, first))
+        }
+    }
+
+    fun touchMove(slot: Int, x: Int, y: Int) {
+        if (slot !in down.indices) return
+        synchronized(lock) { pending[slot] = clamp(x, y) }
+    }
+
+    fun touchUp(slot: Int) {
+        if (slot !in down.indices) return
+        exec.execute {
+            flush()
+            if (!down[slot]) return@execute
+            down[slot] = false
+            write(InputProtocol.touchUp(slot, down.none { it }))
+        }
+    }
+
+    /** Lifts every finger (the screen was left while a finger was down). */
+    fun releaseAll() { for (i in down.indices) touchUp(i) }
+
+    override fun close() {
+        ready = false
+        exec.shutdown()
+        try { stream?.close() } catch (_: Exception) { }
+        stream = null
     }
 }

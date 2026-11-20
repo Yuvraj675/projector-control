@@ -47,3 +47,29 @@ class LiveToolsTest {
         }
     }
 }
+
+/** Live check of the screen mirror and touch screen (`KS_PROJECTOR=<ip>`). Never sends a touch. */
+class LiveMirrorTest {
+    private fun host(): String { val h = System.getenv("KS_PROJECTOR"); Assume.assumeTrue("KS_PROJECTOR not set", h != null); return h!! }
+
+    @Test
+    fun streamsDecodableUnitsAndTheTouchScreenComesAndGoes() {
+        AdbConnection.connect(host()).use { c ->
+            val units = java.util.concurrent.CopyOnWriteArrayList<Pair<Int, Boolean>>()
+            val m = ScreenMirror(c, onUnit = { u, k -> units += u.size to k }, onProblem = { println("LIVE mirror problem: $it") })
+            m.start()
+            val end = System.currentTimeMillis() + 7000
+            while (System.currentTimeMillis() < end) Thread.sleep(200)
+            m.close()
+            println("LIVE mirror: ${units.size} units, first key=${units.firstOrNull()?.second}, bytes=${units.sumOf { it.first }}")
+            assertTrue(units.isNotEmpty())
+            assertTrue("the first unit must be a key frame with SPS/PPS", units.first().second)
+
+            fun touchDevices() = c.run("dumpsys input | grep -E '^  Device [0-9]+: ProjectorConnect Touch' | wc -l").out.trim().toIntOrNull() ?: -1
+            assertEquals(0, touchDevices())
+            TouchInput(c).use { t -> t.start(); assertTrue(t.isOpen); assertEquals(1, touchDevices()) }
+            Thread.sleep(1500)
+            assertEquals(0, touchDevices())
+        }
+    }
+}

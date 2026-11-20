@@ -24,6 +24,13 @@ interface Shell {
     /** Starts `cmd` and keeps its stdin open for [ShellStream.write]. */
     fun openStream(cmd: String): ShellStream = throw ProjectorException("Streaming is not supported by this connection.")
 
+    /**
+     * Starts `cmd` and hands everything it prints to [onData] (binary safe) until it ends or the returned handle is closed.
+     * [onEnd] is called once when the command is over, for any reason.
+     */
+    fun openOutput(cmd: String, onData: (ByteArray) -> Unit, onEnd: () -> Unit): AutoCloseable =
+        throw ProjectorException("Streaming is not supported by this connection.")
+
     /** Copies a stream to a file on the projector. */
     fun push(input: java.io.InputStream, remotePath: String): Unit = throw ProjectorException("File transfer is not supported by this connection.")
 
@@ -55,6 +62,26 @@ class AdbConnection private constructor(private val dadb: Dadb, val host: String
             }
             override fun close() { open.set(false); try { sh.close() } catch (_: Exception) { } }
         }
+    }
+
+    override fun openOutput(cmd: String, onData: (ByteArray) -> Unit, onEnd: () -> Unit): AutoCloseable {
+        val sh = dadb.openShell(cmd)
+        val open = java.util.concurrent.atomic.AtomicBoolean(true)
+        Thread {
+            try {
+                while (open.get()) {
+                    when (val p = sh.read()) {
+                        is dadb.AdbShellPacket.StdOut -> onData(p.payload)
+                        is dadb.AdbShellPacket.Exit -> break
+                        else -> Unit
+                    }
+                }
+            } catch (_: Exception) { }
+            open.set(false)
+            try { sh.close() } catch (_: Exception) { }
+            onEnd()
+        }.apply { isDaemon = true; name = "adb-output" }.start()
+        return AutoCloseable { open.set(false); try { sh.close() } catch (_: Exception) { } }
     }
 
     override fun push(input: java.io.InputStream, remotePath: String) {
