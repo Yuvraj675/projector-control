@@ -26,6 +26,9 @@ interface Shell {
 
     /** Copies a stream to a file on the projector. */
     fun push(input: java.io.InputStream, remotePath: String): Unit = throw ProjectorException("File transfer is not supported by this connection.")
+
+    /** Reads a file from the projector. */
+    fun pull(remotePath: String): ByteArray = throw ProjectorException("File transfer is not supported by this connection.")
 }
 
 class ProjectorException(message: String, cause: Throwable? = null) : Exception(message, cause)
@@ -56,6 +59,12 @@ class AdbConnection private constructor(private val dadb: Dadb, val host: String
 
     override fun push(input: java.io.InputStream, remotePath: String) {
         input.use { dadb.push(it.source(), remotePath, 420, System.currentTimeMillis()) }
+    }
+
+    override fun pull(remotePath: String): ByteArray {
+        val buf = Buffer()
+        dadb.pull(buf, remotePath)
+        return buf.readByteArray()
     }
 
     fun push(bytes: ByteArray, remotePath: String, mode: Int = 420 /* 0644 */) {

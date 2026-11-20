@@ -171,4 +171,10 @@ class RemoteToolsTest {
         assertFalse(ProjectorTools.isLowOnMemory(st(400)))
         assertFalse(ProjectorTools.isLowOnMemory(ProjectorStatus(0, 0, 0, 0, "", "", "")))   // unreadable status: don't act
     }
+
+    @Test
+    fun pngDetection() {
+        assertTrue(ProjectorTools.isPng(byteArrayOf(0x89.toByte(), 'P'.code.toByte(), 'N'.code.toByte(), 'G'.code.toByte(), 13, 10, 26, 10, 0)))
+        assertFalse(ProjectorTools.isPng("not an image at all".toByteArray()))
+    }
 }

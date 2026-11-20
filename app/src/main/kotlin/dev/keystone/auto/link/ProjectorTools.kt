@@ -95,6 +95,18 @@ class ProjectorTools(private val sh: Shell) {
         return parseStatus(mem, df, prop("ro.product.model"), prop("ro.build.version.release"), prop("ro.product.cpu.abilist"))
     }
 
+    /** A PNG of what the projector is showing (it includes the keystone warp). Null when the capture failed. */
+    fun screenshot(): ByteArray? {
+        val path = "/data/local/tmp/pc-shot.png"
+        return try {
+            sh.run("screencap -p $path")
+            val png = sh.pull(path)
+            png.takeIf { isPng(it) }
+        } finally {
+            try { sh.run("rm -f $path") } catch (_: Exception) { }
+        }
+    }
+
     /** Board temperature in °C when the projector reports one. */
     fun temperatureC(): Double? = Diagnostics.parseTemperature(sh.run("cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null").out)
 
@@ -145,6 +157,8 @@ class ProjectorTools(private val sh: Shell) {
         const val LOW_MEMORY_MB = 250
 
         fun isLowOnMemory(st: ProjectorStatus) = st.ramTotalMb > 0 && st.ramFreeMb < LOW_MEMORY_MB
+
+        fun isPng(b: ByteArray) = b.size > 8 && b[0] == 0x89.toByte() && b[1] == 'P'.code.toByte() && b[2] == 'N'.code.toByte() && b[3] == 'G'.code.toByte()
 
         const val SLEEP_FILE = "/data/local/tmp/pc-sleep"
 

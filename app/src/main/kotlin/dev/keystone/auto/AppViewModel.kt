@@ -1,6 +1,7 @@
 package dev.keystone.auto
 
 import android.app.Application
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dadb.AdbKeyPair
@@ -55,6 +56,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val device = MutableStateFlow(DeviceState(null, null))
     val saved = MutableStateFlow<List<SavedKeystone>>(emptyList())   // named keystones for the connected projector
     val sleepLeft = MutableStateFlow<Int?>(null)     // seconds until the projector's screen turns off
+    val shot = MutableStateFlow<androidx.compose.ui.graphics.ImageBitmap?>(null)   // last screenshot of the projector
     val link = MutableStateFlow(LinkState.Online)    // is the projector answering? (the watchdog keeps this current)
 
     // ---- private session state ----------------------------------------------------------------------------
@@ -815,6 +817,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 cm.setPrimaryClip(android.content.ClipData.newPlainText("ProjectorConnect report", text))
                 toast.value = "Report copied. Paste it wherever you need it."
             } catch (e: Exception) { fail("Couldn't build the report", e) }
+        }
+    }
+
+    /** Grabs what the projector is showing so the user can see it on the phone. */
+    fun takeScreenshot() {
+        viewModelScope.launch(io) {
+            busy.value = "Looking at the projector's screen…"
+            try {
+                val png = proj { it.tools.screenshot() }
+                if (png == null) toast.value = "The projector didn't give a picture."
+                else shot.value = android.graphics.BitmapFactory.decodeByteArray(png, 0, png.size)?.asImageBitmap()
+            } catch (e: Exception) { fail("Couldn't capture the screen", e) } finally { busy.value = null }
         }
     }
 
