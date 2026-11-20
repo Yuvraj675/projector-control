@@ -49,7 +49,7 @@ class GeometryTest {
             val cur = Offsets(r(150), r(60), r(150), r(60), r(150), r(60), r(150), r(60))
             fun j(m: Double) = Pt(rnd.nextDouble(-m, m), rnd.nextDouble(-m, m))
             val base = listOf(Pt(300.0, 200.0), Pt(1600.0, 200.0), Pt(1600.0, 900.0), Pt(300.0, 900.0))
-            val dst = base.map { it + j(110.0) }
+            val dst = base.map { it + j(80.0) }
             val hw = homography(Panel.frame, dst)                       // panel -> photo
             val hk = homography(Panel.frame, cur.corners())             // framebuffer -> panel
             val obs = warp(hw, warp(hk, Panel.markers))

@@ -21,8 +21,12 @@ object Panel {
     val markerFractions = listOf(0.075 to 0.075, 0.925 to 0.075, 0.85 to 0.925, 0.075 to 0.925)
     val markers = markerFractions.map { Pt(it.first * W, it.second * H) }
 
-    /** Sanity limits for any value ever written to the projector. */
-    const val MAX_X = 400.0
+    /**
+     * Limits for any value ever written to the projector. The firmware's real maximum is not confirmed (the projector
+     * reports `persist.hisi.keystone.alias.edge=235`), so these stay a nudge BELOW it and must never be raised to the
+     * suspected maximum: never overestimate what the firmware accepts.
+     */
+    const val MAX_X = 230.0
     const val MAX_Y = 220.0
 }
 

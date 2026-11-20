@@ -21,8 +21,8 @@ fun solveKeystone(
     aspect: Double = Panel.W / Panel.H,
     margin: Double = 1.0,
     grid: Int = 21,
-    maxOffX: Double = 320.0,
-    maxOffY: Double = 180.0,
+    maxOffX: Double = Panel.MAX_X,
+    maxOffY: Double = Panel.MAX_Y,
 ): SolveResult? {
     require(observed.size == 4)
     val hFbToPanel = homography(Panel.frame, current.corners())

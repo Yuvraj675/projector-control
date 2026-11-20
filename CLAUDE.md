@@ -66,8 +66,9 @@ projector at that moment (`Session.keystoneAtStart` is updated). All projector c
   `getXnKeystonePosition()` reads the absolute value. Values never go below 0. The helper `KsAll get|delta` wraps this.
 - **Firmware Auto mode** (`getAutoKeystone()==1`, prop `persist.newlink.autokeystone_onoff=1`) breaks everything: logcat shows
   `ZYKeystoneService AutoKeystone Not Mix-Auto Now!` and `adjustKeystoneOffset Illegal Value of N, Out of Range[0, -1]`, every
-  corner setter is refused and the getters read all zeros. It got switched on during a real session (cause unknown). The helper now
-  calls `setAutoKeystone(0)` before `delta`/`manual` and prints `AUTO=<0|1>`; `Projector.applyKeystone` uses that. Seen in the
+  corner setter is refused and the getters read all zeros. It got switched on during a real session (cause unknown). **The app must never write this
+  setting** (0.2.0/0.3.0 called `setAutoKeystone(0)` and 0.3.0 users then always got "keystone values couldn't be accepted"; removed).
+  The helper only reads it and prints `AUTO=<0|1>`; `Projector.applyKeystone` refuses with an explanation if it is on. Seen in the
   phone log as "did not accept the new keystone (... got all 0)".
 - Needs `/system/framework/HitvShare.jar`, `HitvManager.jar` and the `hitvservice` service, so only this firmware family works.
 - Screenshots (`screencap`) include the keystone warp, which is how the model was verified.
@@ -99,19 +100,19 @@ Unknown camera yaw is assumed 0 (phone parallel to the wall) unless learned.
 direction that improves the predicted picture (step halves on reversal). Params persist in `profile.json`, sessions in history.
 
 ## Status, open items and wider context
-- Version 0.3.0 adds: connection watchdog (`AppViewModel.startWatchdog`, `link/Reconnect.kt`), Auto-keystone switch-off on connect, saved keystones (`data/SavedKeystones.kt`), sleep timer on the projector (`ProjectorTools.scheduleSleep`), volume-key passthrough (`MainActivity.onKeyDown`), memory guard, diagnostics (`link/Diagnostics.kt`), screenshot (`Shell.pull`), send-file-and-play (`ProjectorTools.sendAndOpen`), pinned apps, remote-only mode (`ProjectorInfo.supported == false` still connects, no keystone), recovery card. 101 JVM tests; none of the new features have been run on a phone or the real projector yet.
+- Version 0.3.0 adds: connection watchdog (`AppViewModel.startWatchdog`, `link/Reconnect.kt`), saved keystones (`data/SavedKeystones.kt`), sleep timer on the projector (`ProjectorTools.scheduleSleep`), volume-key passthrough (`MainActivity.onKeyDown`), memory guard, diagnostics (`link/Diagnostics.kt`), screenshot (`Shell.pull`), send-file-and-play (`ProjectorTools.sendAndOpen`), pinned apps, remote-only mode (`ProjectorInfo.supported == false` still connects, no keystone), recovery card. 101 JVM tests; none of the new features have been run on a phone or the real projector yet.
 - Version 0.2.0 (renamed from AutoKeystone; the application id `dev.keystone.auto` and the Gradle module names are unchanged on
   purpose, so the new APK installs over the old one and keeps the learned profile, history and ADB key). 83 JVM tests pass; the
   live tests (`KS_PROJECTOR=<ip>`: `LiveToolsTest`, the read-only `readsTheRealProjector`) pass against the real projector.
-  **Do not run `readsTheRealProjector` when firmware Auto keystone is on**: its no-op `applyKeystone` now switches Auto off.
+  The app never changes firmware Auto keystone, so `readsTheRealProjector` is safe either way.
 - **Not yet run on a phone**: camera, sensors (gyro air mouse, gravity), speech recogniser, Wi-Fi scan, dadb on Android, the
   file picker/install path, and the touch feel. If something fails ask for Settings -> Activity log and the screen.
-- Firmware Auto keystone (see above) was found on in a real session and blocks every setter; Projector -> Keystone shows it and
-  can switch it off. Why it switched on is unknown.
+- Firmware Auto keystone (see above) was found on in a real session and blocks every setter; Projector -> Keystone only shows it
+  (the user turns it off in the projector's own settings). Why it switched on is unknown.
 - Ideas not built: live mirroring (only a screenshot exists), non-ASCII typing (needs an IME or clipboard route on the projector),
   a launcher widget/quick-settings tile for the remote, CEC/HDMI control, multi-projector switcher, quick keystone re-check after moving.
 - No git remote is configured yet; the user will add one.
-- Fixed design decisions: BR marker offset from the corner (mute indicator), corner offsets capped at 320/180 px in the solver,
-  hard limits 400/220 in `Panel`, outlier rejection only for gross deviations, photos stay on the phone.
+- Fixed design decisions: BR marker offset from the corner (mute indicator), corner offsets capped in the solver at `Panel.MAX_X/MAX_Y` (230/220),
+  limits always kept a nudge BELOW the firmware's suspected maximum (`persist.hisi.keystone.alias.edge=235`, unconfirmed), never raised to it, outlier rejection only for gross deviations, photos stay on the phone.
 - The wider project (the user's projector, what was changed on it, backups, research prototype, laptop setup) is described in
   `../PROJECT_STATE.md`, which lives outside this repo and may not exist elsewhere. Read it first if it is there.

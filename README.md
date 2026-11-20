@@ -133,7 +133,7 @@ The first time it meets a projector it saves the original keystone (*Settings �
 | Phone scan finds nothing on Android 17+ | Grant the app the *local network* permission in the phone's app settings |
 | An app won't install: *built for 64-bit* | The projector is 32-bit. Get the **armeabi-v7a** (arm32) build of the app |
 | Netflix TV app fails to install or run | Many projector firmwares are not certified. Use the phone's casting instead |
-| Keystone says it was not accepted | The firmware's own Auto keystone was on. The app now switches it off when it connects; if it keeps coming back, turn it off in the projector's keystone settings |
+| Keystone says it was not accepted | The firmware's own Auto keystone is on and refuses every change. The app never changes that setting itself: turn it off in the projector's own keystone settings |
 | Mouse feels too fast or slow | **Settings → Remote** sets touchpad and air-mouse speed |
 | Link keeps dropping | Check the projector's Wi-Fi signal. The **diagnostics report** under *Projector → Help* shows the response time |
 
