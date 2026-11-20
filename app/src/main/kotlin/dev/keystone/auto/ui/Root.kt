@@ -44,6 +44,7 @@ fun AppRoot(vm: AppViewModel, finish: () -> Unit) {
                 Screen.Keyboard -> KeyboardScreen(vm)
                 Screen.Apps -> AppsScreen(vm)
                 Screen.Install -> InstallScreen(vm)
+                Screen.Mirror -> MirrorScreen(vm)
                 Screen.Device -> DeviceScreen(vm)
                 Screen.Guide -> GuideScreen(vm)
                 Screen.Capture -> CaptureScreen(vm)

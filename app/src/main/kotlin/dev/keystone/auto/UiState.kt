@@ -16,6 +16,7 @@ sealed interface Screen {
     data object Keyboard : Screen
     data object Apps : Screen
     data object Install : Screen
+    data object Mirror : Screen
     data object Device : Screen
     data object Guide : Screen
     data object Capture : Screen
@@ -102,3 +103,12 @@ sealed interface InstallState {
 
 /** What the Projector screen shows. */
 data class DeviceState(val status: ProjectorStatus?, val firmwareAutoKeystone: Boolean?, val loading: Boolean = false, val customLauncher: Boolean = false)
+
+/** The live view of the projector's screen. */
+sealed interface MirrorState {
+    data object Idle : MirrorState
+    data object Starting : MirrorState
+    /** [quad] is where the projector's keystone puts the picture's corners (TL, TR, BR, BL) as fractions of the stream. */
+    data class Live(val quad: List<Pair<Float, Float>>) : MirrorState
+    data class Failed(val message: String) : MirrorState
+}

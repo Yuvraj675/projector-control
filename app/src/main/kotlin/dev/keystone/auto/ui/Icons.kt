@@ -22,6 +22,7 @@ enum class Ico(val d: String, val filled: Boolean = false) {
     Pointer("M6 3.5 V17.5 L9.6 14.2 L12.2 20.2 L14.6 19.1 L12 13.2 L17 12.8 Z"),
     Keyboard("M3 6.5 H21 V17.5 H3 Z M6.5 10 H6.6 M10 10 H10.1 M13.5 10 H13.6 M17 10 H17.1 M7 14 H17"),
     Apps("M4.5 4.5 H10 V10 H4.5 Z M14 4.5 H19.5 V10 H14 Z M4.5 14 H10 V19.5 H4.5 Z M14 14 H19.5 V19.5 H14 Z"),
+    Send("M12 20 V9 M7.5 13 L12 8.5 L16.5 13 M4.5 4.5 H19.5"),
     Install("M12 3.5 V14.5 M7.5 10.5 L12 15 L16.5 10.5 M4.5 19.5 H19.5"),
     Keystone("M8 5 H16 L20.5 19 H3.5 Z"),
     Projector("M3 8 H21 V17 H3 Z M17.2 12.5 A2.7 2.7 0 1 0 11.8 12.5 A2.7 2.7 0 1 0 17.2 12.5 M6.5 17 V19.5 M17.5 17 V19.5"),

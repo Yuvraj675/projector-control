@@ -100,6 +100,13 @@ Unknown camera yaw is assumed 0 (phone parallel to the wall) unless learned.
 direction that improves the predicted picture (step halves on reversal). Params persist in `profile.json`, sessions in history.
 
 ## Status, open items and wider context
+- Version 0.4.0: **Projector screen** (`ui/screens/MirrorScreen.kt`, `link/Mirror.kt`, `platform/MirrorDecoder.kt`) replaces the screenshot (screencap takes ~5 s on this projector).
+  `screenrecord --size 960x540 --bit-rate 3000000 --time-limit 170 --output-format=h264 -` is read over ADB (`Shell.openOutput`), cut into access
+  units by `NalSplitter` (it needs `flush()` after a quiet moment: a static screen sends one picture and nothing after it), decoded by MediaCodec onto
+  a TextureView. The stream is the picture AFTER the keystone warp, so the view applies `setPolyToPoly(keystone corners -> view corners)`; a touch on the
+  view is then a framebuffer coordinate for `TouchInput`, a virtual multi-touch screen (`uinput`, type 110 = UI_SET_PROPBIT, `abs_info`, protocol B, 2 slots)
+  that exists only while the screen is open. Verified live on the projector: stream decodes, touch device registers (TOUCH_MT) and a touch opened an app.
+  Home also has a **Send file** tile (any file, `vm.sendFile`).
 - Version 0.3.2: Auto keystone detection uses the firmware property, not the helper's raw value (0.3.1 always thought Auto was on).
 - Version 0.3.1: the app no longer writes the firmware's Auto keystone setting; keystone limits lowered to 230/220.
 - Version 0.3.0 adds: connection watchdog (`AppViewModel.startWatchdog`, `link/Reconnect.kt`), saved keystones (`data/SavedKeystones.kt`), sleep timer on the projector (`ProjectorTools.scheduleSleep`), volume-key passthrough (`MainActivity.onKeyDown`), memory guard, diagnostics (`link/Diagnostics.kt`), screenshot (`Shell.pull`), send-file-and-play (`ProjectorTools.sendAndOpen`), pinned apps, remote-only mode (`ProjectorInfo.supported == false` still connects, no keystone), recovery card. 101 JVM tests; none of the new features have been run on a phone or the real projector yet.
@@ -111,7 +118,7 @@ direction that improves the predicted picture (step halves on reversal). Params 
   file picker/install path, and the touch feel. If something fails ask for Settings -> Activity log and the screen.
 - Firmware Auto keystone (see above) was found on in a real session and blocks every setter; Projector -> Keystone only shows it
   (the user turns it off in the projector's own settings). Why it switched on is unknown.
-- Ideas not built: live mirroring (only a screenshot exists), non-ASCII typing (needs an IME or clipboard route on the projector),
+- Ideas not built: non-ASCII typing (needs an IME or clipboard route on the projector),
   a launcher widget/quick-settings tile for the remote, CEC/HDMI control, multi-projector switcher, quick keystone re-check after moving.
 - No git remote is configured yet; the user will add one.
 - Fixed design decisions: BR marker offset from the corner (mute indicator), corner offsets capped in the solver at `Panel.MAX_X/MAX_Y` (230/220),

@@ -94,7 +94,7 @@ fun DeviceScreen(vm: AppViewModel) {
         Spacer(Modifier.height(20.dp))
         SectionTitle("Help")
         AppCard {
-            SecondaryButton("See the projector's screen", { vm.takeScreenshot() })
+            SecondaryButton("See and touch the projector's screen", { vm.go(dev.keystone.auto.Screen.Mirror) })
             Spacer(Modifier.height(10.dp))
             SecondaryButton("Copy a diagnostics report", { vm.copyDiagnostics() })
             Hint("Connection speed, memory, temperature and settings in one block of text. It never includes the projector's address.", Modifier.padding(top = 6.dp))
@@ -119,17 +119,6 @@ fun DeviceScreen(vm: AppViewModel) {
             ListRow(Ico.Globe, "All settings") { vm.openProjectorSettings("android.settings.SETTINGS") }
         }
         Spacer(Modifier.height(8.dp))
-    }
-
-    val shot by vm.shot.collectAsState()
-    shot?.let { img ->
-        AlertDialog(
-            onDismissRequest = { vm.shot.value = null },
-            title = { Text("On the projector now") },
-            text = { Image(img, "Screenshot of the projector", Modifier.fillMaxWidth()) },
-            confirmButton = { TextButton(onClick = { vm.takeScreenshot() }) { Text("Refresh") } },
-            dismissButton = { TextButton(onClick = { vm.shot.value = null }) { Text("Close") } },
-        )
     }
 
     if (saving) AlertDialog(

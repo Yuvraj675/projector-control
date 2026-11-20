@@ -39,6 +39,8 @@ fun HomeScreen(vm: AppViewModel) {
     val connect by vm.connect.collectAsState()
     val info = (connect as? ConnectState.Connected)?.info
     val pickApk = rememberApkPicker(vm)
+    val sendLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) vm.sendFile(uri, null) }
+    val pickFile = remember(sendLauncher) { { sendLauncher.launch(arrayOf("*/*")) } }
     val limited = info != null && !info.supported      // not a Hisilicon projector: no keystone
 
     AppBackground {
@@ -71,6 +73,11 @@ fun HomeScreen(vm: AppViewModel) {
             }
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth().height(124.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Tile("Send file", "Copy it and play it", Ico.Send, pickFile, Modifier.weight(1f).fillMaxHeight())
+                Tile("Projector screen", "See it and touch it", Ico.Projector, { vm.go(Screen.Mirror) }, Modifier.weight(1f).fillMaxHeight())
+            }
+            Spacer(Modifier.height(12.dp))
+            Row(Modifier.fillMaxWidth().height(124.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Tile("Install app", "From an APK file", Ico.Install, pickApk, Modifier.weight(1f).fillMaxHeight())
                 if (limited) Tile("Projector", "Memory, power, files", Ico.Projector, { vm.go(Screen.Device) }, Modifier.weight(1f).fillMaxHeight())
                 else Tile("Auto keystone", "Straighten the picture", Ico.Keystone, { vm.go(Screen.Guide) }, Modifier.weight(1f).fillMaxHeight())
@@ -79,7 +86,7 @@ fun HomeScreen(vm: AppViewModel) {
             if (!limited) Tile("Projector", "Memory, power and settings", Ico.Projector, { vm.go(Screen.Device) }, Modifier.fillMaxWidth().height(84.dp), compact = true)
 
             Spacer(Modifier.height(18.dp))
-            Hint("Tip: share a YouTube or web link to ProjectorConnect from any app and it opens on the projector.", center = true)
+            Hint("Tip: share a link, video, photo or song to ProjectorConnect from any app and it opens on the projector.", center = true)
         }
     }
 }

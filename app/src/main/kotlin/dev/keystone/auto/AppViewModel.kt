@@ -56,7 +56,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val device = MutableStateFlow(DeviceState(null, null))
     val saved = MutableStateFlow<List<SavedKeystone>>(emptyList())   // named keystones for the connected projector
     val sleepLeft = MutableStateFlow<Int?>(null)     // seconds until the projector's screen turns off
-    val shot = MutableStateFlow<androidx.compose.ui.graphics.ImageBitmap?>(null)   // last screenshot of the projector
     val pinned = MutableStateFlow(store.pinnedApps)   // packages shown as one-tap shortcuts on Home
     val link = MutableStateFlow(LinkState.Online)    // is the projector answering? (the watchdog keeps this current)
 
@@ -82,6 +81,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     // ---- navigation ----------------------------------------------------------------------------------------
     fun go(s: Screen) {
         _screen.value = s
+        if (s != Screen.Mirror && mirror.value != MirrorState.Idle) stopMirror()
         // the virtual mouse/keyboard stays on the projector while the remote screens are open, then goes away a little later
         remoteIdleJob?.cancel()
         if (s != Screen.Remote && s != Screen.Keyboard && remote != null) {
@@ -96,7 +96,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun back(): Boolean {
         when (_screen.value) {
             Screen.Connect, Screen.Home -> return false
-            Screen.Guide, Screen.Remote, Screen.Keyboard, Screen.Apps, Screen.Device -> go(Screen.Home)
+            Screen.Guide, Screen.Remote, Screen.Keyboard, Screen.Apps, Screen.Device, Screen.Mirror -> go(Screen.Home)
             Screen.Install -> if (install.value !is InstallState.Working) go(Screen.Apps)
             Screen.Capture -> if (resultMode.value) { resultMode.value = false; go(Screen.Verify) } else go(Screen.Guide)
             Screen.Working -> Unit
@@ -227,6 +227,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun closeLocked() {
+        stopMirror()
         closeRemote()
         conn?.close()
         conn = null
@@ -749,7 +750,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                     override val name = name
                     override fun open() = resolver.openInputStream(uri) ?: throw ProjectorException("Couldn't read that file.")
                 }
-                val r = proj { it.tools.sendAndOpen(source, mime) { step -> busy.value = step } }
+                val type = mime ?: resolver.getType(uri)
+                val r = proj { it.tools.sendAndOpen(source, type) { step -> busy.value = step } }
                 toast.value = r.message
             } catch (e: Exception) { fail("Couldn't send the file", e) } finally { busy.value = null }
         }
@@ -842,17 +844,51 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** Grabs what the projector is showing so the user can see it on the phone. */
-    fun takeScreenshot() {
+    // ---- live screen: the projector's screen on the phone, with touch ---------------------------------------------
+    val mirror = MutableStateFlow<MirrorState>(MirrorState.Idle)
+    private var screenMirror: ScreenMirror? = null
+    private var touch: TouchInput? = null
+    @Volatile private var mirrorSink: ((ByteArray, Boolean) -> Unit)? = null
+
+    /** Starts streaming the projector's screen into [sink] (the decoder) and opens the virtual touch screen. */
+    fun startMirror(sink: (ByteArray, Boolean) -> Unit) {
+        if (mirror.value is MirrorState.Starting || mirror.value is MirrorState.Live) { mirrorSink = sink; return }
+        mirror.value = MirrorState.Starting
+        mirrorSink = sink
         viewModelScope.launch(io) {
-            busy.value = "Looking at the projector's screen…"
             try {
-                val png = proj { it.tools.screenshot() }
-                if (png == null) toast.value = "The projector didn't give a picture."
-                else shot.value = android.graphics.BitmapFactory.decodeByteArray(png, 0, png.size)?.asImageBitmap()
-            } catch (e: Exception) { fail("Couldn't capture the screen", e) } finally { busy.value = null }
+                val c = conn ?: throw ProjectorException("Not connected to a projector.")
+                stopMirror(keepState = true)
+                // The stream is the picture after the keystone warp, so remember where the corners are to straighten it on the phone.
+                val ks = runCatching { proj { it.readKeystone() } }.getOrNull()
+                val autoOn = projector?.autoWasOn == true
+                val offsets = if (ks == null || autoOn || ks.toList().all { it == 0.0 }) Offsets.fromList(List(8) { 0.0 }) else ks
+                val quad = offsets.corners().map { (it.x / Panel.W).toFloat() to (it.y / Panel.H).toFloat() }
+                val t = TouchInput(c)
+                t.start()
+                touch = t
+                screenMirror = ScreenMirror(c, onUnit = { u, k -> mirrorSink?.invoke(u, k) }, onProblem = { m -> mirror.value = MirrorState.Failed(m) }).also { it.start() }
+                mirror.value = MirrorState.Live(quad)
+                AppLog.d("mirror: streaming, touch screen ready")
+            } catch (e: Exception) {
+                AppLog.e("mirror start", e)
+                stopMirror(keepState = true)
+                mirror.value = MirrorState.Failed(friendly(e))
+            }
         }
     }
+
+    fun stopMirror(keepState: Boolean = false) {
+        mirrorSink = null
+        try { touch?.releaseAll() } catch (_: Exception) { }
+        touch?.close(); touch = null
+        screenMirror?.close(); screenMirror = null
+        if (!keepState) mirror.value = MirrorState.Idle
+    }
+
+    fun touchDown(slot: Int, x: Int, y: Int) { touch?.touchDown(slot, x, y) }
+    fun touchMove(slot: Int, x: Int, y: Int) { touch?.touchMove(slot, x, y) }
+    fun touchUp(slot: Int) { touch?.touchUp(slot) }
 
     /** Undo for the custom launcher: Home goes back to the stock launcher, and the Home-key helper service is removed. */
     fun restoreStockLauncher() {
@@ -887,6 +923,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     override fun onCleared() {
         super.onCleared()
+        stopMirror()
         closeRemote()
         try { conn?.close() } catch (_: Exception) { }
     }
