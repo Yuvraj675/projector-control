@@ -184,6 +184,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             connect.value = ConnectState.Connecting(host, "Preparing the projector…")
             p.ensureHelper { b, path -> c.push(b, path) }
             if (p.ensurePatternApp { b, path -> c.push(b, path) }) AppLog.d("installed the test pattern app")
+            // The firmware's own Auto keystone refuses every setter and makes the getters read 0: switch it off first,
+            // so the "original keystone" we remember is a real one.
+            var autoFixed = false
+            if (p.firmwareAutoOn()) {
+                autoFixed = p.switchFirmwareAutoOff()
+                AppLog.d("firmware Auto keystone was on; switched off=$autoFixed")
+            }
             val ks = p.readKeystone()
             projectorId = p.stableId()
             store.saveOriginalIfMissing(projectorId, ks)
@@ -193,6 +200,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             projector = p
             connect.value = ConnectState.Connected(info, ks)
             if (_screen.value == Screen.Connect) go(Screen.Home)
+            if (autoFixed) toast.value = "Switched off the projector's own Auto keystone so the picture can be corrected."
             pendingShare?.let { pendingShare = null; openLink(it) }
         } catch (e: Exception) {
             AppLog.e("connect to $host failed", e)
