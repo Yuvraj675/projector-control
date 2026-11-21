@@ -11,9 +11,7 @@ import android.os.VibratorManager
  * setting, which many phones ship switched off, so it did nothing at all. The app has its own switch in Settings.
  */
 object Haptics {
-    enum class Kind(val ms: Long, val amplitude: Int) {
-        Tick(8, 70), Click(16, 140), Heavy(34, 255),
-    }
+    enum class Kind { Tick, Click, Heavy }
 
     @Volatile private var vibrator: Vibrator? = null
     private var last = 0L
@@ -30,13 +28,27 @@ object Haptics {
 
     fun play(context: Context, kind: Kind = Kind.Click) {
         val now = android.os.SystemClock.uptimeMillis()
-        if (now - last < 20) return
+        if (now - last < 35) return
         last = now
         val v = get(context)?.takeIf { it.hasVibrator() } ?: return
-        try {
-            val effect = if (v.hasAmplitudeControl()) VibrationEffect.createOneShot(kind.ms, kind.amplitude)
-            else VibrationEffect.createOneShot(kind.ms + 8, VibrationEffect.DEFAULT_AMPLITUDE)
-            v.vibrate(effect)
-        } catch (_: Exception) { }
+        try { v.vibrate(effect(v, kind)) } catch (_: Exception) { }
+    }
+
+    /**
+     * The phone's own tuned effects first (the ones the system plays for recent apps and long presses feel strong on a
+     * good motor); a full-amplitude pulse where the phone has none.
+     */
+    private fun effect(v: Vibrator, kind: Kind): VibrationEffect {
+        if (Build.VERSION.SDK_INT >= 29) {
+            val id = when (kind) {
+                Kind.Tick -> VibrationEffect.EFFECT_CLICK
+                Kind.Click -> VibrationEffect.EFFECT_HEAVY_CLICK
+                Kind.Heavy -> -1
+            }
+            if (id != -1) return VibrationEffect.createPredefined(id)
+            return VibrationEffect.createWaveform(longArrayOf(0, 40, 45, 70), intArrayOf(0, 255, 0, 255), -1)
+        }
+        val ms = when (kind) { Kind.Tick -> 22L; Kind.Click -> 38L; Kind.Heavy -> 70L }
+        return if (v.hasAmplitudeControl()) VibrationEffect.createOneShot(ms, 255) else VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE)
     }
 }

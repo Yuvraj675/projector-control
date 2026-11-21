@@ -15,6 +15,7 @@ import dev.keystone.auto.data.SavedKeystones
 import dev.keystone.auto.link.*
 import dev.keystone.auto.platform.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -686,8 +687,41 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun loadApps() {
         apps.value = AppsState.Loading
         viewModelScope.launch(io) {
-            try { apps.value = AppsState.Loaded(proj { it.tools.listApps() }) }
+            try {
+                val list = proj { it.tools.listApps() }
+                apps.value = AppsState.Loaded(list)
+                loadIcons(list)
+            }
             catch (e: Exception) { AppLog.e("list apps", e); apps.value = AppsState.Failed(friendly(e)) }
+        }
+    }
+
+    /** App logos by package name. Cached ones show at once; the rest are copied from the projector one at a time. */
+    val icons = MutableStateFlow<Map<String, android.graphics.Bitmap>>(emptyMap())
+    private var iconJob: Job? = null
+
+    private fun loadIcons(list: List<ProjectorApp>) {
+        val ctx = getApplication<Application>()
+        iconJob?.cancel()
+        iconJob = viewModelScope.launch(io) {
+            val have = HashMap(icons.value)
+            list.forEach { a -> if (a.packageName !in have) dev.keystone.auto.platform.AppIcons.cached(ctx, a.packageName)?.let { have[a.packageName] = it } }
+            icons.value = HashMap(have)
+            // the user's own apps first, then the rest; skip huge files (a download would take minutes)
+            for (a in list.sortedByDescending { it.thirdParty }) {
+                if (a.packageName in have) continue
+                try {
+                    val tools = projector?.tools ?: break
+                    val path = tools.apkPath(a.packageName) ?: continue
+                    val size = tools.apkSize(path)
+                    if (size <= 0 || size > 160L * 1024 * 1024) continue
+                    val tmp = java.io.File(ctx.cacheDir, "icon-${a.packageName}.apk")
+                    try {
+                        tools.pullApk(path, tmp)
+                        dev.keystone.auto.platform.AppIcons.extract(ctx, tmp, a.packageName)?.let { have[a.packageName] = it; icons.value = HashMap(have) }
+                    } finally { tmp.delete() }
+                } catch (e: Exception) { AppLog.e("icon for ${a.packageName}", e) }
+            }
         }
     }
 

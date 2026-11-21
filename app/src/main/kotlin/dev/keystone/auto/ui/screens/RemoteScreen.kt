@@ -41,6 +41,7 @@ import dev.keystone.auto.link.Evdev
 import dev.keystone.auto.link.RemoteKey
 import dev.keystone.auto.platform.GyroPointer
 import dev.keystone.auto.ui.*
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.abs
 import kotlin.math.max
@@ -176,9 +177,17 @@ private fun TouchPad(vm: AppViewModel, modifier: Modifier) {
     val s by rememberUpdatedState(settings)
     val tick = rememberTick(settings.haptics)
     val tickNow by rememberUpdatedState(tick)
+    var finger by remember { mutableStateOf<Offset?>(null) }
+    var rippleAt by remember { mutableStateOf(Offset.Zero) }
+    val ripple = remember { androidx.compose.animation.core.Animatable(1f) }
+    val scope = rememberCoroutineScope()
+    val orb by androidx.compose.animation.core.animateFloatAsState(if (finger != null) 1f else 0f, moveSpring(), label = "orb")
+    val lastFinger = remember { androidx.compose.runtime.mutableStateOf(Offset.Zero) }
+    val accent = MaterialTheme.colorScheme.primary
     PadSurface(modifier.pointerInput(Unit) {
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false)
+            finger = down.position
             val startT = down.uptimeMillis
             var travelled = 0f
             var maxFingers = 1
@@ -191,6 +200,7 @@ private fun TouchPad(vm: AppViewModel, modifier: Modifier) {
                 if (ev == null) { longPressed = true; vm.buttonDown(); tickNow(); continue }
                 val pressed = ev.changes.filter { it.pressed }
                 endT = ev.changes.maxOf { it.uptimeMillis }
+                if (pressed.isNotEmpty()) { finger = pressed[0].position; lastFinger.value = pressed[0].position }
                 if (pressed.isEmpty()) { ev.changes.forEach { it.consume() }; break }
                 maxFingers = max(maxFingers, pressed.size)
                 if (pressed.size >= 2) {
@@ -212,10 +222,25 @@ private fun TouchPad(vm: AppViewModel, modifier: Modifier) {
                 }
                 ev.changes.forEach { it.consume() }
             }
+            val tapped = !longPressed && travelled < SLOP_PX && endT - startT < TAP_MS
+            finger = null
             if (longPressed) { vm.buttonUp(); tickNow() }
-            else if (travelled < SLOP_PX && endT - startT < TAP_MS) { tickNow(); vm.click(if (maxFingers >= 2) Evdev.BTN_RIGHT else Evdev.BTN_LEFT) }
+            else if (tapped) {
+                tickNow(); vm.click(if (maxFingers >= 2) Evdev.BTN_RIGHT else Evdev.BTN_LEFT)
+                rippleAt = lastFinger.value.takeIf { it != Offset.Zero } ?: down.position
+                scope.launch { ripple.snapTo(0f); ripple.animateTo(1f, androidx.compose.animation.core.tween(520)) }
+            }
         }
     }) {
+        Canvas(Modifier.matchParentSize()) {
+            finger?.let { f -> lastFinger.value = f }
+            val at = lastFinger.value
+            if (orb > 0.01f) {
+                drawCircle(Brush.radialGradient(listOf(accent.copy(alpha = 0.34f * orb), Color.Transparent), center = at, radius = 120.dp.toPx() * (0.6f + 0.4f * orb)), radius = 120.dp.toPx(), center = at)
+                drawCircle(accent.copy(alpha = 0.9f * orb), radius = 7.dp.toPx() * orb, center = at)
+            }
+            if (ripple.value < 1f) drawCircle(accent.copy(alpha = 0.5f * (1f - ripple.value)), radius = 14.dp.toPx() + 70.dp.toPx() * ripple.value, center = rippleAt, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx()))
+        }
         Column(Modifier.align(Alignment.BottomCenter).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text("Swipe to move, tap to click", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Two fingers scroll, two-finger tap goes back", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))

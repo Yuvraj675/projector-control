@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -160,14 +161,14 @@ fun FloatingTabBar(tabs: List<TabItem>, selected: Int, onSelect: (Int) -> Unit, 
             tabs.forEachIndexed { i, t ->
                 val on = i == selected
                 val tint by animateColorAsState(if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, label = "tabtint")
-                val lift by animateFloatAsState(if (on) 1f else 0f, moveSpring(), label = "lift")
+                val lift by animateFloatAsState(if (on) 1f else 0f, spring(dampingRatio = 0.35f, stiffness = 380f), label = "lift")
                 Column(
                     Modifier.weight(1f).fillMaxHeight().clip(CircleShape)
                         .clickable(role = Role.Tab) { if (!on) { tap(); onSelect(i) } }
                         .semantics { this.selected = on; contentDescription = t.label },
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
                 ) {
-                    Icon24(t.ico, tint, size = 22.dp, modifier = Modifier.offset(y = (2 * (1 - lift) - 1).dp))
+                    Icon24(t.ico, tint, size = 22.dp, modifier = Modifier.offset(y = (3 * (1 - lift) - 3 * lift).dp).scale(1f + 0.12f * lift))
                     Text(t.label, style = MaterialTheme.typography.labelMedium, color = tint, maxLines = 1)
                 }
             }

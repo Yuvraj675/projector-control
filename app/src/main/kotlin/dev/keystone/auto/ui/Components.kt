@@ -64,22 +64,23 @@ fun AppBackground(modifier: Modifier = Modifier, content: @Composable BoxScope.(
     )
 }
 
-private val STEP_NAMES = listOf("Connect", "Photos", "Fixing", "Check")
+private val STEP_NAMES = listOf("Photos", "Fixing", "Checking")
 
-/** Progress through the keystone flow: a thin segmented line and the name of the current step. */
+/** Where you are in the fix: three named stages, the finished ones filled, the current one named. [current] is 0 for Photos. */
 @Composable
 fun StepIndicator(current: Int, modifier: Modifier = Modifier) {
-    Column(modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            STEP_NAMES.indices.forEach { i ->
-                val fill by animateFloatAsState(if (i <= current) 1f else 0f, moveSpring(), label = "seg")
-                Box(Modifier.weight(1f).height(3.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant)) {
+    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        STEP_NAMES.forEachIndexed { i, name ->
+            val fill by animateFloatAsState(if (i <= current) 1f else 0f, moveSpring(), label = "seg")
+            val tint by animateColorAsState(if (i == current) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurfaceVariant, label = "stept")
+            Column(Modifier.weight(1f)) {
+                Box(Modifier.fillMaxWidth().height(3.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant)) {
                     Box(Modifier.fillMaxHeight().fillMaxWidth(fill).background(MaterialTheme.colorScheme.primary))
                 }
+                Spacer(Modifier.height(8.dp))
+                Text(name, style = MaterialTheme.typography.bodySmall, color = tint)
             }
         }
-        Spacer(Modifier.height(8.dp))
-        Text("${STEP_NAMES.getOrElse(current) { "" }}, step $current of ${STEP_NAMES.lastIndex}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -110,7 +111,7 @@ fun ScreenScaffold(
                 }
                 if (step != null) {
                     Spacer(Modifier.height(14.dp))
-                    StepIndicator(step)
+                    StepIndicator(step - 1)
                 }
             }
             val bodyMod = Modifier.weight(1f).fillMaxWidth().let { if (scroll) it.verticalScroll(rememberScrollState()) else it }

@@ -9,6 +9,10 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -51,8 +55,10 @@ fun AppRoot(vm: AppViewModel, finish: () -> Unit) {
 
     CompositionLocalProvider(LocalHapticsOn provides settings.haptics) {
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+            // the four tabs live in one swipeable pager; every other screen is a normal destination
+            val isTab = TABS.any { it.first == screen }
             AnimatedContent(
-                targetState = screen,
+                targetState = if (isTab) Screen.Home else screen,
                 transitionSpec = {
                     val dir = if (depth(targetState) >= depth(initialState)) 1 else -1
                     (slideInHorizontally(moveSpring()) { dir * it / 9 } + fadeIn(tween(240, delayMillis = 60))) togetherWith
@@ -60,13 +66,11 @@ fun AppRoot(vm: AppViewModel, finish: () -> Unit) {
                 },
                 label = "screen",
             ) { s ->
-                CompositionLocalProvider(LocalInTabs provides TABS.any { it.first == s }) {
+                CompositionLocalProvider(LocalInTabs provides (s == Screen.Home)) {
                     when (s) {
                         Screen.Connect -> ConnectScreen(vm)
-                        Screen.Home -> HomeScreen(vm)
-                        Screen.Remote -> RemoteScreen(vm)
-                        Screen.Keyboard -> KeyboardScreen(vm)
-                        Screen.Apps -> AppsScreen(vm)
+                        Screen.Home -> TabsHost(vm)
+                        Screen.Remote, Screen.Keyboard, Screen.Apps -> Unit
                         Screen.Install -> InstallScreen(vm)
                         Screen.Mirror -> MirrorScreen(vm)
                         Screen.Device -> DeviceScreen(vm)
@@ -107,6 +111,40 @@ fun AppRoot(vm: AppViewModel, finish: () -> Unit) {
                 }
             }
             ToastHost(vm)
+        }
+    }
+}
+
+/** Home, Remote, Type and Apps side by side: swipe sideways or tap the bar. Touching the touchpad never swipes. */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun TabsHost(vm: AppViewModel) {
+    val screen by vm.screen.collectAsState()
+    val start = TABS.indexOfFirst { it.first == screen }.coerceAtLeast(0)
+    val pager = rememberPagerState(initialPage = start) { TABS.size }
+    val tap = rememberTap()
+    // the tab bar (or the back button) changed the screen: slide the pager there
+    LaunchedEffect(screen) {
+        val i = TABS.indexOfFirst { it.first == screen }
+        if (i >= 0 && i != pager.targetPage) pager.animateScrollToPage(i, animationSpec = moveSpring())
+    }
+    // the user swiped: tell the app which tab is now showing
+    LaunchedEffect(pager) {
+        snapshotFlow { pager.settledPage }.collect { page ->
+            val target = TABS[page].first
+            if (target != vm.screen.value && TABS.any { it.first == vm.screen.value }) {
+                if (target == Screen.Apps) vm.loadApps()
+                tap()
+                vm.go(target)
+            }
+        }
+    }
+    HorizontalPager(pager, Modifier.fillMaxSize(), beyondBoundsPageCount = 0, key = { it }) { page ->
+        when (TABS[page].first) {
+            Screen.Home -> HomeScreen(vm)
+            Screen.Remote -> RemoteScreen(vm)
+            Screen.Keyboard -> KeyboardScreen(vm)
+            else -> AppsScreen(vm)
         }
     }
 }

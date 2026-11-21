@@ -29,7 +29,6 @@ fun GuideScreen(vm: AppViewModel, initialPage: Int = 0) {
 
     ScreenScaffold(
         title = "How to take the photos",
-        step = 1,
         onBack = { if (page > 0) page-- else vm.back() },
         bottomBar = {
             Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.Center) {

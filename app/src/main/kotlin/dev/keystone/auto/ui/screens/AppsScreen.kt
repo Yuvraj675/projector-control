@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.keystone.auto.AppViewModel
@@ -33,6 +34,7 @@ import dev.keystone.auto.ui.*
 fun AppsScreen(vm: AppViewModel) {
     val state by vm.apps.collectAsState()
     val pickApk = rememberApkPicker(vm)
+    val icons by vm.icons.collectAsState()
     var menu by remember { mutableStateOf<ProjectorApp?>(null) }
 
     ScreenScaffold(
@@ -52,9 +54,9 @@ fun AppsScreen(vm: AppViewModel) {
                 val system = s.apps.filter { !it.thirdParty }
                 LazyVerticalGrid(GridCells.Fixed(3), Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (mine.isNotEmpty()) item(span = { GridItemSpan(3) }) { SectionTitle("Installed") }
-                    items(mine, key = { it.packageName }) { AppTile(it, { vm.launchApp(it) }, { menu = it }) }
+                    items(mine, key = { it.packageName }) { AppTile(it, { vm.launchApp(it) }, { menu = it }, icons[it.packageName]) }
                     if (system.isNotEmpty()) item(span = { GridItemSpan(3) }) { SectionTitle("Projector") }
-                    items(system, key = { it.packageName }) { AppTile(it, { vm.launchApp(it) }, { menu = it }) }
+                    items(system, key = { it.packageName }) { AppTile(it, { vm.launchApp(it) }, { menu = it }, icons[it.packageName]) }
                     item(span = { GridItemSpan(3) }) { Hint("Tap to open. Press and hold for more.", center = true, modifier = Modifier.padding(vertical = 12.dp)) }
                 }
             }
@@ -81,7 +83,7 @@ fun AppsScreen(vm: AppViewModel) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun AppTile(app: ProjectorApp, onOpen: () -> Unit, onMore: () -> Unit) {
+internal fun AppTile(app: ProjectorApp, onOpen: () -> Unit, onMore: () -> Unit, icon: android.graphics.Bitmap? = null) {
     val hue = remember(app.packageName) { (app.packageName.hashCode().toUInt() % 360u).toFloat() }
     val tone = Color.hsv(hue, 0.45f, 0.92f)
     Column(
@@ -89,7 +91,10 @@ internal fun AppTile(app: ProjectorApp, onOpen: () -> Unit, onMore: () -> Unit) 
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(Modifier.size(60.dp).clip(RoundedCornerShape(20.dp)).background(tone.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
-            Text(app.label.take(1).uppercase(), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = tone)
+            androidx.compose.animation.Crossfade(icon, label = "icon") { bmp ->
+                if (bmp != null) androidx.compose.foundation.Image(bmp.asImageBitmap(), app.label, Modifier.fillMaxSize())
+                else Text(app.label.take(1).uppercase(), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = tone)
+            }
         }
         Spacer(Modifier.height(6.dp))
         Text(app.label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onBackground, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)

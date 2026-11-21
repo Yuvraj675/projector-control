@@ -48,6 +48,15 @@ class ProjectorTools(private val sh: Shell) {
         return !r.out.contains("Error", true) && !r.out.contains("Exception", true)
     }
 
+    /** Path of the app's main APK on the projector, or null. */
+    fun apkPath(pkg: String): String? =
+        sh.run("pm path ${pkg.shellQuote()}").out.lineSequence().map { it.trim() }.firstOrNull { it.startsWith("package:") }?.removePrefix("package:")
+
+    fun apkSize(path: String): Long = sh.run("stat -c %s ${path.shellQuote()}").out.trim().toLongOrNull() ?: -1L
+
+    /** Copies the app's APK to [dest] so its icon can be read on the phone. */
+    fun pullApk(path: String, dest: java.io.File) = sh.pullTo(path, dest)
+
     fun forceStop(pkg: String) { sh.run("am force-stop ${pkg.shellQuote()}") }
 
     fun uninstall(pkg: String): Boolean = sh.run("pm uninstall ${pkg.shellQuote()} 2>&1").out.contains("Success")

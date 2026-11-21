@@ -47,7 +47,11 @@ fun HomeScreen(vm: AppViewModel) {
     AppBackground {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(top = 14.dp, bottom = 104.dp)) {
             Row(Modifier.fillMaxWidth().stagger(0), verticalAlignment = Alignment.CenterVertically) {
-                StatusPill("Connected", true)
+                val hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
+                Text(
+                    when { hour < 5 -> "Late night viewing"; hour < 12 -> "Good morning"; hour < 17 -> "Good afternoon"; hour < 22 -> "Movie night?"; else -> "Late night viewing" },
+                    style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 Spacer(Modifier.weight(1f))
                 HeaderIcon(Ico.Sliders, "Settings") { vm.go(Screen.Settings) }
             }
@@ -55,16 +59,21 @@ fun HomeScreen(vm: AppViewModel) {
             Column(Modifier.fillMaxWidth().stagger(1).clip(RoundedCornerShape(24.dp)).pressable({ vm.go(Screen.Device) }).padding(vertical = 4.dp)) {
                 Text(info?.displayName ?: "Projector", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.height(6.dp))
-                Text(listOfNotNull(info?.host, info?.androidRelease?.let { "Android $it" }).joinToString(", "), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    StatusPill("Connected", true)
+                    Spacer(Modifier.width(10.dp))
+                    Text(info?.host.orEmpty(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
             Spacer(Modifier.height(26.dp))
 
             val apps by vm.apps.collectAsState()
             val pinned by vm.pinned.collectAsState()
+            val icons by vm.icons.collectAsState()
             val quick = (apps as? AppsState.Loaded)?.apps?.filter { it.packageName in pinned }.orEmpty()
             if (quick.isNotEmpty()) {
                 Row(Modifier.fillMaxWidth().stagger(2).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    quick.forEach { app -> Box(Modifier.width(84.dp)) { AppTile(app, { vm.launchApp(app) }, { vm.togglePin(app) }) } }
+                    quick.forEach { app -> Box(Modifier.width(84.dp)) { AppTile(app, { vm.launchApp(app) }, { vm.togglePin(app) }, icons[app.packageName]) } }
                 }
                 Spacer(Modifier.height(20.dp))
             }
@@ -94,8 +103,6 @@ fun HomeScreen(vm: AppViewModel) {
                 ListRow(Ico.Chip, "Projector", "Memory, power and settings") { vm.go(Screen.Device) }
             }
 
-            Spacer(Modifier.height(20.dp))
-            Hint("Share a link, video, photo or song to ProjectorConnect from any app and it opens on the projector.", Modifier.stagger(5).padding(horizontal = 4.dp))
         }
     }
 }

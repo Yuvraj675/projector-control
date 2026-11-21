@@ -57,8 +57,8 @@ fun VerifyScreen(vm: AppViewModel) {
             SecondaryButton("Not quite", { vm.notRight() })
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 TextAction("Undo", { vm.undo() }, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                TextAction("Peek at normal screen", { vm.peekHome() }, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                TextAction("Show pattern", { vm.showPatternAgain() }, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextAction("Normal view", { vm.peekHome() }, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextAction("Pattern", { vm.showPatternAgain() }, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
     ) {
