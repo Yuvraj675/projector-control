@@ -60,17 +60,16 @@ fun Tile(
     val pressed by src.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.965f else 1f, spring(stiffness = Spring.StiffnessMedium), label = "tile")
     val primary = MaterialTheme.colorScheme.primary
-    val shape = RoundedCornerShape(28.dp)
-    val bg = if (accent) Brush.linearGradient(listOf(primary.copy(alpha = 0.34f), primary.copy(alpha = 0.10f)))
+    val shape = RoundedCornerShape(22.dp)
+    val bg = if (accent) Brush.linearGradient(listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primaryContainer))
     else Brush.linearGradient(listOf(MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.surface))
     Box(
         modifier.scale(scale).clip(shape).background(bg)
-            .border(BorderStroke(1.dp, if (accent) primary.copy(alpha = 0.55f) else MaterialTheme.colorScheme.outlineVariant), shape)
             .clickable(interactionSource = src, indication = null, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = "$title. $subtitle" }
             .padding(if (big || compact) 18.dp else 14.dp),
     ) {
-        val chip = if (accent) primary.copy(alpha = 0.22f) else MaterialTheme.colorScheme.surfaceVariant
+        val chip = androidx.compose.ui.graphics.Color.Transparent
         if (compact) {
             // icon on the left, text on the right: for tiles that are too short to stack them
             Row(Modifier.align(Alignment.CenterStart), verticalAlignment = Alignment.CenterVertically) {

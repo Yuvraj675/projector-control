@@ -83,7 +83,7 @@ fun ScreenScaffold(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     AppBackground(modifier) {
-        Column(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize().imePadding()) {
             Column(Modifier.padding(horizontal = 20.dp).padding(top = 8.dp)) {
                 Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (onBack != null) {
@@ -148,10 +148,9 @@ fun TextAction(text: String, onClick: () -> Unit, modifier: Modifier = Modifier,
 fun AppCard(modifier: Modifier = Modifier, padding: Dp = 18.dp, content: @Composable ColumnScope.() -> Unit) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(22.dp),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 2.dp,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        tonalElevation = 0.dp,
     ) { Column(Modifier.padding(padding), content = content) }
 }
 

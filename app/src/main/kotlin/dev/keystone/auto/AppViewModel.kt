@@ -246,6 +246,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val p = projector ?: throw ProjectorException("Not connected to a projector.")
         try {
             block(p)
+        } catch (e: dev.keystone.auto.link.InstallDropped) {
+            throw e                                              // never re-run an install blindly
         } catch (e: Exception) {
             AppLog.e("projector call failed, reconnecting once", e)
             val host = p.host
@@ -321,6 +323,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             m.contains("refused", true) -> "The projector refused the connection. Network debugging (ADB) may be switched off."
             m.contains("timed out", true) || m.contains("timeout", true) -> "The projector didn't answer in time."
             m.contains("unreachable", true) || m.contains("No route", true) -> "The projector can't be reached on this network."
+            e is java.io.EOFException || m.contains("EOF", true) || m.contains("reset", true) || m.contains("broken pipe", true) ->
+                "The projector closed the connection. It may be busy or low on memory; reconnect and try again."
             else -> m
         }
     }
@@ -779,6 +783,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 AppLog.d("install $name: ${r.ok} ${r.message}")
                 install.value = InstallState.Done(name, r.ok, r.message)
                 if (r.ok) loadApps()
+            } catch (d: dev.keystone.auto.link.InstallDropped) {
+                AppLog.e("install dropped", d)
+                install.value = InstallState.Working(name, "Connection dropped, checking the result…")
+                val landed = try { proj { it.tools.installLanded(d) } } catch (e: Exception) { AppLog.e("install check", e); false }
+                install.value = if (landed) InstallState.Done(name, true, "Installed.")
+                    else InstallState.Done(name, false, "The connection to the projector dropped and the app didn't arrive. Try again.")
+                if (landed) loadApps()
             } catch (e: Exception) {
                 AppLog.e("install", e)
                 install.value = InstallState.Done(name, false, friendly(e))

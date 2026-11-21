@@ -12,6 +12,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -44,14 +53,22 @@ fun RemoteScreen(vm: AppViewModel, initialMode: Int = 0, autoStart: Boolean = tr
     val settings by vm.settings.collectAsState()
     var mode by rememberSaveable { mutableIntStateOf(initialMode) }
     val tick = rememberTick(settings.haptics)
+    var typing by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) { if (autoStart) vm.startRemote() }
 
     ScreenScaffold(
         title = "Remote", onBack = { vm.back() }, scroll = false,
-        actions = { HeaderIcon(Ico.Power, "Projector screen off") { vm.press(RemoteKey.POWER) } },
+        actions = {
+            HeaderIcon(Ico.Keyboard, if (typing) "Hide keyboard" else "Type on the projector") { tick(); typing = !typing }
+            HeaderIcon(Ico.Power, "Projector screen off") { vm.press(RemoteKey.POWER) }
+        },
     ) {
         Segmented(MODES, mode, { mode = it; tick() })
         Spacer(Modifier.height(14.dp))
+        if (typing) {
+            TypingBar(vm, tick) { typing = false }
+            Spacer(Modifier.height(10.dp))
+        }
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when (mode) {
                 0 -> TouchPad(vm, Modifier.fillMaxSize())
@@ -82,6 +99,47 @@ fun RemoteScreen(vm: AppViewModel, initialMode: Int = 0, autoStart: Boolean = tr
             RoundKey(Ico.VolUp, "Volume up", { vm.press(RemoteKey.VOLUME_UP) }, repeat = true, tick = tick)
             RoundKey(Ico.PlayPause, "Play or pause", { vm.press(RemoteKey.PLAY_PAUSE) }, prominent = true, tick = tick)
         }
+    }
+}
+
+/**
+ * A keyboard inside the remote: opens the phone keyboard and sends every letter to the projector as it is typed.
+ * The field always starts with an invisible marker so a Backspace on an empty field is still noticed.
+ */
+@Composable
+private fun TypingBar(vm: AppViewModel, tick: () -> Unit, onClose: () -> Unit) {
+    val marker = "\u200B"
+    var value by remember { mutableStateOf(marker) }
+    val focus = remember { FocusRequester() }
+    val kb = LocalSoftwareKeyboardController.current
+    LaunchedEffect(Unit) { focus.requestFocus(); kb?.show() }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = { new ->
+                when {
+                    !new.startsWith(marker) -> { vm.press(RemoteKey.BACKSPACE); tick(); value = marker }
+                    else -> {
+                        val typed = new.removePrefix(marker)
+                        val old = value.removePrefix(marker)
+                        if (typed.length > old.length) { vm.typeText(typed.substring(old.length)); tick() }
+                        else if (typed.length < old.length) { repeat(old.length - typed.length) { vm.press(RemoteKey.BACKSPACE) }; tick() }
+                        // keep the field short: only the last few characters matter for the diff
+                        value = if (typed.length > 24) marker else new
+                    }
+                }
+            },
+            modifier = Modifier.weight(1f).focusRequester(focus),
+            singleLine = true,
+            placeholder = { Text("Typing on the projector…") },
+            shape = RoundedCornerShape(18.dp),
+            keyboardOptions = KeyboardOptions(autoCorrect = false, keyboardType = KeyboardType.Text, imeAction = ImeAction.Send),
+            keyboardActions = KeyboardActions(onSend = { vm.press(RemoteKey.ENTER); tick(); value = marker }),
+        )
+        Spacer(Modifier.width(8.dp))
+        RoundKey(Ico.Enter, "Enter", { vm.press(RemoteKey.ENTER); value = marker }, size = 48.dp, prominent = true, tick = tick)
+        Spacer(Modifier.width(4.dp))
+        HeaderIcon(Ico.Check, "Done typing") { kb?.hide(); onClose() }
     }
 }
 
@@ -126,6 +184,7 @@ private fun TouchPad(vm: AppViewModel, modifier: Modifier) {
             val startT = down.uptimeMillis
             var travelled = 0f
             var maxFingers = 1
+            var scrollAcc = 0f
             var longPressed = false
             var endT = startT
             while (true) {
@@ -140,6 +199,8 @@ private fun TouchPad(vm: AppViewModel, modifier: Modifier) {
                     val dy = pressed.map { it.positionChange().y }.average().toFloat()
                     travelled += abs(dy)
                     vm.scrollBy((if (s.naturalScroll) dy else -dy) / 24.0)
+                    scrollAcc += abs(dy)
+                    if (scrollAcc >= 40f) { scrollAcc = 0f; tickNow() }
                 } else {
                     val c = pressed[0]
                     val d = c.positionChange()
@@ -153,13 +214,13 @@ private fun TouchPad(vm: AppViewModel, modifier: Modifier) {
                 }
                 ev.changes.forEach { it.consume() }
             }
-            if (longPressed) vm.buttonUp()
+            if (longPressed) { vm.buttonUp(); tickNow() }
             else if (travelled < SLOP_PX && endT - startT < TAP_MS) { tickNow(); vm.click(if (maxFingers >= 2) Evdev.BTN_RIGHT else Evdev.BTN_LEFT) }
         }
     }) {
         Column(Modifier.align(Alignment.BottomCenter).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Swipe to move · tap to click", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("two fingers scroll · two-finger tap goes back", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
+            Text("Swipe to move, tap to click", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Two fingers scroll, two-finger tap goes back", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
         }
     }
 }
@@ -213,7 +274,7 @@ private fun AirPad(vm: AppViewModel, modifier: Modifier) {
                 Icon24(Ico.Crosshair, primary, size = 56.dp, strokeWidth = 1.5f)
             }
             Spacer(Modifier.height(18.dp))
-            Text(if (aiming) "Aiming…" else "Hold to aim · tap to click", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(if (aiming) "Aiming…" else "Hold to aim, tap to click", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
             Text("Point the top of the phone at the screen", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Column(Modifier.align(Alignment.CenterEnd).padding(end = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {

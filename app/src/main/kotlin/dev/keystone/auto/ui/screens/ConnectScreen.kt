@@ -24,7 +24,6 @@ fun ConnectScreen(vm: AppViewModel) {
 
     ScreenScaffold(
         title = "ProjectorConnect",
-        step = 0,
         actions = {
             IconButton(onClick = { vm.go(Screen.Settings) }) {
                 Icon(Icons.Default.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onBackground)
@@ -100,7 +99,7 @@ fun ConnectScreen(vm: AppViewModel) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(st.info.displayName, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
-                        Hint("Android ${st.info.androidRelease} · ${st.info.host}")
+                        Hint("Android ${st.info.androidRelease}, ${st.info.host}")
                     }
                     StatusPill("Connected", true)
                 }

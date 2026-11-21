@@ -122,7 +122,7 @@ private fun DeviceCard(name: String, detail: String, onClick: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(8.dp).clip(CircleShape).background(MaterialTheme.appColors.success))
                 Spacer(Modifier.width(8.dp))
-                Text(if (detail.isNotBlank()) "Connected · $detail" else "Connected", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                Text(if (detail.isNotBlank()) "$detail" else "Connected", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
             }
         }
         Icon24(Ico.Chevron, MaterialTheme.colorScheme.onSurfaceVariant, size = 22.dp)

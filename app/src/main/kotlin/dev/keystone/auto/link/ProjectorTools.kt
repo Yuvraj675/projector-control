@@ -20,6 +20,9 @@ interface InstallSource {
 
 class InstallResult(val ok: Boolean, val message: String)
 
+/** The connection broke while `pm install` was running; the install may still have gone through. */
+class InstallDropped(val dir: String, val marker: String, cause: Throwable) : Exception("The connection dropped during the install (${cause.message ?: cause.javaClass.simpleName}).", cause)
+
 /** Day-to-day control of the projector over ADB: apps, links, power, status. Pure shell commands, easy to fake in tests. */
 class ProjectorTools(private val sh: Shell) {
 
@@ -153,6 +156,7 @@ class ProjectorTools(private val sh: Shell) {
      */
     fun install(source: InstallSource, onStep: (String) -> Unit = {}): InstallResult {
         val dir = "/data/local/tmp/pc-install-${System.currentTimeMillis()}"
+        var dropped = false
         try {
             sh.run("mkdir -p $dir")
             val files = ArrayList<String>()
@@ -180,10 +184,32 @@ class ProjectorTools(private val sh: Shell) {
             }
             onStep("Installing…")
             val cmd = if (files.size == 1) "pm install -r -t ${files[0]} 2>&1" else "pm install-multiple -r -t ${files.joinToString(" ")} 2>&1"
-            val r = sh.run(cmd)
+            val r = try { sh.run(cmd) } catch (e: Exception) {
+                // The link dropped (EOF, reset...) while pm was working. pm usually still finishes, so don't report
+                // failure: the caller reconnects and asks installLanded() whether the app arrived.
+                dropped = true
+                throw InstallDropped(dir, files[0], e)
+            }
             return if (r.out.contains("Success")) InstallResult(true, "Installed.") else InstallResult(false, explainInstallFailure(r.text))
         } finally {
-            try { sh.run("rm -rf $dir") } catch (_: Exception) { }
+            if (!dropped) try { sh.run("rm -rf $dir") } catch (_: Exception) { }
+        }
+    }
+
+    /**
+     * After [InstallDropped]: waits a moment, then checks whether pm wrote a new app file after our APK was copied.
+     * Cleans the temporary folder either way.
+     */
+    fun installLanded(dropped: InstallDropped): Boolean {
+        try {
+            repeat(6) {
+                val r = sh.run("find /data/app -name 'base.apk' -newer ${dropped.marker.shellQuote()} 2>/dev/null | head -1")
+                if (r.out.isNotBlank()) return true
+                Thread.sleep(2000)
+            }
+            return false
+        } finally {
+            try { sh.run("rm -rf ${dropped.dir.shellQuote()}") } catch (_: Exception) { }
         }
     }
 

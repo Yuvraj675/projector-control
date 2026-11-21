@@ -100,7 +100,7 @@ fun SettingsScreen(vm: AppViewModel) {
         AppCard {
             val connected = connect as? ConnectState.Connected
             Text(connected?.info?.displayName ?: "Not connected", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-            connected?.let { Hint("${it.info.host} · picture uses ${(it.keystone.panelUse() * 100).toInt()}% of the panel") }
+            connected?.let { Hint("${it.info.host}, picture uses ${(it.keystone.panelUse() * 100).toInt()}% of the panel") }
             Spacer(Modifier.height(10.dp))
             SecondaryButton("Restore the original keystone", { vm.restoreOriginal() }, enabled = connected != null && hasOriginal)
             Hint("Puts back the keystone the projector had the first time this app connected to it.", Modifier.padding(top = 6.dp))
@@ -154,7 +154,7 @@ fun HistoryScreen(vm: AppViewModel) {
                         )
                     }
                     Spacer(Modifier.height(6.dp))
-                    Hint("${e.captures} photos · shape %.2f:1 · spread ±%.0f px".format(e.params.aspect, e.spreadPx))
+                    Hint("${e.captures} photos, shape %.2f:1, spread ±%.0f px".format(e.params.aspect, e.spreadPx))
                     Hint("Applied ${e.applied.toMap().values.joinToString(" ")}")
                     if (e.verdict.startsWith("rejected:")) Hint(e.verdict.removePrefix("rejected:").lowercase().replace('_', ' '))
                     if (e.note.isNotBlank()) Hint(e.note)
