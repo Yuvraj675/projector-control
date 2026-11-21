@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.keystone.auto.AppViewModel
 import dev.keystone.auto.AppsState
@@ -44,87 +45,57 @@ fun HomeScreen(vm: AppViewModel) {
     val limited = info != null && !info.supported      // not a Hisilicon projector: no keystone
 
     AppBackground {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 8.dp, bottom = 24.dp)) {
-            Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
-                Wordmark(Modifier.weight(1f))
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(top = 14.dp, bottom = 104.dp)) {
+            Row(Modifier.fillMaxWidth().stagger(0), verticalAlignment = Alignment.CenterVertically) {
+                StatusPill("Connected", true)
+                Spacer(Modifier.weight(1f))
                 HeaderIcon(Ico.Sliders, "Settings") { vm.go(Screen.Settings) }
             }
-            Spacer(Modifier.height(14.dp))
-
-            DeviceCard(name = info?.displayName ?: "Projector", detail = info?.host ?: "", onClick = { vm.go(Screen.Device) })
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(18.dp))
+            Column(Modifier.fillMaxWidth().stagger(1).clip(RoundedCornerShape(24.dp)).pressable({ vm.go(Screen.Device) }).padding(vertical = 4.dp)) {
+                Text(info?.displayName ?: "Projector", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(6.dp))
+                Text(listOfNotNull(info?.host, info?.androidRelease?.let { "Android $it" }).joinToString(", "), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Spacer(Modifier.height(26.dp))
 
             val apps by vm.apps.collectAsState()
             val pinned by vm.pinned.collectAsState()
             val quick = (apps as? AppsState.Loaded)?.apps?.filter { it.packageName in pinned }.orEmpty()
             if (quick.isNotEmpty()) {
-                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.fillMaxWidth().stagger(2).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     quick.forEach { app -> Box(Modifier.width(84.dp)) { AppTile(app, { vm.launchApp(app) }, { vm.togglePin(app) }) } }
                 }
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(20.dp))
             }
 
-            Row(Modifier.fillMaxWidth().height(212.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Tile("Remote", "Touchpad, air mouse, D-pad", Ico.Pointer, { vm.go(Screen.Remote) }, Modifier.weight(1.2f).fillMaxHeight(), accent = true, big = true)
-                Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Tile("Type & speak", "", Ico.Keyboard, { vm.go(Screen.Keyboard) }, Modifier.weight(1f).fillMaxWidth())
-                    Tile("Apps", "", Ico.Apps, { vm.loadApps(); vm.go(Screen.Apps) }, Modifier.weight(1f).fillMaxWidth())
+            if (!limited) {
+                val primary = MaterialTheme.colorScheme.primary
+                Row(
+                    Modifier.fillMaxWidth().stagger(3).clip(RoundedCornerShape(30.dp)).background(MaterialTheme.colorScheme.primaryContainer)
+                        .pressable({ vm.go(Screen.Guide) }).padding(horizontal = 24.dp, vertical = 24.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Auto keystone", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Spacer(Modifier.height(4.dp))
+                        Text("Straighten a skewed picture using your phone's camera", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f))
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Icon24(Ico.Keystone, primary, size = 40.dp, strokeWidth = 1.4f)
                 }
+                Spacer(Modifier.height(14.dp))
             }
-            Spacer(Modifier.height(12.dp))
-            Row(Modifier.fillMaxWidth().height(124.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Tile("Send file", "Copy it and play it", Ico.Send, pickFile, Modifier.weight(1f).fillMaxHeight())
-                Tile("Projector screen", "See it and touch it", Ico.Projector, { vm.go(Screen.Mirror) }, Modifier.weight(1f).fillMaxHeight())
-            }
-            Spacer(Modifier.height(12.dp))
-            Row(Modifier.fillMaxWidth().height(124.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Tile("Install app", "From an APK file", Ico.Install, pickApk, Modifier.weight(1f).fillMaxHeight())
-                if (limited) Tile("Projector", "Memory, power, files", Ico.Projector, { vm.go(Screen.Device) }, Modifier.weight(1f).fillMaxHeight())
-                else Tile("Auto keystone", "Straighten the picture", Ico.Keystone, { vm.go(Screen.Guide) }, Modifier.weight(1f).fillMaxHeight())
-            }
-            Spacer(Modifier.height(12.dp))
-            if (!limited) Tile("Projector", "Memory, power and settings", Ico.Projector, { vm.go(Screen.Device) }, Modifier.fillMaxWidth().height(84.dp), compact = true)
 
-            Spacer(Modifier.height(18.dp))
-            Hint("Tip: share a link, video, photo or song to ProjectorConnect from any app and it opens on the projector.", center = true)
-        }
-    }
-}
-
-@Composable
-private fun Wordmark(modifier: Modifier = Modifier) {
-    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(30.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
-            Icon24(Ico.Projector, MaterialTheme.colorScheme.primary, size = 18.dp)
-        }
-        Spacer(Modifier.width(10.dp))
-        Text("ProjectorConnect", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground)
-    }
-}
-
-@Composable
-private fun DeviceCard(name: String, detail: String, onClick: () -> Unit) {
-    val primary = MaterialTheme.colorScheme.primary
-    val shape = RoundedCornerShape(28.dp)
-    Row(
-        Modifier.fillMaxWidth().clip(shape)
-            .background(Brush.horizontalGradient(listOf(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.surface)))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
-            .clickable(onClick = onClick).padding(horizontal = 18.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(Modifier.size(48.dp).clip(CircleShape).background(primary.copy(alpha = 0.16f)).border(1.dp, primary.copy(alpha = 0.5f), CircleShape), contentAlignment = Alignment.Center) {
-            Icon24(Ico.Projector, primary, size = 26.dp)
-        }
-        Spacer(Modifier.width(14.dp))
-        Column(Modifier.weight(1f)) {
-            Text(name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(8.dp).clip(CircleShape).background(MaterialTheme.appColors.success))
-                Spacer(Modifier.width(8.dp))
-                Text(if (detail.isNotBlank()) "$detail" else "Connected", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            Column(Modifier.fillMaxWidth().stagger(4).clip(RoundedCornerShape(30.dp)).background(MaterialTheme.colorScheme.surface).padding(horizontal = 20.dp, vertical = 8.dp)) {
+                ListRow(Ico.Projector, "Projector screen", "See it on your phone and touch it") { vm.go(Screen.Mirror) }
+                ListRow(Ico.Send, "Send a file", "Copy it to the projector and play it", pickFile)
+                ListRow(Ico.Install, "Install an app", "From an APK file on this phone", pickApk)
+                ListRow(Ico.Chip, "Projector", "Memory, power and settings") { vm.go(Screen.Device) }
             }
+
+            Spacer(Modifier.height(20.dp))
+            Hint("Share a link, video, photo or song to ProjectorConnect from any app and it opens on the projector.", Modifier.stagger(5).padding(horizontal = 4.dp))
         }
-        Icon24(Ico.Chevron, MaterialTheme.colorScheme.onSurfaceVariant, size = 22.dp)
     }
 }

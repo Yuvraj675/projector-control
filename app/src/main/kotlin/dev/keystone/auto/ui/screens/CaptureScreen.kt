@@ -143,7 +143,7 @@ fun CaptureScreen(vm: AppViewModel) {
 private fun CameraContent(vm: AppViewModel) {
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
-    val haptic = LocalHapticFeedback.current
+    val ctx0 = androidx.compose.ui.platform.LocalContext.current
     val session by vm.session.collectAsState()
     val processing by vm.processing.collectAsState()
     val notice by vm.notice.collectAsState()
@@ -186,7 +186,7 @@ private fun CameraContent(vm: AppViewModel) {
         val file = File(context.cacheDir, "cap_${System.nanoTime()}.jpg")
         rig.takePhoto(
             file,
-            onSaved = { shooting = false; haptic.performHapticFeedback(HapticFeedbackType.LongPress); vm.onPhoto(file, g, meta) },
+            onSaved = { shooting = false; dev.keystone.auto.platform.Haptics.play(ctx0, dev.keystone.auto.platform.Haptics.Kind.Heavy); vm.onPhoto(file, g, meta) },
             onError = { shooting = false; vm.notice.value = "The photo failed: $it" },
         )
     }

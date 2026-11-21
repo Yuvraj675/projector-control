@@ -145,23 +145,21 @@ private fun TypingBar(vm: AppViewModel, tick: () -> Unit, onClose: () -> Unit) {
 
 @Composable
 private fun Overlay(content: @Composable ColumnScope.() -> Unit) {
-    Box(Modifier.fillMaxSize().clip(RoundedCornerShape(32.dp)).background(MaterialTheme.colorScheme.background.copy(alpha = 0.88f)), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxSize().clip(RoundedCornerShape(36.dp)).background(MaterialTheme.colorScheme.background.copy(alpha = 0.9f)), contentAlignment = Alignment.Center) {
         Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, content = content)
     }
 }
 
-/** The dotted, softly lit surface behind every control. */
+/** The surface behind every control: one flat tonal slab with a faint grid. */
 @Composable
 private fun PadSurface(modifier: Modifier, content: @Composable BoxScope.() -> Unit) {
-    val dot = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.07f)
-    val glow = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
-    val shape = RoundedCornerShape(32.dp)
-    Box(modifier.clip(shape).background(MaterialTheme.colorScheme.surface).border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)) {
+    val dot = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+    val shape = RoundedCornerShape(36.dp)
+    Box(modifier.clip(shape).background(MaterialTheme.colorScheme.surface)) {
         Canvas(Modifier.matchParentSize()) {
-            drawCircle(Brush.radialGradient(listOf(glow, Color.Transparent), center = center, radius = size.maxDimension * 0.6f), radius = size.maxDimension, center = center)
-            val step = 26.dp.toPx()
+            val step = 30.dp.toPx()
             var y = step
-            while (y < size.height) { var x = step; while (x < size.width) { drawCircle(dot, 1.6.dp.toPx(), Offset(x, y)); x += step }; y += step }
+            while (y < size.height) { var x = step; while (x < size.width) { drawCircle(dot, 1.5.dp.toPx(), Offset(x, y)); x += step }; y += step }
         }
         content()
     }
@@ -247,8 +245,7 @@ private fun AirPad(vm: AppViewModel, modifier: Modifier) {
         Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
             Box(
                 Modifier.size(210.dp).clip(CircleShape)
-                    .background(Brush.radialGradient(listOf(primary.copy(alpha = if (aiming) 0.45f else 0.22f), primary.copy(alpha = 0.06f))))
-                    .border(2.dp, primary.copy(alpha = if (aiming) 0.95f else 0.5f), CircleShape)
+                    .background(primary.copy(alpha = if (aiming) 0.30f else 0.14f))
                     .pointerInput(Unit) {
                         awaitEachGesture {
                             val down = awaitFirstDown(requireUnconsumed = false)
@@ -291,7 +288,7 @@ private fun DPad(vm: AppViewModel, modifier: Modifier) {
     val tick = rememberTick(settings.haptics)
     PadSurface(modifier) {
         Box(Modifier.align(Alignment.Center).size(270.dp)) {
-            Box(Modifier.matchParentSize().clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)).border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape))
+            Box(Modifier.matchParentSize().clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)))
             RoundKey(Ico.Up, "Up", { vm.press(RemoteKey.UP) }, Modifier.align(Alignment.TopCenter).padding(top = 14.dp), size = 62.dp, repeat = true, tick = tick)
             RoundKey(Ico.Down, "Down", { vm.press(RemoteKey.DOWN) }, Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp), size = 62.dp, repeat = true, tick = tick)
             RoundKey(Ico.Left, "Left", { vm.press(RemoteKey.LEFT) }, Modifier.align(Alignment.CenterStart).padding(start = 14.dp), size = 62.dp, repeat = true, tick = tick)

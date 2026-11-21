@@ -34,9 +34,10 @@ fun GuideScreen(vm: AppViewModel, initialPage: Int = 0) {
         bottomBar = {
             Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.Center) {
                 repeat(PAGES) { i ->
+                    val w by androidx.compose.animation.core.animateDpAsState(if (i == page) 26.dp else 8.dp, moveSpring(), label = "dot")
                     Box(
-                        Modifier.padding(horizontal = 4.dp).size(if (i == page) 22.dp else 8.dp, 8.dp).clip(CircleShape)
-                            .background(if (i == page) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline),
+                        Modifier.padding(horizontal = 4.dp).size(w, 8.dp).clip(CircleShape)
+                            .background(if (i == page) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant),
                     )
                 }
             }
@@ -52,7 +53,7 @@ fun GuideScreen(vm: AppViewModel, initialPage: Int = 0) {
             targetState = page,
             transitionSpec = {
                 val dir = if (targetState > initialState) 1 else -1
-                (slideInHorizontally { it * dir / 4 } + fadeIn()) togetherWith (slideOutHorizontally { -it * dir / 4 } + fadeOut())
+                (slideInHorizontally(moveSpring()) { it * dir / 5 } + fadeIn()) togetherWith (slideOutHorizontally(moveSpring()) { -it * dir / 5 } + fadeOut())
             },
             label = "guide",
         ) { p ->

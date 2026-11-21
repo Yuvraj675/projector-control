@@ -23,19 +23,15 @@ fun ConnectScreen(vm: AppViewModel) {
     var manual by remember { mutableStateOf(false) }
 
     ScreenScaffold(
-        title = "ProjectorConnect",
-        actions = {
-            IconButton(onClick = { vm.go(Screen.Settings) }) {
-                Icon(Icons.Default.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onBackground)
-            }
-        },
+        title = "Connect",
+        actions = { HeaderIcon(Ico.Sliders, "Settings") { vm.go(Screen.Settings) } },
     ) {
-        ProjectorHero(Modifier.padding(top = 4.dp))
-        Spacer(Modifier.height(16.dp))
-        Text("Your phone is now your projector's remote", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
-        Spacer(Modifier.height(8.dp))
-        Hint("Control it like a mouse, type and speak, install apps and straighten the picture. All from your phone, no computer needed.")
+        ProjectorHero(Modifier.padding(top = 4.dp).stagger(0))
         Spacer(Modifier.height(20.dp))
+        Text("Your phone, now the remote.", Modifier.stagger(1), style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.onBackground)
+        Spacer(Modifier.height(10.dp))
+        Hint("Mouse, keyboard, apps and picture fixes, all from your phone.", Modifier.stagger(2))
+        Spacer(Modifier.height(26.dp))
 
         notice?.let {
             Banner(it, BannerKind.Info)

@@ -37,6 +37,8 @@ class UiSnapshotTest {
     private fun snap(name: String, dark: Boolean = true, content: @Composable () -> Unit) {
         rule.setContent { ProjectorConnectTheme(dark) { content() } }
         rule.waitForIdle()
+        rule.mainClock.advanceTimeBy(1500)
+        rule.waitForIdle()
         // draw the real window content into a bitmap (captureToImage waits for a hardware draw that Robolectric never runs)
         val view = rule.activity.window.decorView
         val w = view.width.takeIf { it > 0 } ?: 1233

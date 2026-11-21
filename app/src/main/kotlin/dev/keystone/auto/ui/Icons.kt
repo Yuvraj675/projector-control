@@ -61,6 +61,8 @@ enum class Ico(val d: String, val filled: Boolean = false) {
     Globe("M21 12 A9 9 0 1 1 3 12 A9 9 0 1 1 21 12 M3 12 H21 M12 3 C15 6.5 15 17.5 12 21 C9 17.5 9 6.5 12 3"),
     Wifi("M3.5 9.5 A12 12 0 0 1 20.5 9.5 M6.5 13 A8 8 0 0 1 17.5 13 M9.5 16.3 A4 4 0 0 1 14.5 16.3 M12 19.6 H12.1"),
     Chevron("M9.5 6 L15.5 12 L9.5 18"),
+    ArrowLeft("M15 5 L8 12 L15 19"),
+    Tools("M5 6.5 H19 M5 12 H19 M5 17.5 H19"),
 }
 
 @Composable

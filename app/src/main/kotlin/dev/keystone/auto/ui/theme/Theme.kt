@@ -26,38 +26,38 @@ data class AppColors(
 )
 
 private val DarkApp = AppColors(
-    success = Color(0xFF4ADE80), warning = Color(0xFFFFB84D),
-    bgTop = Color(0xFF0E1013), bgBottom = Color(0xFF0E1013), glow = Color(0x3335E0C8),
+    success = Color(0xFF5BE08C), warning = Color(0xFFFFB84D),
+    bgTop = Color(0xFF0B0B0D), bgBottom = Color(0xFF0B0B0D), glow = Color(0x33FF6B3D),
 )
 private val LightApp = AppColors(
     success = Color(0xFF16A34A), warning = Color(0xFFC27800),
-    bgTop = Color(0xFFF6F6F3), bgBottom = Color(0xFFF6F6F3), glow = Color(0x2235E0C8),
+    bgTop = Color(0xFFF5F4F1), bgBottom = Color(0xFFF5F4F1), glow = Color(0x22E8481C),
 )
 
 val LocalAppColors = staticCompositionLocalOf { DarkApp }
 
 private val DarkScheme = darkColorScheme(
-    primary = Color(0xFF35E0C8), onPrimary = Color(0xFF00241F),
-    primaryContainer = Color(0xFF0F4D45), onPrimaryContainer = Color(0xFFB7F5EC),
-    secondary = Color(0xFF8E9BFF), onSecondary = Color(0xFF0E1550),
+    primary = Color(0xFFFF6B3D), onPrimary = Color(0xFF1C0A03),
+    primaryContainer = Color(0xFF2B1810), onPrimaryContainer = Color(0xFFFFD9CC),
+    secondary = Color(0xFF9AA4FF), onSecondary = Color(0xFF0E1550),
     tertiary = Color(0xFFFFB84D), onTertiary = Color(0xFF3A2400),
-    background = Color(0xFF0E1013), onBackground = Color(0xFFEDEEF0),
-    surface = Color(0xFF171A1F), onSurface = Color(0xFFEDEEF0),
-    surfaceVariant = Color(0xFF22262D), onSurfaceVariant = Color(0xFF9EA3AE),
-    outline = Color(0xFF3A3F49), outlineVariant = Color(0xFF262A31),
+    background = Color(0xFF0B0B0D), onBackground = Color(0xFFF4F4F5),
+    surface = Color(0xFF151517), onSurface = Color(0xFFF4F4F5),
+    surfaceVariant = Color(0xFF1F1F23), onSurfaceVariant = Color(0xFF8E8E96),
+    outline = Color(0xFF3A3A41), outlineVariant = Color(0xFF26262B),
     error = Color(0xFFFF6B6B), onError = Color(0xFF3B0000),
-    errorContainer = Color(0xFF4A1B22), onErrorContainer = Color(0xFFFFD6D6),
+    errorContainer = Color(0xFF3A1A1E), onErrorContainer = Color(0xFFFFD6D6),
 )
 
 private val LightScheme = lightColorScheme(
-    primary = Color(0xFF0B9C8A), onPrimary = Color.White,
-    primaryContainer = Color(0xFFC6F3EC), onPrimaryContainer = Color(0xFF00403A),
+    primary = Color(0xFFE8481C), onPrimary = Color.White,
+    primaryContainer = Color(0xFFFFE3D9), onPrimaryContainer = Color(0xFF4A1405),
     secondary = Color(0xFF4458D6), onSecondary = Color.White,
     tertiary = Color(0xFFC27800), onTertiary = Color.White,
-    background = Color(0xFFF6F6F3), onBackground = Color(0xFF14161A),
-    surface = Color.White, onSurface = Color(0xFF10152B),
-    surfaceVariant = Color(0xFFE9E9E4), onSurfaceVariant = Color(0xFF5A5F69),
-    outline = Color(0xFFC4C6CC), outlineVariant = Color(0xFFE0E0DA),
+    background = Color(0xFFF5F4F1), onBackground = Color(0xFF111114),
+    surface = Color.White, onSurface = Color(0xFF111114),
+    surfaceVariant = Color(0xFFECEAE5), onSurfaceVariant = Color(0xFF6A6A72),
+    outline = Color(0xFFC4C4C8), outlineVariant = Color(0xFFE4E2DC),
     error = Color(0xFFD64545), onError = Color.White,
     errorContainer = Color(0xFFFFE0E0), onErrorContainer = Color(0xFF5A0F0F),
 )
@@ -65,15 +65,15 @@ private val LightScheme = lightColorScheme(
 private val base = FontFamily.SansSerif
 
 val AppTypography = Typography(
-    displaySmall = TextStyle(fontFamily = base, fontWeight = FontWeight.Bold, fontSize = 34.sp, lineHeight = 40.sp, letterSpacing = (-0.5).sp),
-    headlineMedium = TextStyle(fontFamily = base, fontWeight = FontWeight.Bold, fontSize = 28.sp, lineHeight = 34.sp, letterSpacing = (-0.3).sp),
-    headlineSmall = TextStyle(fontFamily = base, fontWeight = FontWeight.SemiBold, fontSize = 22.sp, lineHeight = 28.sp),
-    titleLarge = TextStyle(fontFamily = base, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, lineHeight = 26.sp),
-    titleMedium = TextStyle(fontFamily = base, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, lineHeight = 22.sp),
+    displaySmall = TextStyle(fontFamily = base, fontWeight = FontWeight.Light, fontSize = 44.sp, lineHeight = 46.sp, letterSpacing = (-1.6).sp),
+    headlineMedium = TextStyle(fontFamily = base, fontWeight = FontWeight.Normal, fontSize = 32.sp, lineHeight = 36.sp, letterSpacing = (-1).sp),
+    headlineSmall = TextStyle(fontFamily = base, fontWeight = FontWeight.Medium, fontSize = 22.sp, lineHeight = 27.sp, letterSpacing = (-0.4).sp),
+    titleLarge = TextStyle(fontFamily = base, fontWeight = FontWeight.Medium, fontSize = 20.sp, lineHeight = 25.sp, letterSpacing = (-0.3).sp),
+    titleMedium = TextStyle(fontFamily = base, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 21.sp, letterSpacing = (-0.1).sp),
     bodyLarge = TextStyle(fontFamily = base, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 24.sp),
-    bodyMedium = TextStyle(fontFamily = base, fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 21.sp),
-    bodySmall = TextStyle(fontFamily = base, fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 17.sp),
-    labelLarge = TextStyle(fontFamily = base, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 20.sp, letterSpacing = 0.sp),
+    bodyMedium = TextStyle(fontFamily = base, fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 20.sp),
+    bodySmall = TextStyle(fontFamily = base, fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 16.sp),
+    labelLarge = TextStyle(fontFamily = base, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 20.sp, letterSpacing = 0.sp),
     labelMedium = TextStyle(fontFamily = base, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.sp),
 )
 
@@ -82,7 +82,7 @@ private val AppShapes = Shapes(
     small = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
     medium = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
     large = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
-    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(32.dp),
+    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(36.dp),
 )
 
 @Composable

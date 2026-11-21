@@ -2,6 +2,13 @@ package dev.keystone.auto.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -24,48 +31,83 @@ import dev.keystone.auto.Screen
 import dev.keystone.auto.link.LinkState
 import dev.keystone.auto.ui.screens.*
 
+private val TABS = listOf(
+    Screen.Home to TabItem(Ico.Tools, "Home"),
+    Screen.Remote to TabItem(Ico.Pointer, "Remote"),
+    Screen.Keyboard to TabItem(Ico.Keyboard, "Type"),
+    Screen.Apps to TabItem(Ico.Apps, "Apps"),
+)
+
+/** How deep a screen is: the tabs sit side by side, everything else is one level in. Decides which way a transition slides. */
+private fun depth(s: Screen): Int = TABS.indexOfFirst { it.first == s }.let { if (it >= 0) it else 10 }
+
 @Composable
 fun AppRoot(vm: AppViewModel, finish: () -> Unit) {
     val screen by vm.screen.collectAsState()
     val busy by vm.busy.collectAsState()
+    val settings by vm.settings.collectAsState()
 
     BackHandler { if (!vm.back()) finish() }
 
-    Box(Modifier.fillMaxSize()) {
-        AnimatedContent(
-            targetState = screen,
-            transitionSpec = { fadeIn() togetherWith fadeOut() },
-            label = "screen",
-        ) { s ->
-            when (s) {
-                Screen.Connect -> ConnectScreen(vm)
-                Screen.Home -> HomeScreen(vm)
-                Screen.Remote -> RemoteScreen(vm)
-                Screen.Keyboard -> KeyboardScreen(vm)
-                Screen.Apps -> AppsScreen(vm)
-                Screen.Install -> InstallScreen(vm)
-                Screen.Mirror -> MirrorScreen(vm)
-                Screen.Device -> DeviceScreen(vm)
-                Screen.Guide -> GuideScreen(vm)
-                Screen.Capture -> CaptureScreen(vm)
-                Screen.Working -> WorkingScreen(vm)
-                Screen.Verify -> VerifyScreen(vm)
-                Screen.Feedback -> FeedbackScreen(vm)
-                Screen.ResultPhoto -> ResultPhotoScreen(vm)
-                Screen.Done -> DoneScreen(vm)
-                Screen.Settings -> SettingsScreen(vm)
-                Screen.History -> HistoryScreen(vm)
-                Screen.Log -> LogScreen(vm)
+    CompositionLocalProvider(LocalHapticsOn provides settings.haptics) {
+        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+            AnimatedContent(
+                targetState = screen,
+                transitionSpec = {
+                    val dir = if (depth(targetState) >= depth(initialState)) 1 else -1
+                    (slideInHorizontally(moveSpring()) { dir * it / 9 } + fadeIn(tween(240, delayMillis = 60))) togetherWith
+                        (slideOutHorizontally(moveSpring()) { -dir * it / 9 } + fadeOut(tween(140)))
+                },
+                label = "screen",
+            ) { s ->
+                CompositionLocalProvider(LocalInTabs provides TABS.any { it.first == s }) {
+                    when (s) {
+                        Screen.Connect -> ConnectScreen(vm)
+                        Screen.Home -> HomeScreen(vm)
+                        Screen.Remote -> RemoteScreen(vm)
+                        Screen.Keyboard -> KeyboardScreen(vm)
+                        Screen.Apps -> AppsScreen(vm)
+                        Screen.Install -> InstallScreen(vm)
+                        Screen.Mirror -> MirrorScreen(vm)
+                        Screen.Device -> DeviceScreen(vm)
+                        Screen.Guide -> GuideScreen(vm)
+                        Screen.Capture -> CaptureScreen(vm)
+                        Screen.Working -> WorkingScreen(vm)
+                        Screen.Verify -> VerifyScreen(vm)
+                        Screen.Feedback -> FeedbackScreen(vm)
+                        Screen.ResultPhoto -> ResultPhotoScreen(vm)
+                        Screen.Done -> DoneScreen(vm)
+                        Screen.Settings -> SettingsScreen(vm)
+                        Screen.History -> HistoryScreen(vm)
+                        Screen.Log -> LogScreen(vm)
+                    }
+                }
             }
-        }
-        busy?.let { BusyOverlay(it) }
-        val link by vm.link.collectAsState()
-        if (link == LinkState.Reconnecting && screen != Screen.Connect) {
-            Box(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.systemBars).padding(top = 6.dp), contentAlignment = Alignment.TopCenter) {
-                StatusPill("Reconnecting to the projector…", false)
+
+            val tabIndex = TABS.indexOfFirst { it.first == screen }
+            Box(Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.systemBars)) {
+                AnimatedVisibility(
+                    tabIndex >= 0,
+                    enter = slideInVertically(moveSpring()) { it } + fadeIn(),
+                    exit = slideOutVertically { it } + fadeOut(tween(120)),
+                ) {
+                    FloatingTabBar(TABS.map { it.second }, tabIndex.coerceAtLeast(0), { i ->
+                        val target = TABS[i].first
+                        if (target == Screen.Apps) vm.loadApps()
+                        vm.go(target)
+                    })
+                }
             }
+
+            busy?.let { BusyOverlay(it) }
+            val link by vm.link.collectAsState()
+            if (link == LinkState.Reconnecting && screen != Screen.Connect) {
+                Box(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.systemBars).padding(top = 6.dp), contentAlignment = Alignment.TopCenter) {
+                    StatusPill("Reconnecting to the projector…", false)
+                }
+            }
+            ToastHost(vm)
         }
-        ToastHost(vm)
     }
 }
 
