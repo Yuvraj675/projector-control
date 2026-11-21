@@ -101,7 +101,7 @@ fun AppRoot(vm: AppViewModel, finish: () -> Unit) {
                 ) {
                     FloatingTabBar(TABS.map { it.second }, tabIndex.coerceAtLeast(0), { i ->
                         val target = TABS[i].first
-                        if (target == Screen.Apps) vm.loadApps()
+                        if (target == Screen.Apps) vm.ensureApps()
                         vm.go(target)
                     })
                 }
@@ -133,19 +133,20 @@ private fun TabsHost(vm: AppViewModel) {
     val generation = remember { intArrayOf(0) }
     LaunchedEffect(screen) {
         val i = TABS.indexOfFirst { it.first == screen }
-        if (i >= 0 && i != pager.currentPage || i >= 0 && pager.currentPageOffsetFraction != 0f) {
+        // slide there unless the pager is already on it; if it is, only finish a slide that was cut short (never fight a finger)
+        if (i >= 0 && (i != pager.currentPage || (!pager.isScrollInProgress && pager.currentPageOffsetFraction != 0f))) {
             val mine = ++generation[0]
             sliding = true
             try { pager.animateScrollToPage(i, animationSpec = androidx.compose.animation.core.tween(260, easing = androidx.compose.animation.core.FastOutSlowInEasing)) }
             finally { if (generation[0] == mine) sliding = false }
         }
     }
-    // the user swiped: tell the app which tab is now showing
+    // the user swiped: the bar follows as soon as the page is more than half over, not when it has settled
     LaunchedEffect(pager) {
-        snapshotFlow { pager.settledPage }.collect { page ->
+        snapshotFlow { pager.currentPage }.collect { page ->
             val target = TABS[page].first
             if (!sliding && target != vm.screen.value && TABS.any { it.first == vm.screen.value }) {
-                if (target == Screen.Apps) vm.loadApps()
+                if (target == Screen.Apps) vm.ensureApps()
                 tap()
                 vm.go(target)
             }

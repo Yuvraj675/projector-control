@@ -45,7 +45,10 @@ fun KeyboardScreen(vm: AppViewModel, autoStart: Boolean = true) {
     var text by rememberSaveable { mutableStateOf("") }
     var live by rememberSaveable { mutableStateOf(true) }
     var link by rememberSaveable { mutableStateOf("") }
-    LaunchedEffect(Unit) { if (autoStart) { kotlinx.coroutines.delay(400); if (vm.screen.value == dev.keystone.auto.Screen.Keyboard) vm.startRemote() } }
+    // the tab pages are built ahead of time, so connect when this screen is actually the one showing (and stay for a moment)
+    val current by vm.screen.collectAsState()
+    val showing = current == dev.keystone.auto.Screen.Keyboard
+    LaunchedEffect(showing) { if (autoStart && showing) { kotlinx.coroutines.delay(300); if (vm.screen.value == dev.keystone.auto.Screen.Keyboard) vm.startRemote() } }
 
     fun change(new: String) { if (live) sendDiff(vm, text, new); text = new }
 

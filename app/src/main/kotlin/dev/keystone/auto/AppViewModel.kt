@@ -685,8 +685,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         toast.value = "$what: ${friendly(e)}"
     }
 
+    /** Loads the list the first time (or after a failure); a list that is already there is left alone. */
+    fun ensureApps() { if (apps.value !is AppsState.Loaded) loadApps() }
+
     fun loadApps() {
-        apps.value = AppsState.Loading
+        if (apps.value !is AppsState.Loaded) apps.value = AppsState.Loading      // a refresh keeps showing the old list
         viewModelScope.launch(io) {
             try {
                 val list = proj { it.tools.listApps() }

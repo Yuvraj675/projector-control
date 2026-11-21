@@ -55,7 +55,10 @@ fun RemoteScreen(vm: AppViewModel, initialMode: Int = 0, autoStart: Boolean = tr
     var mode by rememberSaveable { mutableIntStateOf(initialMode) }
     val tick = rememberTick(settings.haptics)
     var typing by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(Unit) { if (autoStart) { kotlinx.coroutines.delay(400); if (vm.screen.value == dev.keystone.auto.Screen.Remote) vm.startRemote() } }
+    // the tab pages are built ahead of time, so connect when this screen is actually the one showing (and stay for a moment)
+    val current by vm.screen.collectAsState()
+    val showing = current == dev.keystone.auto.Screen.Remote
+    LaunchedEffect(showing) { if (autoStart && showing) { kotlinx.coroutines.delay(300); if (vm.screen.value == dev.keystone.auto.Screen.Remote) vm.startRemote() } }
 
     ScreenScaffold(
         title = "Remote", onBack = { vm.back() }, scroll = false,
