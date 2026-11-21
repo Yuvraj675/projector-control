@@ -705,21 +705,39 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val ctx = getApplication<Application>()
         iconJob?.cancel()
         iconJob = viewModelScope.launch(io) {
-            val have = HashMap(icons.value)
-            list.forEach { a -> if (a.packageName !in have) dev.keystone.auto.platform.AppIcons.cached(ctx, a.packageName)?.let { have[a.packageName] = it } }
-            icons.value = HashMap(have)
-            // the user's own apps first, then the rest; skip huge files (a download would take minutes)
-            for (a in list.sortedByDescending { it.thirdParty }) {
-                if (a.packageName in have) continue
+            val have: MutableMap<String, android.graphics.Bitmap> = java.util.concurrent.ConcurrentHashMap(icons.value)
+            fun publish() { icons.value = HashMap(have) }
+            val icons_ = dev.keystone.auto.platform.AppIcons
+            list.forEach { a -> if (a.packageName !in have) icons_.cached(ctx, a.packageName)?.let { have[a.packageName] = it } }
+            publish()
+
+            // 1. the phone's own copy of the app, 2. its Google Play page: both are quick, so several at once
+            val gate = kotlinx.coroutines.sync.Semaphore(6)
+            val todo = list.filter { it.packageName !in have && !icons_.recentlyMissed(ctx, it.packageName) }
+            kotlinx.coroutines.coroutineScope {
+                todo.map { a ->
+                    launch {
+                        gate.acquire()
+                        try {
+                            val bmp = icons_.fromPhone(ctx, a.packageName) ?: icons_.fromPlayStore(ctx, a.packageName)
+                            if (bmp != null) { have[a.packageName] = bmp; publish() }
+                        } finally { gate.release() }
+                    }
+                }.forEach { it.join() }
+            }
+
+            // 3. last resort for apps Google Play doesn't know: copy the APK, but only small ones
+            for (a in list.filter { it.packageName !in have && !icons_.recentlyMissed(ctx, it.packageName) }) {
                 try {
                     val tools = projector?.tools ?: break
-                    val path = tools.apkPath(a.packageName) ?: continue
-                    val size = tools.apkSize(path)
-                    if (size <= 0 || size > 160L * 1024 * 1024) continue
+                    val path = tools.apkPath(a.packageName)
+                    val size = path?.let { tools.apkSize(it) } ?: -1L
+                    if (path == null || size <= 0 || size > 15L * 1024 * 1024) { icons_.markMissed(ctx, a.packageName); continue }
                     val tmp = java.io.File(ctx.cacheDir, "icon-${a.packageName}.apk")
                     try {
                         tools.pullApk(path, tmp)
-                        dev.keystone.auto.platform.AppIcons.extract(ctx, tmp, a.packageName)?.let { have[a.packageName] = it; icons.value = HashMap(have) }
+                        val bmp = icons_.extract(ctx, tmp, a.packageName)
+                        if (bmp != null) { have[a.packageName] = bmp; publish() } else icons_.markMissed(ctx, a.packageName)
                     } finally { tmp.delete() }
                 } catch (e: Exception) { AppLog.e("icon for ${a.packageName}", e) }
             }

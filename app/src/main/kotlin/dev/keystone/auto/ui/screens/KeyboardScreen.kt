@@ -45,7 +45,7 @@ fun KeyboardScreen(vm: AppViewModel, autoStart: Boolean = true) {
     var text by rememberSaveable { mutableStateOf("") }
     var live by rememberSaveable { mutableStateOf(true) }
     var link by rememberSaveable { mutableStateOf("") }
-    LaunchedEffect(Unit) { if (autoStart) vm.startRemote() }
+    LaunchedEffect(Unit) { if (autoStart) { kotlinx.coroutines.delay(400); if (vm.screen.value == dev.keystone.auto.Screen.Keyboard) vm.startRemote() } }
 
     fun change(new: String) { if (live) sendDiff(vm, text, new); text = new }
 

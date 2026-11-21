@@ -10,6 +10,9 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -124,16 +127,24 @@ private fun TabsHost(vm: AppViewModel) {
     val start = TABS.indexOfFirst { it.first == screen }.coerceAtLeast(0)
     val pager = rememberPagerState(initialPage = start) { TABS.size }
     val tap = rememberTap()
-    // the tab bar (or the back button) changed the screen: slide the pager there
+    // While the app itself is sliding the pager (a tap on the tab bar), swipe detection must stay quiet: a slide that a
+    // second tap cuts short settles on a page in between, and reporting that would undo the second tap.
+    var sliding by remember { mutableStateOf(false) }
+    val generation = remember { intArrayOf(0) }
     LaunchedEffect(screen) {
         val i = TABS.indexOfFirst { it.first == screen }
-        if (i >= 0 && i != pager.targetPage) pager.animateScrollToPage(i, animationSpec = moveSpring())
+        if (i >= 0 && i != pager.currentPage || i >= 0 && pager.currentPageOffsetFraction != 0f) {
+            val mine = ++generation[0]
+            sliding = true
+            try { pager.animateScrollToPage(i, animationSpec = androidx.compose.animation.core.tween(260, easing = androidx.compose.animation.core.FastOutSlowInEasing)) }
+            finally { if (generation[0] == mine) sliding = false }
+        }
     }
     // the user swiped: tell the app which tab is now showing
     LaunchedEffect(pager) {
         snapshotFlow { pager.settledPage }.collect { page ->
             val target = TABS[page].first
-            if (target != vm.screen.value && TABS.any { it.first == vm.screen.value }) {
+            if (!sliding && target != vm.screen.value && TABS.any { it.first == vm.screen.value }) {
                 if (target == Screen.Apps) vm.loadApps()
                 tap()
                 vm.go(target)

@@ -55,7 +55,7 @@ fun RemoteScreen(vm: AppViewModel, initialMode: Int = 0, autoStart: Boolean = tr
     var mode by rememberSaveable { mutableIntStateOf(initialMode) }
     val tick = rememberTick(settings.haptics)
     var typing by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(Unit) { if (autoStart) vm.startRemote() }
+    LaunchedEffect(Unit) { if (autoStart) { kotlinx.coroutines.delay(400); if (vm.screen.value == dev.keystone.auto.Screen.Remote) vm.startRemote() } }
 
     ScreenScaffold(
         title = "Remote", onBack = { vm.back() }, scroll = false,
