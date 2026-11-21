@@ -99,7 +99,7 @@ fun HomeScreen(vm: AppViewModel) {
             Column(Modifier.fillMaxWidth().stagger(4).clip(RoundedCornerShape(30.dp)).background(MaterialTheme.colorScheme.surface).padding(horizontal = 20.dp, vertical = 8.dp)) {
                 ListRow(Ico.Projector, "Projector screen", "See it on your phone and touch it") { vm.go(Screen.Mirror) }
                 ListRow(Ico.Send, "Send a file", "Copy it to the projector and play it", pickFile)
-                ListRow(Ico.Install, "Install an app", "From an APK file on this phone", pickApk)
+                ListRow(Ico.Install, "Install an app", "Send one from this phone, or pick an APK") { vm.go(Screen.Install) }
                 ListRow(Ico.Chip, "Projector", "Memory, power and settings") { vm.go(Screen.Device) }
             }
 

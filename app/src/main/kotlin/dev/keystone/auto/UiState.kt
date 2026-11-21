@@ -16,6 +16,7 @@ sealed interface Screen {
     data object Keyboard : Screen
     data object Apps : Screen
     data object Install : Screen
+    data object PhoneApps : Screen
     data object Mirror : Screen
     data object Device : Screen
     data object Guide : Screen
@@ -93,6 +94,11 @@ sealed interface AppsState {
     data object Loading : AppsState
     data class Loaded(val apps: List<ProjectorApp>) : AppsState
     data class Failed(val message: String) : AppsState
+}
+
+sealed interface PhoneAppsState {
+    data object Loading : PhoneAppsState
+    data class Loaded(val apps: List<dev.keystone.auto.platform.PhoneApp>) : PhoneAppsState
 }
 
 sealed interface InstallState {

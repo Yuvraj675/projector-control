@@ -99,6 +99,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             Screen.Connect, Screen.Home -> return false
             Screen.Guide, Screen.Remote, Screen.Keyboard, Screen.Apps, Screen.Device, Screen.Mirror -> go(Screen.Home)
             Screen.Install -> if (install.value !is InstallState.Working) go(Screen.Apps)
+            Screen.PhoneApps -> go(Screen.Install)
             Screen.Capture -> if (resultMode.value) { resultMode.value = false; go(Screen.Verify) } else go(Screen.Guide)
             Screen.Working -> Unit
             Screen.Verify -> Unit                                   // the user must say whether it looks right
@@ -806,13 +807,39 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             install.value = InstallState.Done(name, false, "That doesn't look like an app file. Choose an .apk (or an .apkm / .apks / .xapk bundle).")
             return
         }
+        runInstall(name, object : InstallSource {
+            override val name = name
+            override fun open() = resolver.openInputStream(uri) ?: throw ProjectorException("Couldn't read that file.")
+        })
+    }
+
+    /** Apps on this phone that can be sent to the projector. */
+    val phoneApps = MutableStateFlow<PhoneAppsState>(PhoneAppsState.Loading)
+
+    fun openPhoneApps() {
+        go(Screen.PhoneApps)
+        if (phoneApps.value is PhoneAppsState.Loaded) return
+        viewModelScope.launch(io) {
+            phoneApps.value = PhoneAppsState.Loaded(try { dev.keystone.auto.platform.PhoneApps.list(getApplication()) } catch (e: Exception) { AppLog.e("phone apps", e); emptyList() })
+        }
+    }
+
+    /** Sends an app that is installed on this phone to the projector and installs it there. */
+    fun installPhoneApp(app: dev.keystone.auto.platform.PhoneApp) {
+        install.value = InstallState.Working(app.label, "Preparing…")
+        go(Screen.Install)
+        viewModelScope.launch(io) {
+            val (source, cleanup) = try { dev.keystone.auto.platform.PhoneApps.source(getApplication(), app) } catch (e: Exception) {
+                AppLog.e("phone app bundle", e); install.value = InstallState.Done(app.label, false, "Couldn't read this app's files from the phone."); return@launch
+            }
+            runInstall(app.label, source, cleanup)
+        }
+    }
+
+    private fun runInstall(name: String, source: InstallSource, cleanup: () -> Unit = {}) {
         install.value = InstallState.Working(name, "Preparing…")
         viewModelScope.launch(io) {
             try {
-                val source = object : InstallSource {
-                    override val name = name
-                    override fun open() = resolver.openInputStream(uri) ?: throw ProjectorException("Couldn't read that file.")
-                }
                 val r = proj { it.tools.install(source) { step -> install.value = InstallState.Working(name, step) } }
                 AppLog.d("install $name: ${r.ok} ${r.message}")
                 install.value = InstallState.Done(name, r.ok, r.message)
@@ -827,7 +854,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             } catch (e: Exception) {
                 AppLog.e("install", e)
                 install.value = InstallState.Done(name, false, friendly(e))
-            }
+            } finally { cleanup() }
         }
     }
 

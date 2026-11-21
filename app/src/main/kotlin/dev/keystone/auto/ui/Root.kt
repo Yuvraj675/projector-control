@@ -72,6 +72,7 @@ fun AppRoot(vm: AppViewModel, finish: () -> Unit) {
                         Screen.Home -> TabsHost(vm)
                         Screen.Remote, Screen.Keyboard, Screen.Apps -> Unit
                         Screen.Install -> InstallScreen(vm)
+                        Screen.PhoneApps -> PhoneAppsScreen(vm)
                         Screen.Mirror -> MirrorScreen(vm)
                         Screen.Device -> DeviceScreen(vm)
                         Screen.Guide -> GuideScreen(vm)

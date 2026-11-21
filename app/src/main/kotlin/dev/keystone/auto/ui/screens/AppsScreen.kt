@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.sp
 import dev.keystone.auto.AppViewModel
 import dev.keystone.auto.AppsState
 import dev.keystone.auto.InstallState
+import dev.keystone.auto.PhoneAppsState
+import dev.keystone.auto.ui.theme.appColors
 import dev.keystone.auto.Screen
 import dev.keystone.auto.link.ProjectorApp
 import dev.keystone.auto.ui.*
@@ -41,7 +43,7 @@ fun AppsScreen(vm: AppViewModel) {
         title = "Apps", onBack = { vm.back() }, scroll = false,
         actions = {
             HeaderIcon(Ico.Refresh, "Refresh the list") { vm.loadApps() }
-            HeaderIcon(Ico.Install, "Install an app from a file", pickApk)
+            HeaderIcon(Ico.Install, "Install an app") { vm.go(Screen.Install) }
         },
     ) {
         when (val s = state) {
@@ -109,9 +111,11 @@ fun InstallScreen(vm: AppViewModel) {
         Spacer(Modifier.height(24.dp))
         when (val s = state) {
             InstallState.Idle -> {
-                Hint("Choose an app file on your phone. It is sent to the projector over Wi-Fi and installed.", center = true)
-                Spacer(Modifier.height(20.dp))
-                PrimaryButton("Choose a file", pickApk)
+                Hint("Send an app you already have on this phone, or pick an APK file. It travels over Wi-Fi and is installed on the projector.", center = true)
+                Spacer(Modifier.height(24.dp))
+                PrimaryButton("Apps on this phone", { vm.openPhoneApps() })
+                Spacer(Modifier.height(10.dp))
+                SecondaryButton("Choose an APK file", pickApk)
             }
             is InstallState.Working -> Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(64.dp), strokeWidth = 5.dp)
@@ -144,5 +148,60 @@ fun InstallScreen(vm: AppViewModel) {
                 }
             }
         }
+    }
+}
+
+/** Every app on this phone, ready to send to the projector. Searchable; apps that can't run there say so. */
+@Composable
+fun PhoneAppsScreen(vm: AppViewModel) {
+    val state by vm.phoneApps.collectAsState()
+    var query by remember { mutableStateOf("") }
+    var confirm by remember { mutableStateOf<dev.keystone.auto.platform.PhoneApp?>(null) }
+
+    ScreenScaffold(title = "From this phone", onBack = { vm.back() }, scroll = false) {
+        when (val s = state) {
+            PhoneAppsState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) }
+            is PhoneAppsState.Loaded -> {
+                androidx.compose.material3.OutlinedTextField(
+                    value = query, onValueChange = { query = it }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Search your apps") }, shape = RoundedCornerShape(50),
+                )
+                Spacer(Modifier.height(8.dp))
+                val shown = s.apps.filter { it.label.contains(query.trim(), ignoreCase = true) }
+                androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxSize()) {
+                    items(shown.size, key = { shown[it].pkg }) { i ->
+                        val app = shown[i]
+                        Row(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).pressable({ if (app.warning != null) confirm = app else vm.installPhoneApp(app) }).padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Box(Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.surfaceVariant)) {
+                                app.icon?.let { androidx.compose.foundation.Image(it.asImageBitmap(), app.label, Modifier.fillMaxSize()) }
+                            }
+                            Spacer(Modifier.width(14.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(app.label, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(
+                                    if (app.warning != null) "${app.sizeMb} MB, may not run on the projector" else "${app.sizeMb} MB",
+                                    style = MaterialTheme.typography.bodySmall, color = if (app.warning != null) MaterialTheme.appColors.warning else MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Icon24(Ico.Send, MaterialTheme.colorScheme.onSurfaceVariant, size = 20.dp)
+                        }
+                    }
+                    item { Spacer(Modifier.height(24.dp)) }
+                }
+            }
+        }
+    }
+
+    confirm?.let { app ->
+        AlertDialog(
+            onDismissRequest = { confirm = null },
+            title = { Text(app.label) },
+            text = { Text("${app.warning}. Apps with native code are usually built for the phone's 64-bit processor, and the projector is 32-bit. You can try anyway; it fails cleanly if it can't install.") },
+            confirmButton = { TextButton(onClick = { confirm = null; vm.installPhoneApp(app) }) { Text("Try anyway") } },
+            dismissButton = { TextButton(onClick = { confirm = null }) { Text("Cancel") } },
+        )
     }
 }
