@@ -10,7 +10,7 @@ import java.util.zip.ZipOutputStream
 
 class PhoneAppsTest {
     private fun apk(vararg entries: String): File {
-        val f = File.createTempFile("t", ".apk").apply { deleteOnExit() }
+        val f = File.createTempFile("phoneapp", ".apk").apply { deleteOnExit() }
         ZipOutputStream(f.outputStream()).use { z -> entries.forEach { z.putNextEntry(ZipEntry(it)); z.write(1); z.closeEntry() } }
         return f
     }
