@@ -21,7 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
@@ -60,7 +60,7 @@ fun RoundKey(
     tick: () -> Unit = {},
 ) {
     var down by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(if (down) 0.88f else 1f, pressSpring(), label = "key")
+    val scale = animateFloatAsState(if (down) 0.88f else 1f, pressSpring(), label = "key")
     val primary = MaterialTheme.colorScheme.primary
     val fill by animateColorAsState(
         when {
@@ -72,7 +72,7 @@ fun RoundKey(
     )
     val fg = if (prominent) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
     Box(
-        modifier.size(size).scale(scale).clip(CircleShape).background(fill)
+        modifier.size(size).graphicsLayer { scaleX = scale.value; scaleY = scale.value }.clip(CircleShape).background(fill)
             .semantics { contentDescription = label; role = Role.Button }
             .pointerInput(repeat) {
                 detectTapGestures(onPress = {
@@ -98,8 +98,8 @@ fun Segmented(options: List<Segment>, selected: Int, onSelect: (Int) -> Unit, mo
     val tap = rememberTap()
     BoxWithConstraints(modifier.fillMaxWidth().clip(CircleShape).background(MaterialTheme.colorScheme.surface).padding(4.dp)) {
         val each = maxWidth / options.size
-        val x by animateDpAsState(each * selected, moveSpring(), label = "seg")
-        Box(Modifier.offset(x = x).width(each).height(44.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant))
+        val x = animateDpAsState(each * selected, moveSpring(), label = "seg")
+        Box(Modifier.offset { androidx.compose.ui.unit.IntOffset(x.value.roundToPx(), 0) }.width(each).height(44.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant))
         Row(Modifier.fillMaxWidth()) {
             options.forEachIndexed { i, o ->
                 val on = i == selected
@@ -155,20 +155,20 @@ fun FloatingTabBar(tabs: List<TabItem>, selected: Int, onSelect: (Int) -> Unit, 
             .clip(RoundedCornerShape(34.dp)).background(MaterialTheme.colorScheme.surface).padding(6.dp),
     ) {
         val each = maxWidth / tabs.size
-        val x by animateDpAsState(each * selected, moveSpring(), label = "tab")
-        Box(Modifier.offset(x = x).width(each).fillMaxHeight().clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)))
+        val x = animateDpAsState(each * selected, moveSpring(), label = "tab")
+        Box(Modifier.offset { androidx.compose.ui.unit.IntOffset(x.value.roundToPx(), 0) }.width(each).fillMaxHeight().clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)))
         Row(Modifier.fillMaxSize()) {
             tabs.forEachIndexed { i, t ->
                 val on = i == selected
                 val tint by animateColorAsState(if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, label = "tabtint")
-                val lift by animateFloatAsState(if (on) 1f else 0f, spring(dampingRatio = 0.35f, stiffness = 380f), label = "lift")
+                val lift = animateFloatAsState(if (on) 1f else 0f, spring(dampingRatio = 0.35f, stiffness = 380f), label = "lift")
                 Column(
                     Modifier.weight(1f).fillMaxHeight().clip(CircleShape)
                         .clickable(role = Role.Tab) { if (!on) { tap(); onSelect(i) } }
                         .semantics { this.selected = on; contentDescription = t.label },
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
                 ) {
-                    Icon24(t.ico, tint, size = 22.dp, modifier = Modifier.offset(y = (3 * (1 - lift) - 3 * lift).dp).scale(1f + 0.12f * lift))
+                    Icon24(t.ico, tint, size = 22.dp, modifier = Modifier.graphicsLayer { val l = lift.value; translationY = (3f * (1f - l) - 3f * l) * density; scaleX = 1f + 0.12f * l; scaleY = 1f + 0.12f * l })
                     Text(t.label, style = MaterialTheme.typography.labelMedium, color = tint, maxLines = 1)
                 }
             }

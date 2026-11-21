@@ -50,9 +50,10 @@ fun <T> moveSpring() = spring<T>(dampingRatio = 0.82f, stiffness = Spring.Stiffn
 fun Modifier.pressable(onClick: () -> Unit, enabled: Boolean = true, role: Role = Role.Button, haptic: Boolean = true): Modifier {
     val src = remember { MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.96f else 1f, pressSpring(), label = "press")
+    val scale = animateFloatAsState(if (pressed) 0.96f else 1f, pressSpring(), label = "press")
     val tap = rememberTap()
-    return this.scale(scale).clickable(interactionSource = src, indication = null, enabled = enabled, role = role) { if (haptic) tap(); onClick() }
+    // read in the draw phase: the press spring never recomposes anything
+    return this.graphicsLayer { scaleX = scale.value; scaleY = scale.value }.clickable(interactionSource = src, indication = null, enabled = enabled, role = role) { if (haptic) tap(); onClick() }
 }
 
 /** Flat, near-black (or paper) backdrop with the system bars handled. */

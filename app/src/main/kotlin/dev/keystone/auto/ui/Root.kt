@@ -151,7 +151,7 @@ private fun TabsHost(vm: AppViewModel) {
             }
         }
     }
-    HorizontalPager(pager, Modifier.fillMaxSize(), beyondBoundsPageCount = 0, key = { it }) { page ->
+    HorizontalPager(pager, Modifier.fillMaxSize(), beyondBoundsPageCount = TABS.size - 1, key = { it }) { page ->
         when (TABS[page].first) {
             Screen.Home -> HomeScreen(vm)
             Screen.Remote -> RemoteScreen(vm)
