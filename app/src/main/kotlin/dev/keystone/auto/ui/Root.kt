@@ -77,6 +77,7 @@ fun AppRoot(vm: AppViewModel, finish: () -> Unit) {
                         Screen.Install -> InstallScreen(vm)
                         Screen.PhoneApps -> PhoneAppsScreen(vm)
                         Screen.Mirror -> MirrorScreen(vm)
+                        Screen.Tune -> TuneScreen(vm)
                         Screen.Device -> DeviceScreen(vm)
                         Screen.Guide -> GuideScreen(vm)
                         Screen.Capture -> CaptureScreen(vm)

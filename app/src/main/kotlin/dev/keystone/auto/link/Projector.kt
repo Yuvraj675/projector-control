@@ -119,6 +119,17 @@ class Projector(private val sh: Shell, private val assets: ProjectorAssets, val 
         throw ProjectorException("The projector did not accept the new keystone (wanted ${t.toMap()}, got ${cur.toMap()}).")
     }
 
+    /**
+     * Opens the live tuner for manual keystone changes. Reads the current corners first (that is where the tuner starts),
+     * and refuses, like [applyKeystone], while the firmware's own Auto keystone is on.
+     */
+    fun openTuner(onError: (String) -> Unit): KeystoneTuner {
+        val cur = readKeystone()
+        if (autoWasOn) throw ProjectorException("The projector's own Auto keystone is on. Switch it to manual in the projector's keystone settings.")
+        val stream = sh.openStream("${ProjectorBundle.CLASSPATH} app_process /system/bin ${ProjectorBundle.HELPER_CLASS} serve 2>&1")
+        return KeystoneTuner(stream, cur, onError = onError)
+    }
+
     // ---- pattern app ---------------------------------------------------------------------------------------
 
     fun patternInstalledVersion(): Int? {

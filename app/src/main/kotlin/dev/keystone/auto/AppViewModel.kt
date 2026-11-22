@@ -83,6 +83,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun go(s: Screen) {
         _screen.value = s
         if (s != Screen.Mirror && mirror.value != MirrorState.Idle) stopMirror()
+        if (s != Screen.Tune && tune.value != TuneState.Idle) closeTune()
         // the virtual mouse/keyboard stays on the projector while the remote screens are open, then goes away a little later
         remoteIdleJob?.cancel()
         if (s != Screen.Remote && s != Screen.Keyboard && remote != null) {
@@ -97,7 +98,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun back(): Boolean {
         when (_screen.value) {
             Screen.Connect, Screen.Home -> return false
-            Screen.Guide, Screen.Remote, Screen.Keyboard, Screen.Apps, Screen.Device, Screen.Mirror -> go(Screen.Home)
+            Screen.Guide, Screen.Remote, Screen.Keyboard, Screen.Apps, Screen.Device, Screen.Mirror, Screen.Tune -> go(Screen.Home)
             Screen.Install -> if (install.value !is InstallState.Working) go(Screen.Apps)
             Screen.PhoneApps -> go(Screen.Install)
             Screen.Capture -> if (resultMode.value) { resultMode.value = false; go(Screen.Verify) } else go(Screen.Guide)
@@ -628,6 +629,61 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             } finally {
                 busy.value = null
             }
+        }
+    }
+
+    // ---- manual keystone: drag the four corners, live ------------------------------------------------------------
+    val tune = MutableStateFlow<TuneState>(TuneState.Idle)
+    /** Where the corners are wanted right now (the screen draws these; the tuner sends them to the projector). */
+    val tuneOffsets = MutableStateFlow(Offsets.NONE)
+    private var tuner: KeystoneTuner? = null
+
+    fun openTune() {
+        if (tune.value is TuneState.Starting || (tune.value is TuneState.Ready && tuner?.isOpen == true)) return
+        tune.value = TuneState.Starting
+        viewModelScope.launch(io) {
+            try {
+                var start = Offsets.NONE
+                val t = proj { p ->
+                    p.openTuner { msg -> tune.value = TuneState.Failed(msg) }.also { start = it.position }
+                }
+                tuner?.close()
+                tuner = t
+                tuneOffsets.value = start
+                tune.value = TuneState.Ready(start)
+                AppLog.d("tune: live keystone link ready, start ${start.toMap()}")
+            } catch (e: Exception) {
+                AppLog.e("tune start", e)
+                tune.value = TuneState.Failed(friendly(e))
+            }
+        }
+    }
+
+    /** Moves the corners to [o] (clamped to the safe range) as fast as the projector can follow. */
+    fun tuneTo(o: Offsets) {
+        val t = tuner ?: return
+        val c = o.rounded().clamped()
+        tuneOffsets.value = c
+        t.moveTo(c)
+    }
+
+    /** Leaves the manual screen: sends the last step, ends the helper and checks what the projector really holds. */
+    fun closeTune() {
+        val t = tuner
+        tuner = null
+        tune.value = TuneState.Idle
+        if (t == null) return
+        viewModelScope.launch(io) {
+            val wanted = tuneOffsets.value
+            try { t.close() } catch (e: Exception) { AppLog.e("tune close", e) }
+            try {
+                val now = proj { it.readKeystone() }
+                (connect.value as? ConnectState.Connected)?.let { connect.value = it.copy(keystone = now) }
+                if (now.toList().zip(wanted.toList()).any { (a, b) -> Math.abs(a - b) > 1.0 }) {
+                    AppLog.d("tune: projector holds ${now.toMap()} but ${wanted.toMap()} was wanted")
+                    toast.value = "The projector holds slightly different values than the screen showed. Check the picture."
+                }
+            } catch (e: Exception) { AppLog.e("tune verify", e) }
         }
     }
 

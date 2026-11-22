@@ -77,6 +77,16 @@ class UiSnapshotTest {
         snap("05_connect_failed") { ConnectScreen(v) }
     }
 
+    @Test fun tuneReady() = snap("40_tune_ready") { TuneContent(TuneState.Ready(ks), ks, {}, {}, {}) }
+
+    @Test fun tuneCornerSelected() = snap("41_tune_corner_selected") { TuneContent(TuneState.Ready(ks), ks, {}, {}, {}, initiallySelected = 2) }
+
+    @Test fun tuneStarting() = snap("42_tune_starting") { TuneContent(TuneState.Starting, ks, {}, {}, {}) }
+
+    @Test fun tuneFailed() = snap("43_tune_failed") { TuneContent(TuneState.Failed("The projector's own Auto keystone is on. Switch it to manual in the projector's keystone settings."), ks, {}, {}, {}) }
+
+    @Test fun tuneLight() = snap("44_tune_light", dark = false) { TuneContent(TuneState.Ready(ks), ks, {}, {}, {}, initiallySelected = 0) }
+
     @Test fun connectConnectedLight() { val v = vm(); v.connect.value = ConnectState.Connected(info, ks); snap("06_connect_connected_light", dark = false) { ConnectScreen(v) } }
 
     @Test fun guide() = snap("07_guide_1") { GuideScreen(vm()) }
