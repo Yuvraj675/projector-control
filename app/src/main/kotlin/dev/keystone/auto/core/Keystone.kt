@@ -28,7 +28,19 @@ object Panel {
      */
     const val MAX_X = 230.0
     const val MAX_Y = 220.0
+
+    /** The area corner [i] (0 = TL, 1 = TR, 2 = BR, 3 = BL) may be moved within, in panel pixels. */
+    fun cornerBox(i: Int): Box = when (i) {
+        0 -> Box(0.0, 0.0, MAX_X, MAX_Y)
+        1 -> Box(W - MAX_X, 0.0, W, MAX_Y)
+        2 -> Box(W - MAX_X, H - MAX_Y, W, H)
+        else -> Box(0.0, H - MAX_Y, MAX_X, H)
+    }
+
+    val cornerNames = listOf("Top left", "Top right", "Bottom right", "Bottom left")
 }
+
+data class Box(val left: Double, val top: Double, val right: Double, val bottom: Double)
 
 /** The eight corner offsets, in the order X1, Y1, X2, Y2, X3, Y3, X4, Y4. */
 data class Offsets(
@@ -51,6 +63,20 @@ data class Offsets(
 
     /** Fraction of the panel area the picture covers. */
     fun panelUse() = polygonArea(corners()) / (Panel.W * Panel.H)
+
+    /**
+     * These offsets with corner [i] (0 = TL, 1 = TR, 2 = BR, 3 = BL) moved to [p] in panel pixels. The point is kept inside
+     * that corner's own box ([Panel.cornerBox]), which is exactly the range the projector accepts, and rounded to whole pixels.
+     */
+    fun withCorner(i: Int, p: Pt): Offsets {
+        val box = Panel.cornerBox(i)
+        val q = Pt(Math.round(p.x.coerceIn(box.left, box.right)).toDouble(), Math.round(p.y.coerceIn(box.top, box.bottom)).toDouble())
+        val c = corners().toMutableList().also { it[i] = q }
+        return fromCorners(c)
+    }
+
+    /** Corner [i] moved by ([dx], [dy]) panel pixels (positive = right / down on the picture). */
+    fun nudged(i: Int, dx: Double, dy: Double): Offsets = corners()[i].let { withCorner(i, Pt(it.x + dx, it.y + dy)) }
 
     companion object {
         val KEYS = listOf("X1", "Y1", "X2", "Y2", "X3", "Y3", "X4", "Y4")
