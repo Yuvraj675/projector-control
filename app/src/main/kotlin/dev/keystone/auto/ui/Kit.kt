@@ -60,6 +60,10 @@ fun RoundKey(
     tick: () -> Unit = {},
 ) {
     var down by remember { mutableStateOf(false) }
+    // The touch handler below starts once (keyed on `repeat`), so it must read the CURRENT callbacks, not the ones from the
+    // first composition. Otherwise a key whose action depends on state (the keystone arrows) replays its first action forever.
+    val pressNow by rememberUpdatedState(onPress)
+    val tickNow by rememberUpdatedState(tick)
     val scale = animateFloatAsState(if (down) 0.88f else 1f, pressSpring(), label = "key")
     val primary = MaterialTheme.colorScheme.primary
     val fill by animateColorAsState(
@@ -77,9 +81,9 @@ fun RoundKey(
             .pointerInput(repeat) {
                 detectTapGestures(onPress = {
                     down = true
-                    tick(); onPress()
+                    tickNow(); pressNow()
                     coroutineScope {
-                        val job = if (repeat) launch { delay(380); while (true) { onPress(); tick(); delay(110) } } else null
+                        val job = if (repeat) launch { delay(380); while (true) { pressNow(); tickNow(); delay(110) } } else null
                         tryAwaitRelease()
                         job?.cancel()
                     }

@@ -640,18 +640,22 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun openTune() {
         if (tune.value is TuneState.Starting || (tune.value is TuneState.Ready && tuner?.isOpen == true)) return
-        tune.value = TuneState.Starting
+        tune.value = TuneState.Starting()
         viewModelScope.launch(io) {
             try {
                 var start = Offsets.NONE
-                val t = proj { p ->
-                    p.openTuner { msg -> tune.value = TuneState.Failed(msg) }.also { start = it.position }
-                }
+                val t = proj { p -> p.openTuner { msg -> tune.value = TuneState.Failed(msg) }.also { start = it.position } }
                 tuner?.close()
                 tuner = t
+                // One frame of what the projector is showing now (it includes the keystone warp, which the editor undoes).
+                // It is taken once, before any corner moves; it takes a few seconds on this projector.
+                tune.value = TuneState.Starting("Capturing the projector's picture…")
+                val image = try {
+                    proj { it.tools.screenshot() }?.let { png -> android.graphics.BitmapFactory.decodeByteArray(png, 0, png.size) }
+                } catch (e: Exception) { AppLog.e("tune capture", e); null }
                 tuneOffsets.value = start
-                tune.value = TuneState.Ready(start)
-                AppLog.d("tune: live keystone link ready, start ${start.toMap()}")
+                tune.value = TuneState.Ready(TuneView(start), image)
+                AppLog.d("tune: live keystone link ready, start ${start.toMap()}, picture ${if (image != null) "${image.width}x${image.height}" else "not captured"}")
             } catch (e: Exception) {
                 AppLog.e("tune start", e)
                 tune.value = TuneState.Failed(friendly(e))

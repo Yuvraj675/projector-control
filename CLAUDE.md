@@ -100,17 +100,27 @@ Unknown camera yaw is assumed 0 (phone parallel to the wall) unless learned.
 direction that improves the predicted picture (step halves on reversal). Params persist in `profile.json`, sessions in history.
 
 ## Manual keystone (Fine-tune)
-`ui/screens/TuneScreen.kt` (`TuneScreen` wraps the pure `TuneContent`, which the snapshot tests draw) shows the 1280x720 panel with the
-picture outline and four dots. Dragging is relative (a float position per drag, so slow drags are not lost to rounding); a tap selects
-a dot and shows arrows with a 1/2/5 px step. `core/Keystone.kt`: `Panel.cornerBox(i)` is each corner's reach (the safe 0..MAX inward range),
-`Offsets.withCorner/nudged` move one corner inside it. `link/KeystoneTuner` keeps wanted vs sent and one worker sends the difference
-as `KsAll serve` lines (merging fast moves; `close()` flushes the last step, `settle()` waits). `AppViewModel.openTune/tuneTo/closeTune`
-(`Screen.Tune`, `TuneState`); leaving the screen closes the helper and reads the keystone back, with a toast on a mismatch.
-`serve` replies `OK` / `ERR <reason>` per line (the stream drains and ignores them, so the app tracks its own state and verifies on close).
-Measured live: 20 steps in ~2.9 s including the JVM start. Dragging feel on a phone is untested.
+Edited in the **corrected view**, not in panel space. `core/TuneView` takes the keystone that is on the projector when the screen opens
+(`base`) as the one that makes the picture look right (a rectangle on the wall): `homography(base.corners() -> Panel.frame)` is then the
+panel-to-view mapping (a homography is fixed by four points), so view coordinates are what the viewer sees. Moving view corner i to R'
+puts the panel corner at `G^-1(R')` (`moveCorner`, clamped by `Offsets.withCorner` to `Panel.cornerBox(i)`, the safe 0..MAX inward range):
+the corner follows the finger 1:1 and the other three stay put on the wall. `step()` sizes an arrow step so the projector's corner moves
+about N of ITS pixels (it only takes whole pixels, so a view step must never round away). `reach` and `bounds` give the area to draw.
+`AppViewModel.openTune`: opens the helper's `serve` stream (`Projector.openTuner`, refuses while firmware Auto keystone is on), then takes ONE
+`screencap` (~2 s measured; it includes the keystone warp, outside the quad is blank/transparent) and builds `TuneState.Ready(TuneView, Bitmap?)`.
+`ui/screens/TuneScreen.kt` (`TuneScreen` wraps the pure `TuneContent`, drawn by the snapshot tests) clips to the current view quad and draws the
+frame with `Matrix.setPolyToPoly(base quad in the bitmap -> current view corners)`, a grid and four dots; no capture -> a tint and the grid.
+Dragging is relative (the dot moves by the finger's movement; at a limit it stops and the finger must come back); a tap selects a dot and shows
+arrows (1/2/5 px). `link/KeystoneTuner` keeps wanted vs sent and one worker sends the difference as `KsAll serve` lines (merging fast moves;
+`close()` flushes the last step, `settle()` waits); leaving the screen closes it and reads the keystone back (toast on a mismatch).
+`serve` replies `OK` / `ERR <reason>` per line (drained and ignored; the app tracks its own state). Measured live: 20 steps in ~2.9 s incl. JVM start.
+**Gotcha fixed in 0.7.1:** `RoundKey`'s touch handler is keyed on `repeat` only, so it used to keep the FIRST `onPress`/`tick`; keys whose action depends
+on state (the keystone arrows) replayed their first action forever (one corner, once, no repeat). It now reads them through `rememberUpdatedState`;
+`ui/TuneUiTest` fails on the old code. Dragging feel on a phone is untested.
 
 ## Status, open items and wider context
-- Version 0.7.0: **Fine-tune keystone** (see above), the helper's `serve` mode, `ksall.jar` rebuilt. Bluetooth control was investigated and dropped: the shell user has no `BLUETOOTH_PRIVILEGED`, `BluetoothDevice.connect()` does not exist on this Android 12 build and the profile proxy cannot bind from `app_process`; the only route left (driving the projector's own Bluetooth screen) would cover a running video. Not run on a phone yet.
+- Version 0.7.1: Fine-tune rebuilt after the first phone run (0.7.0 was unintuitive and its arrows moved one corner once): corrected view with the keystone as base, one captured frame warped live, arrows fixed (stale `RoundKey` callbacks), see above. `TuneView`/`TuneUiTest` added.
+- Version 0.7.0: **Fine-tune keystone** (first version, panel-space dots), the helper's `serve` mode, `ksall.jar` rebuilt. Bluetooth control was investigated and dropped: the shell user has no `BLUETOOTH_PRIVILEGED`, `BluetoothDevice.connect()` does not exist on this Android 12 build and the profile proxy cannot bind from `app_process`; the only route left (driving the projector's own Bluetooth screen) would cover a running video. Not run on a phone yet.
 - Version 0.6.3: (1) Remote never connected since 0.6.1: its start effect ran when the page was pre-composed (screen still Home), failed the `screen == Remote` check and never ran again. The effect is now keyed on `showing` (Remote/Keyboard connect 300 ms after becoming the current screen). (2) Swiping: the tab bar followed `settledPage` (a second late) and then `loadApps()` reloaded the tab. It now follows `currentPage` (flips at the half-way point), the slide effect never fights a finger (`isScrollInProgress`), and `ensureApps()` only loads when the list isn't there; `loadApps()` keeps showing the old list while refreshing. Not run on a phone.
 - Version 0.6.2: tab-switch frame drops. Likely causes addressed: (1) ship the RELEASE build (`./gradlew assembleRelease`, signed with the debug key so it installs over debug builds; the debug build runs Compose far slower) as `ProjectorConnect-<version>.apk`; (2) the pager keeps all four tabs composed (`beyondBoundsPageCount = TABS.size - 1`) so a switch is a pure slide, not a composition spike; (3) press scale, tab highlight and icon lift are read in the layout/draw phase (`graphicsLayer {}` / `offset {}`), so their springs no longer recompose every frame. Not measured on a phone.
 - Version 0.6.1: (1) App icons no longer copy APKs first: `AppViewModel.loadIcons` tries the cache, then the same package installed on the phone (`AppIcons.fromPhone`), then the app's Google Play page (`fromPlayStore`: reads only the first bytes for the og:image tag and asks for `=s144`; verified from a laptop that the tag is there), 6 at a time; only still-missing apps under 15 MB fall back to the APK copy, and misses are remembered for a week (`.miss` files). (2) Tab bug: a tab tap slides the pager, a second tap cut the slide short, the pager settled on a page in between and the swipe listener reported it, undoing the second tap. Swipe reporting is now muted while the app slides (`sliding` + generation counter). (3) Remote/Type start the virtual mouse only after 400 ms on the screen, so sliding past them no longer registers a device.

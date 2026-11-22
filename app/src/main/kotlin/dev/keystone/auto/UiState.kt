@@ -123,8 +123,12 @@ sealed interface MirrorState {
 /** The manual keystone screen: the corners can be moved once the live link to the projector is open. */
 sealed interface TuneState {
     data object Idle : TuneState
-    data object Starting : TuneState
-    /** [start] is what the projector held when the screen opened (for Reset). */
-    data class Ready(val start: Offsets) : TuneState
+    /** [step] says what is happening (connecting, or the few seconds the projector takes to capture its screen). */
+    data class Starting(val step: String = "Connecting to the keystone…") : TuneState
+    /**
+     * [view] is the corrected view built from the keystone that was on the projector when the screen opened; [image] is the
+     * one frame captured then (null when the capture failed, the screen then shows a grid).
+     */
+    data class Ready(val view: dev.keystone.auto.core.TuneView, val image: Bitmap?) : TuneState
     data class Failed(val message: String) : TuneState
 }

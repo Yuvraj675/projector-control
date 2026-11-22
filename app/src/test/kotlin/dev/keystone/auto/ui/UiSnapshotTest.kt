@@ -77,15 +77,47 @@ class UiSnapshotTest {
         snap("05_connect_failed") { ConnectScreen(v) }
     }
 
-    @Test fun tuneReady() = snap("40_tune_ready") { TuneContent(TuneState.Ready(ks), ks, {}, {}, {}) }
+    /** What the projector's screencap would return: content warped through the keystone onto a black 1280x720 frame. */
+    private fun fakeCapture(base: Offsets): Bitmap {
+        val content = Bitmap.createBitmap(1280, 720, Bitmap.Config.ARGB_8888)
+        Canvas(content).apply {
+            drawColor(android.graphics.Color.rgb(24, 40, 78))
+            val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+            p.color = android.graphics.Color.rgb(255, 170, 60); drawCircle(930f, 190f, 110f, p)
+            p.color = android.graphics.Color.rgb(40, 130, 90); drawRect(0f, 520f, 1280f, 720f, p)
+            p.color = android.graphics.Color.WHITE; p.textSize = 120f; drawText("Movie night", 120f, 380f, p)
+            p.style = android.graphics.Paint.Style.STROKE; p.strokeWidth = 14f; p.color = android.graphics.Color.RED; drawRect(7f, 7f, 1273f, 713f, p)
+        }
+        val shot = Bitmap.createBitmap(1280, 720, Bitmap.Config.ARGB_8888)
+        val c = Canvas(shot); c.drawColor(android.graphics.Color.BLACK)
+        val m = android.graphics.Matrix()
+        val src = floatArrayOf(0f, 0f, 1280f, 0f, 1280f, 720f, 0f, 720f)
+        val dst = base.corners().flatMap { listOf(it.x.toFloat(), it.y.toFloat()) }.toFloatArray()
+        m.setPolyToPoly(src, 0, dst, 0, 4)
+        c.drawBitmap(content, m, android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG))
+        return shot
+    }
 
-    @Test fun tuneCornerSelected() = snap("41_tune_corner_selected") { TuneContent(TuneState.Ready(ks), ks, {}, {}, {}, initiallySelected = 2) }
+    private fun readyState(base: Offsets = ks, image: Boolean = true) = TuneState.Ready(TuneView(base), if (image) fakeCapture(base) else null)
 
-    @Test fun tuneStarting() = snap("42_tune_starting") { TuneContent(TuneState.Starting, ks, {}, {}, {}) }
+    @Test fun tuneReady() = snap("40_tune_ready") { TuneContent(readyState(), ks, {}, {}, {}) }
 
-    @Test fun tuneFailed() = snap("43_tune_failed") { TuneContent(TuneState.Failed("The projector's own Auto keystone is on. Switch it to manual in the projector's keystone settings."), ks, {}, {}, {}) }
+    @Test fun tuneCornerSelected() = snap("41_tune_corner_selected") { TuneContent(readyState(), ks, {}, {}, {}, initiallySelected = 1) }
 
-    @Test fun tuneLight() = snap("44_tune_light", dark = false) { TuneContent(TuneState.Ready(ks), ks, {}, {}, {}, initiallySelected = 0) }
+    @Test fun tuneWarped() {
+        val t = TuneView(ks)
+        // the top right corner dragged 60 px down and 40 px left in the corrected view
+        val moved = t.moveCorner(ks, 1, Pt(t.corners(ks)[1].x - 40, t.corners(ks)[1].y + 60))
+        snap("42_tune_warped") { TuneContent(TuneState.Ready(t, fakeCapture(ks)), moved, {}, {}, {}, initiallySelected = 1) }
+    }
+
+    @Test fun tuneStarting() = snap("43_tune_starting") { TuneContent(TuneState.Starting("Capturing the projector's picture…"), ks, {}, {}, {}) }
+
+    @Test fun tuneFailed() = snap("44_tune_failed") { TuneContent(TuneState.Failed("The projector's own Auto keystone is on. Switch it to manual in the projector's keystone settings."), ks, {}, {}, {}) }
+
+    @Test fun tuneNoCapture() = snap("45_tune_no_capture") { TuneContent(readyState(image = false), ks, {}, {}, {}) }
+
+    @Test fun tuneLight() = snap("46_tune_light", dark = false) { TuneContent(readyState(), ks, {}, {}, {}, initiallySelected = 0) }
 
     @Test fun connectConnectedLight() { val v = vm(); v.connect.value = ConnectState.Connected(info, ks); snap("06_connect_connected_light", dark = false) { ConnectScreen(v) } }
 

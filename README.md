@@ -39,7 +39,7 @@ Cheap Android projectors ship with a clumsy remote (or none), hidden settings, a
 - **Power**: wake, screen off, restart, free up memory, and a **sleep timer** (30/60/90 min) that runs on the projector, so it still works if you close the app.
 - **Stays connected**: it pings the projector, reconnects with backoff, and rescans your Wi-Fi if the projector's IP address changed.
 - **Auto keystone** (Hisilicon projectors): straightens the picture using the phone camera. Save named setups ("Bedroom ceiling", "Living room table") and switch in one tap.
-- **Fine-tune keystone** (Hisilicon projectors): a live map of the projector's panel with a dot on each of the four corners. Drag a dot and the picture follows on the wall as you move; tap a dot to nudge it 1, 2 or 5 pixels with arrow buttons (hold to repeat). **Reset** returns to where you started.
+- **Fine-tune keystone** (Hisilicon projectors): the picture as it looks on the wall now (one frame is captured when you open it), with a dot on each corner. Drag a dot and the picture warps like a perspective tool while the projector follows live; the other three corners stay put. Tap a dot to nudge it 1, 2 or 5 pixels with the arrow buttons (hold to repeat). **Reset** returns to where you started.
 - **Safe**: the original keystone is saved the first time it meets a projector, every value is range-checked, and the Projector screen can restore the original home screen if you use a custom launcher.
 - **Works on other projectors**: if the projector is not Hisilicon, you still get everything except keystone.
 
@@ -128,7 +128,7 @@ The first time it meets a projector it saves the original keystone (*Settings â†
 
 ### Fine-tune by hand
 
-For a last small correction, open **Fine-tune keystone** on Home. The map shows the projector's 1280x720 panel and the picture's outline. Drag a corner dot (it follows your finger's movement, so it never jumps) or tap it and use the arrows; the shaded square around each corner is how far the projector lets it go. It needs the firmware's own Auto keystone to be off, like everything else that changes the keystone.
+For a last small correction, open **Fine-tune keystone** on Home. It takes the keystone that is set right now as the base, so the picture starts as a plain rectangle (a frame is captured from the projector once, which takes about two seconds). Drag a corner dot to warp the picture, or tap a dot and use the arrows to move that corner up, down, left or right. The dot moves by your finger's movement, so it never jumps. The shaded patch around each corner is how far the projector lets it go. It needs the firmware's own Auto keystone to be off, like everything else that changes the keystone.
 
 ## Troubleshooting
 
