@@ -39,6 +39,7 @@ Cheap Android projectors ship with a clumsy remote (or none), hidden settings, a
 - **Power**: wake, screen off, restart, free up memory, and a **sleep timer** (30/60/90 min) that runs on the projector, so it still works if you close the app.
 - **Stays connected**: it pings the projector, reconnects with backoff, and rescans your Wi-Fi if the projector's IP address changed.
 - **Auto keystone** (Hisilicon projectors): straightens the picture using the phone camera. Save named setups ("Bedroom ceiling", "Living room table") and switch in one tap.
+- **Fine-tune keystone** (Hisilicon projectors): a live map of the projector's panel with a dot on each of the four corners. Drag a dot and the picture follows on the wall as you move; tap a dot to nudge it 1, 2 or 5 pixels with arrow buttons (hold to repeat). **Reset** returns to where you started.
 - **Safe**: the original keystone is saved the first time it meets a projector, every value is range-checked, and the Projector screen can restore the original home screen if you use a custom launcher.
 - **Works on other projectors**: if the projector is not Hisilicon, you still get everything except keystone.
 
@@ -107,6 +108,7 @@ The projector's IP address is shown in its Wi-Fi settings. You can type it into 
 | Stop the screen at bedtime | **Projector → Sleep timer** |
 | Check why it is slow | **Projector** shows memory and storage. **Free up memory** stops background apps |
 | Fix a crooked picture | Home → **Auto keystone** (Hisilicon projectors) |
+| Nudge a corner by hand | Home → **Fine-tune keystone**: drag a dot, or tap it and use the arrows |
 
 ## Auto keystone
 
@@ -123,6 +125,10 @@ The picture on a tilted projector is a trapezium. These projectors advertise *au
    - *Not quite*: say what is off (right edge short, slopes up to the left, too wide...). It adjusts and asks again. **Undo** restores the previous keystone at any time.
 
 The first time it meets a projector it saves the original keystone (*Settings → Restore the original keystone*). Moved the projector? Save each place under **Projector → Saved keystones**.
+
+### Fine-tune by hand
+
+For a last small correction, open **Fine-tune keystone** on Home. The map shows the projector's 1280x720 panel and the picture's outline. Drag a corner dot (it follows your finger's movement, so it never jumps) or tap it and use the arrows; the shaded square around each corner is how far the projector lets it go. It needs the firmware's own Auto keystone to be off, like everything else that changes the keystone.
 
 ## Troubleshooting
 
@@ -169,6 +175,7 @@ The projector ships Android's `uinput` tool and lets the ADB shell user create v
 <details>
 <summary><b>Auto keystone</b></summary>
 
+- **Live moves.** The helper also has a `serve` mode: one long-running process that applies each line on stdin (`X1=5 Y3=-10`) as relative steps, so the app does not start a new JVM for every step. `KeystoneTuner` merges fast drags into one step and sends only the difference (about 10 steps a second on the real projector).
 - **The keystone is a four-corner warp.** The app reads and sets the corner offsets through the projector's Hisilicon TV service, using a small helper (`ksall.jar`) pushed over ADB. Values are pixels pulled in from each corner of the 1280x720 panel.
 - **Measurement.** A small app (`pattern.apk`) draws four white circles. The phone photographs them, and the circles are found with a morphological opening plus a convexity check.
 - **Removing the phone's own perspective.** Gravity and the camera intrinsics turn the photo into the view of a level camera with a pure rotation, which is exact for any plane.
