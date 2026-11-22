@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import dev.keystone.auto.TuneState
@@ -101,4 +102,58 @@ class TuneUiTest {
         assertTrue(rule.onAllNodesWithContentDescription("Move right").fetchSemanticsNodes().isEmpty())
         assertFalse(moved)
     }
+
+    // ---- selecting and dragging every corner, in the real order: first "connecting", then ready ------------------------
+
+    private class Live(val offsets: () -> Offsets, val ready: () -> Unit)
+
+    private fun showStartingThenReady(): Live {
+        var cur by mutableStateOf(base)
+        var state by mutableStateOf<TuneState>(TuneState.Starting())
+        val view = TuneView(base)
+        rule.setContent {
+            ProjectorConnectTheme(true) { TuneContent(state, cur, onMove = { cur = it }, onRetry = {}, onBack = {}) }
+        }
+        rule.waitForIdle()
+        return Live({ cur }, { state = TuneState.Ready(view, null); rule.waitForIdle() })
+    }
+
+    /** Where corner [i]'s dot is drawn, in the panel node's own pixels (same mapping as the screen). */
+    private fun dotAt(i: Int): Offset {
+        val node = rule.onNodeWithTag("tunePanel").fetchSemanticsNode()
+        val pad = with(rule.density) { 22.dp.toPx() }
+        val b = TuneView(base).bounds
+        val k = (node.size.width - 2 * pad) / (b.right - b.left).toFloat()
+        val c = TuneView(base).corners(base)[i]
+        return Offset(pad + ((c.x - b.left) * k).toFloat(), pad + ((c.y - b.top) * k).toFloat())
+    }
+
+    @Test fun everyCornerCanBeSelectedOnceTheProjectorIsReady() {
+        val live = showStartingThenReady()
+        live.ready()
+        for (i in 0..3) {
+            rule.onNodeWithTag("tunePanel").performTouchInput { click(dotAt(i)) }
+            rule.waitForIdle()
+            rule.onNodeWithText(Panel.cornerNames[i]).assertExists()
+        }
+    }
+
+    private fun dragCornerAndCheck(i: Int) {
+        val live = showStartingThenReady()
+        live.ready()
+        val before = live.offsets()
+        rule.onNodeWithTag("tunePanel").performTouchInput {
+            down(dotAt(i)); moveBy(Offset(40f, 30f)); moveBy(Offset(30f, 20f)); up()
+        }
+        rule.waitForIdle()
+        val after = live.offsets()
+        assertNotEquals("corner $i did not move", before.corners()[i], after.corners()[i])
+        for (k in 0..3) if (k != i) assertEquals("corner $k moved while dragging $i", before.corners()[k], after.corners()[k])
+        rule.onNodeWithText(Panel.cornerNames[i]).assertExists()           // dragging also selects it
+    }
+
+    @Test fun draggingTheTopLeftCornerMovesOnlyIt() = dragCornerAndCheck(0)
+    @Test fun draggingTheTopRightCornerMovesOnlyIt() = dragCornerAndCheck(1)
+    @Test fun draggingTheBottomRightCornerMovesOnlyIt() = dragCornerAndCheck(2)
+    @Test fun draggingTheBottomLeftCornerMovesOnlyIt() = dragCornerAndCheck(3)
 }

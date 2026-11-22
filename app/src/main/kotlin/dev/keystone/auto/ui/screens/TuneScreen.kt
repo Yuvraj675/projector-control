@@ -33,6 +33,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -172,11 +173,13 @@ private fun PanelView(
         val height = (bh * sc).dp + PAD * 2
         Box(Modifier.fillMaxWidth().height(height), contentAlignment = Alignment.Center) {
             Canvas(
-                Modifier.fillMaxSize()
+                Modifier.fillMaxSize().testTag("tunePanel")
                     .pointerInput(Unit) {
                         val pad = PAD.toPx(); val hit = 40.dp.toPx()
-                        val k = (size.width - 2 * pad) / bw
-                        fun toCanvas(p: Pt) = Offset(pad + ((p.x - viewNow.bounds.left) * k).toFloat(), pad + ((p.y - viewNow.bounds.top) * k).toFloat())
+                        // The view (and so the drawn scale) changes when the projector becomes ready, and this handler outlives
+                        // that: always measure with the CURRENT view, never one captured when the handler started.
+                        fun scale() = (size.width - 2 * pad) / (viewNow.bounds.right - viewNow.bounds.left).toFloat()
+                        fun toCanvas(p: Pt) = Offset(pad + ((p.x - viewNow.bounds.left) * scale()).toFloat(), pad + ((p.y - viewNow.bounds.top) * scale()).toFloat())
                         detectTapGestures { at ->
                             if (!enabledNow) return@detectTapGestures
                             val i = viewNow.corners(offsetsNow).withIndex().map { (i, c) -> i to (toCanvas(c) - at).getDistance() }
@@ -187,8 +190,10 @@ private fun PanelView(
                     }
                     .pointerInput(Unit) {
                         val pad = PAD.toPx(); val hit = 40.dp.toPx()
-                        val k = (size.width - 2 * pad) / bw
-                        fun toCanvas(p: Pt) = Offset(pad + ((p.x - viewNow.bounds.left) * k).toFloat(), pad + ((p.y - viewNow.bounds.top) * k).toFloat())
+                        // The view (and so the drawn scale) changes when the projector becomes ready, and this handler outlives
+                        // that: always measure with the CURRENT view, never one captured when the handler started.
+                        fun scale() = (size.width - 2 * pad) / (viewNow.bounds.right - viewNow.bounds.left).toFloat()
+                        fun toCanvas(p: Pt) = Offset(pad + ((p.x - viewNow.bounds.left) * scale()).toFloat(), pad + ((p.y - viewNow.bounds.top) * scale()).toFloat())
                         var corner = -1
                         var pos = Pt(0.0, 0.0)
                         detectDragGestures(
@@ -206,6 +211,7 @@ private fun PanelView(
                             change.consume()
                             // The corner goes where the finger goes, in the corrected view: the dot moves by exactly the finger's
                             // movement (relative, so it never jumps when picked up), and the other three stay put on the wall.
+                            val k = scale()
                             pos = Pt(pos.x + amount.x / k, pos.y + amount.y / k)
                             val next = viewNow.moveCorner(offsetsNow, corner, pos)
                             onMoveNow(next)
