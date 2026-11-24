@@ -6,18 +6,26 @@
 
 ![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF?logo=kotlin&logoColor=white)
-![Version](https://img.shields.io/badge/version-0.4.3-blue)
+![Version](https://img.shields.io/badge/version-0.7.2-blue)
 ![Tests](https://img.shields.io/badge/JVM%20tests-101%20passing-brightgreen)
 ![Projector](https://img.shields.io/badge/projector-Android%20TV%20%2F%20box%20with%20ADB-lightgrey)
 
 [Features](#features) · [Quick start](#quick-start) · [Set up your projector](#set-up-your-projector) · [Using the app](#using-the-app) · [Auto keystone](#auto-keystone) · [Troubleshooting](#troubleshooting) · [How it works](#how-it-works) · [Build from source](#build-from-source)
 
-<p align="center">
-  <img src="docs/screenshots/remote.png" width="19%" alt="Touchpad remote"/>
-  <img src="docs/screenshots/dpad.png" width="19%" alt="D-pad"/>
-  <img src="docs/screenshots/keyboard.png" width="19%" alt="Type and speak"/>
-  <img src="docs/screenshots/apps.png" width="19%" alt="Apps"/>
-</p>
+<table>
+  <tr>
+    <td width="25%" align="center"><img src="docs/screenshots/remote.png" width="240" alt="Touchpad remote"><br>Touchpad remote</td>
+    <td width="25%" align="center"><img src="docs/screenshots/dpad.png" width="240" alt="D-pad"><br>D-pad</td>
+    <td width="25%" align="center"><img src="docs/screenshots/keyboard.png" width="240" alt="Type and speak"><br>Type and speak</td>
+    <td width="25%" align="center"><img src="docs/screenshots/apps.png" width="240" alt="Manage apps"><br>Manage apps</td>
+  </tr>
+  <tr>
+    <td width="25%" align="center"><img src="docs/screenshots/install.png" width="240" alt="Install APKs"><br>Install APKs</td>
+    <td width="25%" align="center"><img src="docs/screenshots/guide.png" width="240" alt="Auto keystone"><br>Auto keystone</td>
+    <td width="25%" align="center"><img src="docs/screenshots/verify.png" width="240" alt="Check the result"><br>Check the result</td>
+    <td width="25%" align="center"><img src="docs/screenshots/fine-tune.png" width="240" alt="Fine-tune corners"><br>Fine-tune corners</td>
+  </tr>
+</table>
 
 </div>
 
