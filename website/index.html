@@ -7,52 +7,50 @@
   <meta name="description" content="Use your Android phone as a Wi-Fi remote for your Android projector. Follow a step-by-step setup with ProjectorConnect.">
   <title>ProjectorConnect — Your phone is the remote</title>
   <link rel="stylesheet" href="style.css">
-  <script type="module" src="/src/main.jsx"></script>
+  <script src="app.js" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
   <header class="site-header">
     <a class="brand" href="#top"><span class="lens" aria-hidden="true"></span>ProjectorConnect</a>
     <nav aria-label="Main navigation">
-      <a href="#features">Features</a><a href="#picture">Try it</a><a href="#help">Help</a><a class="nav-setup" href="#setup">Set up</a>
+      <a href="#features">Features</a><a href="#help">Help</a><a class="nav-setup" href="#setup">Set up</a>
     </nav>
   </header>
 
   <main id="main">
     <section class="hero" id="top" aria-labelledby="hero-title">
-      <img class="hero-art" src="/assets/projection.webp" width="1536" height="1024" alt="" fetchpriority="high">
+      <img class="hero-art" src="assets/projection.webp" width="1536" height="1024" alt="" fetchpriority="high">
       <div class="hero-shade"></div>
       <div class="hero-content wrap">
-        <div class="hero-copy">
-          <h1 id="hero-title">Your phone is<br>the remote.</h1>
-          <p>Point, type, and straighten the big screen from your Android phone. All over the Wi-Fi you already use.</p>
-          <div class="actions">
-            <a class="button primary" href="#setup">Set up my projector</a>
-            <a class="button outline" href="#features">See what it does</a>
-          </div>
-          <small>Android phone + Android projector or TV box</small>
+        <h1 id="hero-title">Your phone is<br>the remote.</h1>
+        <p>Point, type, and straighten the big screen from your Android phone. All over the Wi-Fi you already use.</p>
+        <div class="actions">
+          <a class="button primary" href="#setup">Set up my projector</a>
+          <a class="button outline" href="#features">See what it does</a>
         </div>
-        <div id="story"></div>
+        <small>Android phone + Android projector or TV box</small>
       </div>
     </section>
 
     <section class="showcase" id="features" aria-labelledby="features-title">
-      <div class="wrap feature-layout" id="feature-tour">
+      <div class="wrap feature-layout">
         <div>
           <h2 id="features-title">Make the big screen yours.</h2>
-          <p class="lead">Use the touchpad, D-pad, or air mouse. Type or speak, launch apps, and straighten the picture on supported models.</p>
-          <p class="lead"><a href="https://github.com/Yuvraj675/projector-control#readme">See the app screenshots</a></p>
+          <p class="lead">Put down the tiny remote. Pick what you want to do.</p>
+          <div class="feature-list" aria-label="Feature previews">
+            <button type="button" aria-pressed="true" data-feature="remote"><span>Move around</span><small>Touchpad, D-pad, and air mouse</small></button>
+            <button type="button" aria-pressed="false" data-feature="keyboard"><span>Type or speak</span><small>Search, paste text, and open links</small></button>
+            <button type="button" aria-pressed="false" data-feature="apps"><span>Send and launch</span><small>Open apps, install APKs, and send files</small></button>
+            <button type="button" aria-pressed="false" data-feature="fine-tune"><span>Straighten the picture</span><small>Auto keystone and corner controls on supported models</small></button>
+          </div>
+          <noscript><p>See the <a href="https://github.com/Yuvraj675/projector-control#readme">full screenshot gallery</a>.</p></noscript>
         </div>
-      </div>
-    </section>
-
-    <section class="picture-section" id="picture" aria-labelledby="picture-title">
-      <div class="wrap picture-layout">
-        <div>
-          <h2 id="picture-title">Give the picture a little nudge.</h2>
-          <p class="lead">When a projector sits off to one side, the picture can come out crooked. On compatible Hisilicon projectors, ProjectorConnect lets you fix it from your phone.</p>
-        </div>
-        <div id="picture-demo"></div>
+        <figure class="stage" data-feature="remote">
+          <div class="stage-light" aria-hidden="true"></div>
+          <div class="phone"><img id="feature-image" src="assets/remote.webp" width="500" height="1084" loading="lazy" alt="ProjectorConnect touchpad and remote buttons"></div>
+          <figcaption id="feature-caption" aria-live="polite">Swipe to move the pointer. Tap to click.</figcaption>
+        </figure>
       </div>
     </section>
 
@@ -61,7 +59,7 @@
         <div>
           <h2 id="setup-title">Ready for movie night?</h2>
           <p class="lead">Grab your Android phone, projector remote, and Wi-Fi password. Follow these steps in order.</p>
-          <a class="button dark" href="/assets/ProjectorConnect-0.7.2.apk" download>Download Android app</a>
+          <a class="button dark" href="assets/ProjectorConnect-0.7.2.apk" download>Download Android app</a>
           <p class="download-info">Version 0.7.2 · Android 8 or later</p>
         </div>
         <div class="steps">
