@@ -50,13 +50,13 @@ function fitWall(i, cz = 9, wz = -15) {
   const { tan } = metrics();
   const perPx = (2 * (cz - wz) * tan) / H;
   const r = copies[i].getBoundingClientRect();
-  const top = Math.round($('#nav-wrap').getBoundingClientRect().bottom) + 24;
-  const bottom = r.top - 34;
-  let h = Math.max(150, Math.min(bottom - top, H * 0.5));
+  const top = Math.round($('#nav-wrap').getBoundingClientRect().bottom) + 14;
+  const bottom = r.top - 28;
+  const right = W - 36;
+  let h = Math.max(150, Math.min(bottom - top, H * 0.52));
   let w = (h * 16) / 9;
-  if (w > W * 0.5) { w = W * 0.5; h = (w * 9) / 16; }
-  const right = Math.min(r.right, W - 40);
-  const cx = Math.max(right - w / 2, W * 0.5 + w / 2 - 20);
+  if (w > right - r.left) { w = right - r.left; h = (w * 9) / 16; }
+  const cx = r.left + w / 2;                       // shares its left edge with the copy
   const cy = top + (bottom - top) / 2;
   return { wx: (cx - W / 2) * perPx, wy: (H / 2 - cy) * perPx, ws: (h * perPx) / 9 };
 }
@@ -217,24 +217,26 @@ async function runKeystone() {
   ksBtn.disabled = true;
   stage.lastInput = performance.now();
   const s = stage.state;
+  // the sequence is async: if the visitor scrolls away mid-way it must stop touching the shared phone screen and hand
+  const alive = async (ms) => { await wait(ms); if (active !== 4) { ksBusy = false; ksBtn.disabled = false; return false; } return true; };
   ksStatus.textContent = 'Hold steady…';
   stage.hand.setPose('land-press-1', 18);
-  await wait(420);
+  if (!(await alive(420))) return;
   stage.hand.setPose('land-press-2', 22);
-  await wait(300);
+  if (!(await alive(300))) return;
   stage.hand.setScreen('capture-ready', 1);
   stage.hand.flash(1.1);
   stage.room.uniforms.uFlash.value = 0.35;
   stage.signals.burst(stage.time, 40);
   ksStatus.textContent = 'Photo taken. Finding the four circles…';
-  await wait(650);
+  if (!(await alive(650))) return;
   stage.hand.setPose('land-hold', 16);
   ksStatus.textContent = 'Solving for the largest rectangle…';
-  await wait(700);
+  if (!(await alive(700))) return;
   stage.room.uniforms.uFlash.value = 0.55;           // the projector redraws the picture straight
   gsap.to(s, { fix: 1, duration: 0.9, ease: 'power2.inOut' });
   stage.signals.burst(stage.time, 60);
-  await wait(1200);
+  if (!(await alive(1200))) return;
   stage.hand.setScreen('capture-idle', -1);
   ksStatus.textContent = 'Straight. Done.';
   ksBusy = false;
@@ -349,7 +351,10 @@ function cursor() {
   let x = 0, y = 0, tx = 0, ty = 0;
   window.addEventListener('pointermove', (e) => { tx = e.clientX; ty = e.clientY; });
   gsap.ticker.add(() => { x += (tx - x) * 0.22; y += (ty - y) * 0.22; el.style.transform = `translate3d(${x}px,${y}px,0)`; });
-  document.addEventListener('pointerover', (e) => el.classList.toggle('is-link', !!e.target.closest('a,button,summary,input')));
+  document.addEventListener('pointerover', (e) => {
+    el.classList.toggle('is-link', !!e.target.closest('a,button,summary,input'));
+    el.classList.toggle('hide', !!e.target.closest('.nav-wrap'));   // the glass lens is the feedback there
+  });
 }
 
 function magnetic() {

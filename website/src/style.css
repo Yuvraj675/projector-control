@@ -11,6 +11,7 @@
   --body: 'Instrument Sans Variable', system-ui, sans-serif;
   --pad: clamp(1.25rem, 3.4vw, 3.5rem);
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --col-l: max(43vw, 30rem);   /* left edge of the right-hand column: copy and wall share it */
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -38,7 +39,9 @@ button, input { font: inherit; color: inherit; }
 /* ------------------------------------------------------------------ cursor */
 .cursor { position: fixed; z-index: 90; top: 0; left: 0; pointer-events: none; mix-blend-mode: difference; display: none; }
 .cursor span { display: block; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: #fff; transition: transform 0.35s var(--ease); }
-.cursor.is-link span { transform: scale(3.2); }
+.cursor { transition: opacity 0.25s; }
+.cursor.hide { opacity: 0; }
+.cursor.is-link span { transform: scale(2.6); background: transparent; box-shadow: inset 0 0 0 1.5px #fff; }
 @media (hover: hover) and (pointer: fine) { .cursor { display: block; } body { cursor: none; } a, button, summary, input { cursor: none; } }
 
 /* ------------------------------------------------------------------ header */
@@ -79,16 +82,16 @@ main { position: relative; z-index: 10; }
 #story { height: 700vh; pointer-events: none; }
 .copy-stack { position: fixed; inset: 0; z-index: 10; pointer-events: none; }
 .copy-stack.off { visibility: hidden; }
-.copy { position: absolute; right: var(--pad); bottom: clamp(3.4rem, 8.5vh, 6.5rem); width: max-content; max-width: min(60vw, 52rem); visibility: hidden; pointer-events: none; }
+.copy { position: absolute; left: var(--col-l); bottom: clamp(3.4rem, 8.5vh, 6.5rem); width: max-content; max-width: calc(100vw - var(--col-l) - var(--pad)); visibility: hidden; pointer-events: none; text-shadow: 0 2px 22px rgba(0, 0, 0, 0.5); }
 .copy.is-active { visibility: visible; pointer-events: auto; }
 
-.copy:not(#hero) .display { font-size: clamp(2.6rem, 5.3vw, 6.4rem); }
+.copy:not(#hero) .display { font-size: clamp(2.6rem, 5vw, 6rem); }
 .kicker { margin: 0 0 0.8rem; font-size: 0.95rem; font-weight: 600; color: var(--accent); letter-spacing: 0.01em; }
-.display { margin: 0; font: 800 clamp(3rem, 6.5vw, 7.8rem)/0.92 var(--display); letter-spacing: -0.05em; text-wrap: balance; font-variation-settings: 'opsz' 96; }
+.display { margin: 0; font: 800 clamp(3rem, 6.2vw, 7.4rem)/0.92 var(--display); letter-spacing: -0.05em; text-wrap: balance; font-variation-settings: 'opsz' 96; }
 .display .line { display: block; white-space: nowrap; overflow: hidden; padding: 0.04em 0.06em 0.1em 0; margin-bottom: -0.08em; }
 .display .line > span { display: inline-block; will-change: transform; }
 .display em { font-style: normal; color: var(--accent); }
-.lede { margin: 1.2rem 0 0; max-width: 31rem; font-size: clamp(1rem, 1.2vw, 1.15rem); color: var(--mute); text-wrap: pretty; }
+.lede { margin: 1.2rem 0 0; max-width: 32rem; font-size: clamp(1rem, 1.2vw, 1.15rem); color: rgba(244, 239, 232, 0.76); text-wrap: pretty; }
 .note { margin: 1rem 0 0; max-width: 27rem; font-size: 0.84rem; color: rgba(244, 239, 232, 0.48); }
 
 .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 1.4rem; margin-top: 2rem; }
@@ -184,7 +187,7 @@ details[open] > summary b::after { transform: rotate(0); }
   .wordmark { font-size: 1.12rem; }
   .get { padding: 0.55rem 0.85rem; font-size: 0.82rem; }
   .brand { gap: 0.5rem; }
-  .copy { left: var(--pad); right: var(--pad); width: auto; top: 5rem; bottom: auto; }
+  .copy { left: var(--pad); right: var(--pad); width: auto; max-width: none; top: 5rem; bottom: auto; }
   .copy::before { content: ''; position: absolute; inset: -6rem calc(var(--pad) * -1) -3rem; z-index: -1; background: linear-gradient(180deg, rgba(5, 6, 8, 0.9) 45%, rgba(5, 6, 8, 0)); }
   .display { font-size: clamp(2.7rem, 13.5vw, 5rem); }
   .lede { font-size: 0.97rem; margin-top: 1rem; max-width: 26rem; }

@@ -31,13 +31,16 @@ swipe, air-mouse tilts) plus 12 denser in-between poses, and the landscape two-h
 2. makes 3 in-betweens per neighbouring pair with **RIFE** (`rife-ncnn-vulkan`, the engine Flowframes wraps, native on Linux),
 3. writes `public/assets/hand/**` and the pose graph `src/frames.json`.
 
-The originals are not in git: they live in `projector-redesign/assets/website/hand-frames-v2/` (`raw/`, `raw2/`, `raw3/`).
-To rebuild, copy them to `art/raw`, `art/raw2`, `art/raw3`, download the RIFE release (`rife-ncnn-vulkan-20221029-ubuntu.zip` from
+Frames also get a baked silhouette alpha (so the dark phone bezel is solid over any backdrop). Steps with a Codex-made midpoint in `raw4/` (the largest thumb
+moves) only need one RIFE in-between; the builder uses whichever `raw4` midpoints exist, so more can be added later (see `MIDS` in `build_frames.py`).
+
+The originals are not in git: they live in `projector-redesign/assets/website/hand-frames-v2/` (`raw/`, `raw2/`, `raw3/`, `raw4/`).
+To rebuild, copy them to `art/raw`, `art/raw2`, `art/raw3`, `art/raw4`, download the RIFE release (`rife-ncnn-vulkan-20221029-ubuntu.zip` from
 github.com/nihui/rife-ncnn-vulkan/releases) into `art/tools/`, and run `python3 art/build_frames.py` (needs numpy, opencv-python, Pillow).
 
 Other generated art: the room photographs (`public/assets/room-*.webp`, used as the Auto keystone backdrop and on the phone's capture screen),
 the context-aware Apps and Type screens (`public/assets/ui/apps.webp`, `keyboard.webp`) and three app icons (`art/raw3/icon-*.png`).
-The other five app icons are exact vector logos from simple-icons, tiled by `art/make_icons.mjs`. The Home, Remote and Connect screens are real app screenshots.
+The other five app icons are exact vector logos from simple-icons, tiled by `art/make_icons.mjs`. The Home and Connect screens are edits of real app screenshots with the device name and IP replaced by generic values; the Type screen shows an on-screen keyboard.
 The site says so in a footnote: app screens are illustrations.
 
 ## Notes

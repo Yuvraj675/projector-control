@@ -23,15 +23,32 @@ for n in ['reach-1','reach-2','dpad-up','dpad-left','dpad-right','key-low-left',
     P[n] = f'raw2/{n}'
 for n in ['sw-a','sw-b','sw-c','sw-d','kl-1','kr-1','up-1','left-1','right-1','tl-1','tr-1','lift']:
     P[n] = f'raw3/{n}'
+# direct Codex midpoints for the largest-motion hops (raw4); RIFE only bridges what is left
+MIDS = {  # (a, b): midpoint id
+    ('hold', 'reach-1'): 'm-hold-reach1', ('reach-1', 'reach-2'): 'm-reach1-reach2', ('reach-2', 'dpad-hover'): 'm-reach2-hover',
+    ('tap', 'right-1'): 'm-tap-right1', ('right-1', 'dpad-right'): 'm-right1-dpadright', ('up-1', 'dpad-up'): 'm-up1-dpadup',
+    ('left-1', 'dpad-left'): 'm-left1-dpadleft', ('swipe-start', 'sw-c'): 'm-swstart-swc', ('sw-d', 'swipe-end'): 'm-swd-swipeend',
+    ('kl-1', 'key-low-left'): 'm-kl1-keylowleft', ('kr-1', 'key-low-right'): 'm-kr1-keylowright', ('tap', 'key-mid'): 'm-tap-keymid',
+}
+MIDS = {k: v for k, v in MIDS.items() if os.path.exists(os.path.join(ROOT, 'raw4', v + '.png'))}   # use whichever midpoints exist
+for mid in MIDS.values():
+    P[mid] = f'raw4/{mid}'
+
+def with_mids(edges):
+    out = []
+    for a, b2 in edges:
+        m = MIDS.get((a, b2))
+        out += [(a, m), (m, b2)] if m else [(a, b2)]
+    return out
 
 SETS = {
   'portrait': {
     'size': (768, 1152), 'rest': 'hold', 'dir': 'portrait', 'src': {k: v + '.png' for k, v in P.items()},
-    'edges': [('hold','reach-1'),('reach-1','reach-2'),('reach-2','dpad-hover'),('dpad-hover','lift'),('lift','tap'),
+    'edges': with_mids([('hold','reach-1'),('reach-1','reach-2'),('reach-2','dpad-hover'),('dpad-hover','lift'),('lift','tap'),
               ('tap','up-1'),('up-1','dpad-up'),('tap','left-1'),('left-1','dpad-left'),('tap','right-1'),('right-1','dpad-right'),
               ('tap','key-mid'),('key-mid','kl-1'),('kl-1','key-low-left'),('key-mid','kr-1'),('kr-1','key-low-right'),
               ('tap','sw-a'),('sw-a','sw-b'),('sw-b','swipe-start'),('swipe-start','sw-c'),('sw-c','swipe-mid'),('swipe-mid','sw-d'),('sw-d','swipe-end'),
-              ('hold','tl-1'),('tl-1','tilt-left'),('hold','tr-1'),('tr-1','tilt-right')],
+              ('hold','tl-1'),('tl-1','tilt-left'),('hold','tr-1'),('tr-1','tilt-right')]),
   },
   'landscape': {
     'size': (1152, 768), 'rest': 'land-hold', 'dir': 'landscape',
@@ -83,6 +100,24 @@ def clean_magenta(arr, quad):
     out = arr.copy(); out[mag] = (255, 0, 255)
     return out
 
+def matte(arr):
+    """Silhouette alpha: hand + phone (including the near-black bezel) on the pure-black background."""
+    a = arr.astype(np.int32)
+    mx = a.max(axis=2)
+    core = (mx > 14).astype(np.uint8)
+    core = cv2.morphologyEx(core, cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8))
+    # fill holes only: background components that touch ANY image border stay transparent
+    h, w = core.shape
+    inv = (1 - core).astype(np.uint8)
+    n, lab = cv2.connectedComponents(inv, connectivity=4)
+    border = set(np.unique(np.concatenate([lab[0, :], lab[-1, :], lab[:, 0], lab[:, -1]])).tolist())
+    filled = np.ones((h, w), np.float32)
+    for i in range(1, n):
+        if i in border: filled[lab == i] = 0
+    filled = cv2.GaussianBlur(filled, (0, 0), 1.1)
+    soft = np.clip((mx - 3) / 28.0, 0, 1).astype(np.float32)   # keeps soft shadows / rim glow
+    return np.maximum(filled, soft)
+
 def rife(a, b, step, out):
     os.makedirs(os.path.dirname(out), exist_ok=True)
     if os.path.exists(out): return
@@ -90,7 +125,9 @@ def rife(a, b, step, out):
 
 def save(arr, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    Image.fromarray(arr).save(path, quality=88, method=6)
+    al = (matte(arr) * 255).astype(np.uint8)
+    rgb = arr.copy(); rgb[al == 0] = 0
+    Image.fromarray(np.dstack([rgb, al]), 'RGBA').save(path, quality=88, alpha_quality=92, method=6)
 
 if not os.path.exists(RIFE):
     sys.exit(f'rife-ncnn-vulkan not found at {RIFE}')
@@ -108,7 +145,8 @@ for name, S in SETS.items():
         save(np.asarray(im.resize(size, Image.LANCZOS)), os.path.join(OUT, S['dir'], f'{k}.webp'))
     for a, b in S['edges']:
         ids = [a]
-        for i, step in enumerate(STEPS, 1):
+        steps = [0.5] if (a.startswith('m-') or b.startswith('m-')) else STEPS
+        for i, step in enumerate(steps, 1):
             fid = f'{a}__{b}__{i}'
             raw = os.path.join(CACHE, S['dir'], f'{fid}.png')
             rife(srcs[a], srcs[b], step, raw)

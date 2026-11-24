@@ -17,6 +17,7 @@ const FinalPass = {
     uAberr: { value: 0.0006 },
     uGrain: { value: 0.045 },
     uFade: { value: 1 },
+    uMotion: { value: new THREE.Vector2() },
   },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
   fragmentShader: /* glsl */ `
@@ -24,6 +25,7 @@ const FinalPass = {
     varying vec2 vUv;
     uniform sampler2D tDiffuse;
     uniform float uTime, uAberr, uGrain, uFade;
+    uniform vec2 uMotion;
     float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233)) + uTime) * 43758.5453); }
     void main(){
       vec2 c = vUv - 0.5;
@@ -33,6 +35,12 @@ const FinalPass = {
       float g = texture2D(tDiffuse, vUv).g;
       float b = texture2D(tDiffuse, vUv - off).b;
       vec3 col = vec3(r, g, b);
+      // subtle motion blur along the scene's current screen-space velocity
+      if (length(uMotion) > 0.0003) {
+        vec3 acc = vec3(0.0);
+        for (int i = 0; i < 7; i++) acc += texture2D(tDiffuse, vUv + uMotion * (float(i) / 6.0 - 0.5)).rgb;
+        col = mix(col, acc / 7.0, 0.85);
+      }
       col *= smoothstep(0.95, 0.25, length(c * vec2(1.0, 1.15)));
       col += (hash(vUv * 1000.0) - 0.5) * uGrain;
       gl_FragColor = vec4(col * uFade, 1.0);
@@ -46,7 +54,7 @@ class Room {
     const ld = (u) => { const t = l.load(u); t.colorSpace = THREE.SRGBColorSpace; return t; };
     this.uniforms = {
       uA: { value: ld('/assets/room-pattern.webp') }, uB: { value: ld('/assets/room-straight.webp') },
-      uMix: { value: 0 }, uOpacity: { value: 0 }, uAspect: { value: 1.6 }, uMouse: { value: new THREE.Vector2() }, uFlash: { value: 0 },
+      uMix: { value: 0 }, uOpacity: { value: 0 }, uAspect: { value: 1.6 }, uMouse: { value: new THREE.Vector2() }, uFlash: { value: 0 }, uBias: { value: 1.0 },
     };
     this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
       uniforms: this.uniforms, transparent: true, depthTest: false, depthWrite: false,
@@ -54,13 +62,13 @@ class Room {
       fragmentShader: /* glsl */ `
         precision highp float;
         varying vec2 vUv;
-        uniform sampler2D uA, uB; uniform float uMix, uOpacity, uAspect, uFlash; uniform vec2 uMouse;
+        uniform sampler2D uA, uB; uniform float uMix, uOpacity, uAspect, uFlash, uBias; uniform vec2 uMouse;
         void main(){
           vec2 p = vUv - 0.5;
           float tr = 1.5;                                   // photo aspect
           if (uAspect > tr) p.y *= tr / uAspect; else p.x *= uAspect / tr;
           p = p * 0.94 + 0.5 + uMouse * 0.012;              // slight overscan + parallax
-          vec3 col = mix(texture2D(uA, p).rgb, texture2D(uB, p).rgb, uMix);
+          vec3 col = mix(texture2D(uA, p, uBias).rgb, texture2D(uB, p, uBias).rgb, uMix);
           float d = length((vUv - 0.5) * vec2(1.0, 0.9));
           col *= 0.52 * (1.0 - smoothstep(0.25, 0.95, d) * 0.7);
           col *= 0.65 + 0.35 * smoothstep(0.0, 0.55, vUv.y);   // darker towards the top where the title sits
@@ -169,6 +177,10 @@ export class Stage {
     this.plane0 = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
     this.pulseAt = 0;
     this.lastInput = 0;
+    this.focus = 0;
+    this.pulse = 0;
+    this.prevC = { hx: 0, hy: 0, hs: 0, cx: 0, cz: 9, wx: 0, wy: 0 };
+    this.motion = new THREE.Vector2();
 
     window.addEventListener('pointermove', (e) => {
       this.mouse.set((e.clientX / window.innerWidth) * 2 - 1, -((e.clientY / window.innerHeight) * 2 - 1));
@@ -227,11 +239,13 @@ export class Stage {
       else this.wall.pressPulse = 1;
     }, 140);
     this.lastInput = performance.now();
+    this.pulse = 1;
   }
 
   /** a tap on the phone: ripple on glass + a stream of signals to the wall */
   tap(x, y, n = 26) {
     this.hand.tap(x, y);
+    this.pulse = 1;
     this.signals.burst(this.time, n);
     this.wall.press();
     this.state.flash = 1;
@@ -359,6 +373,27 @@ export class Stage {
     this.final.uniforms.uAberr.value = 0.0005 + Math.min(Math.abs(this.vel) * 0.000035, 0.004);
     this.final.uniforms.uFade.value = clamp(c.intro * 2.2, 0, 1);
     this.bloom.strength = 0.5 + c.spill * 0.15;
+
+    // --- cinematic layer: rack focus, motion blur, glow ---------------------------------------------------------
+    const recently = performance.now() - this.lastInput < 3200 ? 1 : 0;
+    this.focus = damp(this.focus, recently, 2.2, dt);
+    this.pulse = Math.max(0, this.pulse - dt * 1.8);
+    const p = this.prevC;
+    const dx = (c.hx - p.hx) + (c.wx - p.wx) * 0.4 + (c.cx - p.cx) * 1.5;
+    const dy = (c.hy - p.hy) + (c.wy - p.wy) * 0.4;
+    const dz = Math.abs(c.hs - p.hs) * 0.5 + Math.abs(c.cz - p.cz) * 0.6;
+    p.hx = c.hx; p.hy = c.hy; p.hs = c.hs; p.cx = c.cx; p.cz = c.cz; p.wx = c.wx; p.wy = c.wy;
+    const k = dt > 0 ? 1 / dt : 0;
+    const mvx = clamp(dx * k * 0.0016, -0.006, 0.006);
+    const mvy = clamp(dy * k * 0.0016 + this.vel * 0.00005, -0.007, 0.007) + clamp(dz * k * 0.0004, 0, 0.003);
+    this.motion.x = damp(this.motion.x, mvx, 8, dt);
+    this.motion.y = damp(this.motion.y, mvy, 8, dt);
+    this.final.uniforms.uMotion.value.copy(this.motion);
+    const moving = Math.min(1, this.motion.length() * 140);
+    this.wall.uniforms.uBlur.value = 0.15 + this.focus * 0.55 + moving * 0.7;
+    this.room.uniforms.uBias.value = 0.8 + this.focus * 0.9 + moving * 0.8;
+    this.spill.material.uniforms.uI.value += this.pulse * 0.55;
+    this.bloom.strength = 0.5 + c.spill * 0.15 + this.pulse * 0.18;
 
     this.composer.render();
   }

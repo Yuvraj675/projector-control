@@ -34,7 +34,8 @@ vec3 screenAt(vec2 su){
 }
 
 vec4 layer(sampler2D tex, mat3 H, vec2 uv){
-  vec3 c = texture2D(tex, uv).rgb;
+  vec4 tx = texture2D(tex, uv);
+  vec3 c = tx.rgb;
   float k = magenta(c);
   float spill = clamp((min(c.r,c.b) - c.g) * 4.0, 0.0, 1.0) * (1.0 - k);
   c.rb = mix(c.rb, vec2(c.g * 1.1), spill);
@@ -46,8 +47,7 @@ vec4 layer(sampler2D tex, mat3 H, vec2 uv){
   s += vec3(1.0, 0.45, 0.2) * rip;
   s += smoothstep(0.0, 1.0, 1.0 - abs((su.x + su.y * 0.55) - uSheen) * 6.0) * 0.012;
   s = s * uGlow + uFlash;
-  float a = clamp(max(c.r, max(c.g, c.b)) * 7.0, 0.0, 1.0);
-  float al = max(a, k);
+  float al = max(tx.a, k);                 // silhouette alpha baked into the frame (solid bezel)
   return vec4(mix(c, s, k) * al, al);
 }
 
@@ -60,8 +60,9 @@ void main(){
 const DEFAULT_TIP = [0.5, 0.35];
 
 class Rig {
-  constructor(name, shared, loader) {
+  constructor(name, shared, loader, renderer) {
     this.name = name;
+    this.renderer = renderer;
     this.def = frames[name];
     this.loader = loader;
     this.cache = new Map();
@@ -78,6 +79,7 @@ class Rig {
     }
     this.seq = [this.def.rest];
     this.pos = 0;
+    this.t = 0;
     this.current = this.def.rest;
     this.uniforms = {
       uA: { value: this.tex(this.def.rest) },
@@ -114,9 +116,13 @@ class Rig {
   tex(id) {
     let t = this.cache.get(id);
     if (!t) {
-      t = this.loader.load(`/assets/hand/${this.def.dir}/${id}.webp`);
+      // no mipmaps (the frames are drawn close to 1:1) so uploads are cheap, and upload the moment the image
+      // is decoded instead of in the middle of the first frame that needs it
+      t = this.loader.load(`/assets/hand/${this.def.dir}/${id}.webp`, (tex) => { try { this.renderer?.initTexture(tex); } catch {} });
       t.colorSpace = THREE.SRGBColorSpace;
-      t.anisotropy = 4;
+      t.generateMipmaps = false;
+      t.minFilter = THREE.LinearFilter;
+      t.magFilter = THREE.LinearFilter;
       this.cache.set(id, t);
     }
     return t;
@@ -151,6 +157,7 @@ class Rig {
     const start = this.nearestKey(here);
     this.seq = this.path(start, id);
     this.pos = 0;
+    this.t = 0;
     this.preload(this.seq);
   }
 
@@ -162,7 +169,11 @@ class Rig {
 
   update(dt) {
     const last = this.seq.length - 1;
-    this.pos = Math.min(last, this.pos + dt * this.fps);
+    // ease the whole path: the thumb accelerates out of rest and settles into the target
+    this.t += dt;
+    const lin = last > 0 ? Math.min(1, this.t / (last / this.fps)) : 1;
+    const eased = lin * 0.35 + (lin * lin * (3 - 2 * lin)) * 0.65;
+    this.pos = last * eased;
     const i = Math.floor(this.pos);
     const f = this.pos - i;
     const A = this.seq[i];
@@ -213,8 +224,8 @@ export class Hand {
       uFlash: { value: 0 },
     };
     this.rigs = {
-      portrait: new Rig('portrait', this.shared, loader),
-      landscape: new Rig('landscape', this.shared, loader),
+      portrait: new Rig('portrait', this.shared, loader, renderer),
+      landscape: new Rig('landscape', this.shared, loader, renderer),
     };
     this.group = new THREE.Group();
     this.group.add(this.rigs.portrait.group, this.rigs.landscape.group);

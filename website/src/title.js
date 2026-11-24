@@ -36,7 +36,7 @@ export class Title {
             float wipe = smoothstep(uReveal - 0.2, uReveal, 1.0 - uv.y + 0.2 * (uReveal - 0.0));
             vec4 t = texture2D(uTex, uv);
             float band = smoothstep(0.35, 0.0, abs(uv.x - fract(uTime * 0.045 + uMouse.x * 0.1) * 1.6 + 0.3));
-            vec3 col = t.rgb * (0.78 + 0.55 * band);
+            vec3 col = t.rgb * (0.93 + 0.2 * band);
             float a = t.a * uOpacity * clamp(uReveal * 2.0 - (1.0 - uv.y) * 0.9, 0.0, 1.0);
             gl_FragColor = vec4(col, a);
           }`,
@@ -73,8 +73,9 @@ export class Title {
       c.font = `800 ${size}px "Bricolage Grotesque Variable", sans-serif`;
       if ('letterSpacing' in c) c.letterSpacing = `${-size * 0.045}px`;
       const g = c.createLinearGradient(0, 0, 0, H);
-      g.addColorStop(0, '#fbf6ee'); g.addColorStop(1, '#9d968e');
+      g.addColorStop(0, '#fffaf2'); g.addColorStop(1, '#c9c1b6');
       c.fillStyle = g;
+      c.shadowColor = 'rgba(0,0,0,0.7)'; c.shadowBlur = 50; c.shadowOffsetY = 16;
       c.fillText('AUTO', W / 2, H * 0.3);
       c.fillText('KEYSTONE', W / 2, H * 0.3 + size * 0.86);
       const ma = c.measureText('AUTO'), mk = c.measureText('KEYSTONE');
@@ -92,9 +93,10 @@ export class Title {
     c.font = `800 ${size}px "Bricolage Grotesque Variable", sans-serif`;
     if ('letterSpacing' in c) c.letterSpacing = `${-size * 0.045}px`;
     const g = c.createLinearGradient(0, H * 0.15, 0, H * 0.9);
-    g.addColorStop(0, '#fbf6ee');
-    g.addColorStop(1, '#9d968e');
+    g.addColorStop(0, '#fffaf2');
+    g.addColorStop(1, '#c9c1b6');
     c.fillStyle = g;
+    c.shadowColor = 'rgba(0,0,0,0.7)'; c.shadowBlur = 80; c.shadowOffsetY = 24;
     c.fillText(this.text, W / 2, H / 2 + size * 0.04);
     const mt = c.measureText(this.text);
     this.glyph = { top: (H / 2 + size * 0.04 - mt.actualBoundingBoxAscent) / H, bottom: (H / 2 + size * 0.04 + mt.actualBoundingBoxDescent) / H };

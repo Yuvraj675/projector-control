@@ -25,6 +25,7 @@ uniform float uPower;
 uniform float uTime;
 uniform float uGrid;
 uniform float uFlash;
+uniform float uBlur;
 uniform vec3 uBounce;
 
 float hash(vec2 p){ return fract(sin(dot(p, vec2(41.3,289.1))) * 43758.5453); }
@@ -36,7 +37,12 @@ void main(){
   float outside = max(e.x, e.y);
   float inside = 1.0 - smoothstep(-0.002, 0.004, outside);
 
-  vec3 pic = texture2D(uTex, clamp(uv, 0.0, 1.0)).rgb;
+  // depth of field: the far wall softens when the focus is on the hand
+  vec2 cu = clamp(uv, 0.0, 1.0);
+  vec2 px = uBlur * vec2(1.0 / 640.0, 1.0 / 360.0);
+  vec3 pic = texture2D(uTex, cu).rgb * 0.36
+    + (texture2D(uTex, clamp(cu + vec2(px.x, 0.0), 0.0, 1.0)).rgb + texture2D(uTex, clamp(cu - vec2(px.x, 0.0), 0.0, 1.0)).rgb
+     + texture2D(uTex, clamp(cu + vec2(0.0, px.y), 0.0, 1.0)).rgb + texture2D(uTex, clamp(cu - vec2(0.0, px.y), 0.0, 1.0)).rgb) * 0.16;
   // projector hotspot + falloff
   float v = 1.0 - 0.38 * pow(length((uv - vec2(0.5, 0.58)) * vec2(0.9, 1.1)), 1.8);
   pic *= v;
@@ -95,6 +101,7 @@ export class Wall {
       uTime: { value: 0 },
       uGrid: { value: 0 },
       uFlash: { value: 0 },
+      uBlur: { value: 0.5 },
       uBounce: { value: new THREE.Color(0.55, 0.62, 0.8) },
     };
     this.mesh = new THREE.Mesh(
