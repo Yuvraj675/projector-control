@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#110e12">
+  <meta name="description" content="Use your Android phone as a Wi-Fi remote for your Android projector. Follow a step-by-step setup with ProjectorConnect.">
+  <title>ProjectorConnect — Your phone is the remote</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="#top"><span class="lens" aria-hidden="true"></span>ProjectorConnect</a>
+    <nav aria-label="Main navigation">
+      <a href="#features">Features</a><a href="#help">Help</a><a class="nav-setup" href="#setup">Set up</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <img class="hero-art" src="assets/projection.webp" width="1536" height="1024" alt="" fetchpriority="high">
+      <div class="hero-shade"></div>
+      <div class="hero-content wrap">
+        <h1 id="hero-title">Your phone is<br>the remote.</h1>
+        <p>Point, type, and straighten the big screen from your Android phone. All over the Wi-Fi you already use.</p>
+        <div class="actions">
+          <a class="button primary" href="#setup">Set up my projector</a>
+          <a class="button outline" href="#features">See what it does</a>
+        </div>
+        <small>Android phone + Android projector or TV box</small>
+      </div>
+    </section>
+
+    <section class="showcase" id="features" aria-labelledby="features-title">
+      <div class="wrap feature-layout">
+        <div>
+          <h2 id="features-title">Make the big screen yours.</h2>
+          <p class="lead">Put down the tiny remote. Pick what you want to do.</p>
+          <div class="feature-list" aria-label="Feature previews">
+            <button type="button" aria-pressed="true" data-feature="remote"><span>Move around</span><small>Touchpad, D-pad, and air mouse</small></button>
+            <button type="button" aria-pressed="false" data-feature="keyboard"><span>Type or speak</span><small>Search, paste text, and open links</small></button>
+            <button type="button" aria-pressed="false" data-feature="apps"><span>Send and launch</span><small>Open apps, install APKs, and send files</small></button>
+            <button type="button" aria-pressed="false" data-feature="fine-tune"><span>Straighten the picture</span><small>Auto keystone and corner controls on supported models</small></button>
+          </div>
+          <noscript><p>See the <a href="https://github.com/Yuvraj675/projector-control#readme">full screenshot gallery</a>.</p></noscript>
+        </div>
+        <figure class="stage" data-feature="remote">
+          <div class="stage-light" aria-hidden="true"></div>
+          <div class="phone"><img id="feature-image" src="assets/remote.webp" width="500" height="1084" loading="lazy" alt="ProjectorConnect touchpad and remote buttons"></div>
+          <figcaption id="feature-caption" aria-live="polite">Swipe to move the pointer. Tap to click.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="setup" id="setup" aria-labelledby="setup-title">
+      <div class="wrap setup-layout">
+        <div>
+          <h2 id="setup-title">Ready for movie night?</h2>
+          <p class="lead">Grab your Android phone, projector remote, and Wi-Fi password. Follow these steps in order.</p>
+          <a class="button dark" href="assets/ProjectorConnect-0.7.2.apk" download>Download Android app</a>
+          <p class="download-info">Version 0.7.2 · Android 8 or later</p>
+        </div>
+        <div class="steps">
+          <details open>
+            <summary><span class="step-number">1</span><span>Install it on your phone</span></summary>
+            <div class="step-body">
+              <ol>
+                <li>On your Android phone, download the app using the button on this page.</li>
+                <li>Open the downloaded file. It ends in <strong>.apk</strong>, the format Android uses to install apps.</li>
+                <li>If Android asks for permission, tap <strong>Settings</strong> and allow installs from your browser or file manager. Go back and tap <strong>Install</strong>. You can turn that permission back off afterward.</li>
+              </ol>
+            </div>
+          </details>
+          <details>
+            <summary><span class="step-number">2</span><span>Let your phone talk to the projector</span></summary>
+            <div class="step-body">
+              <p>On your projector, open <strong>Settings</strong> using its original remote.</p>
+              <details class="nested">
+                <summary>I can’t find Android Settings</summary>
+                <p>Some projectors hide the Android Settings screen. On the projector, install <a href="https://github.com/5ham5h33r/Project-Settings/releases">Project Settings</a>, then open the new Settings icon. If your projector has a browser, download the APK there and open it from Downloads. You can also transfer it on a USB stick and open it from the projector’s file manager.</p>
+              </details>
+              <ol>
+                <li>In Settings, open <strong>System</strong> or <strong>Device Preferences</strong>, then <strong>About</strong>.</li>
+                <li>Find <strong>Build number</strong> or <strong>Android TV OS build</strong>. Press OK on it seven times until you see the developer message.</li>
+                <li>Go back to <strong>Developer options</strong>. Turn on <strong>USB debugging</strong> or <strong>ADB debugging</strong>. If you see <strong>ADB over network</strong> or <strong>Network debugging</strong>, turn it on too.</li>
+              </ol>
+              <p class="note">Use a home Wi-Fi network you trust. Switch off network debugging when you no longer need remote access.</p>
+            </div>
+          </details>
+          <details>
+            <summary><span class="step-number">3</span><span>Find your projector</span></summary>
+            <div class="step-body">
+              <ol>
+                <li>Connect your phone and projector to the same Wi-Fi network.</li>
+                <li>Open <strong>ProjectorConnect</strong> on your phone and tap <strong>Find my projector</strong>.</li>
+                <li>Select your projector. If the projector shows a debugging prompt, choose <strong>Allow</strong> on its own remote.</li>
+                <li>Open <strong>Remote</strong>, select <strong>D-pad</strong>, and tap a direction to try it.</li>
+              </ol>
+              <a href="#help">My projector isn’t showing up</a>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="help wrap" id="help" aria-labelledby="help-title">
+      <h2 id="help-title">Need a hand?</h2>
+      <div class="faq">
+        <details name="help"><summary>Will my projector work?</summary><p>ProjectorConnect needs an Android projector or TV box with network debugging. The remote, typing, apps, and files work independently of keystone. Auto keystone and live corner adjustment require compatible Hisilicon firmware.</p></details>
+        <details name="help"><summary>Why can’t the app find my projector?</summary><p>Check that both devices are on the same Wi-Fi and neither is on a guest network. Confirm network debugging is on, leave the projector awake, and look for an approval prompt on the big screen. In the app, try <strong>Enter IP address</strong> using the address shown in the projector’s Wi-Fi details. Some models need a one-time computer setup or use a different wireless pairing mode. See the <a href="https://github.com/Yuvraj675/projector-control#set-up-your-projector">projector setup notes</a> for the computer method.</p></details>
+        <details name="help"><summary>How do I straighten a tilted picture?</summary><p>On a supported model, open <strong>Auto keystone</strong> from Home and follow the camera guide. You take four photos of the test pattern. Use <strong>Fine-tune keystone</strong> if you want to move individual corners yourself. If the projector’s own auto correction is on, switch it off from the projector’s settings first.</p></details>
+        <details name="help"><summary>Can I use an iPhone?</summary><p>The app runs on Android phones with Android 8 or later. You can read this guide on any device.</p></details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap"><a class="brand" href="#top"><span class="lens" aria-hidden="true"></span>ProjectorConnect</a><a href="https://github.com/Yuvraj675/projector-control">View source on GitHub</a></div>
+  </footer>
+</body>
+</html>
