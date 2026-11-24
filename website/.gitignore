@@ -1,3 +1,7 @@
 .vite/
 node_modules/
 dist/
+art/raw/
+art/raw2/
+art/ref/
+art/*.log

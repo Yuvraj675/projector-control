@@ -1,25 +1,38 @@
 # ProjectorConnect website
 
-The site follows three chapters: the room and its projected picture, a movie-night walkthrough using the phone, and device setup.
-
-From this directory, run:
+An immersive one-page site for the app. A photographed hand holds a phone whose screen is the real app; scrolling moves a
+Three.js camera through the chapters (Remote, Type, Apps, Auto keystone, Set up) while the phone drives a projected "Android TV" on a
+far wall. Built with Vite, Three.js, GSAP (ScrollTrigger), Lenis and Motion.
 
 ```sh
 npm ci
-npm run dev
+npm run dev      # http://127.0.0.1:5173
+npm run build    # static site in dist/
+npm run preview
 ```
 
-Open the local URL printed by Vite. Run `npm run build` to produce a static site in `dist/`, or `npm run preview` to serve that build.
+## How it works
+- **Hand flipbook** (`src/hand.js`): photographed poses of a hand on pure black, with the phone screen flat magenta. A shader keys the
+  magenta out and maps the live app screenshot onto the glass through a per-frame homography, so the UI stays glued to the phone.
+  `goTo(pose)` walks a graph of poses (rest, reach, hover, tap, D-pad directions, key presses, swipe, air-mouse tilt) and plays the
+  keyframes plus optical-flow in-betweens at about 18 fps, blending neighbours. A second rig holds the landscape two-hand shot used by Auto keystone.
+- **Wall** (`src/wall.js`): a canvas-drawn Android TV (home, search, apps, calibration pattern) shown through a homography shader, so its four
+  corners can be keystoned. The Auto keystone chapter takes a "photo" (hand presses the shutter, the phone screen shows a real room photograph)
+  and the wall snaps from a trapezoid to a rectangle.
+- **Scene** (`src/stage.js`, `particles.js`, `title.js`): projector beam, dust that reacts to the pointer, signal particles from the phone to the wall,
+  bloom/grain/aberration post, and a big in-scene "AUTO KEYSTONE" title behind the hands.
+- **Interactions** (`src/main.js`): a working D-pad (clicks and arrow keys), a type-to-wall field, app tiles, the capture button, a liquid-glass nav.
+  Demo loops pause for a few seconds after the visitor interacts.
 
-## The scenes
+## Art pipeline (`art/`)
+The hand frames were generated with Codex (`art/prompt-*.md`), then processed by `art/build_frames.py`, which finds each frame's magenta screen
+quad, builds in-between frames with screen-aware optical flow and writes `public/assets/hand/**` and `src/frames.json`.
+The original PNGs are not in git: they live in `projector-redesign/assets/website/hand-frames-v2/` (`raw/`, `raw2/`). To rebuild, copy them to `art/raw` and `art/raw2`
+and run `python3 art/build_frames.py` (needs numpy, opencv-python, Pillow).
 
-- `world.js` renders an explorable Three.js room with three camera positions. Scroll takes the sofa camera toward the wall. The projector view lets visitors toggle the physical beam, picture, lens, and wall light. The renderer pauses outside the opening and caps its pixel ratio and frame rate. The photographic room serves as the fallback.
+The room-photo capture screens (`public/assets/ui/capture-*.webp`) are the app's real capture screen with a generated room photograph behind the UI.
 
-- `public/assets/room.webp` is the locked camera plate. `film.webp` is the projected picture in the opening and the perspective demo.
-- `room.js` positions the picture and renders the lens bloom, beam, and dust. The lens and wall coordinates are normalized against the room plate. The canvas pauses outside the opening and in inactive tabs.
-- `perspective.js` maps an image to four corners. `correction.js` provides touch, mouse, and keyboard controls for the demo.
-- `chapters.js` handles hash navigation, history, focus, and the spring-driven chapter indicator.
-- `feature-tour.js` uses GSAP ScrollTrigger to bring the phone closer and advance the movie-night moments as visitors scroll. Motion blends screenshot changes on the photographed phone display. Visitors can select any moment directly. The compact layout skips pinning, and reduced motion keeps the direct controls with instant transitions.
-- The app previews use real ProjectorConnect screenshots. The room, film, and phone insert images are original generated artwork. The Barlow Condensed license is in `public/assets/fonts/`.
-
-When shipping a new app version, replace the APK in `public/assets` and update its download link and version label in `index.html`.
+## Notes
+- Download: replace `public/assets/ProjectorConnect-*.apk` and update the link and version in `index.html`.
+- The old (first) version of the site is backed up in `projector-redesign/website-backup-2026-11-25/`.
+- Phone layout hides the D-pad and app tiles (the hand still demos them); the type field stays.
