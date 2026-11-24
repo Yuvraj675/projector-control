@@ -3,53 +3,113 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#110e12">
-  <meta name="description" content="Use your Android phone as a Wi-Fi remote for your Android projector. Follow a step-by-step setup with ProjectorConnect.">
-  <title>ProjectorConnect — Your phone is the remote</title>
+  <meta name="theme-color" content="#141e29">
+  <meta name="description" content="Use your Android phone as a projector remote, straighten the picture, and set up the app with a step-by-step guide.">
+  <title>ProjectorConnect. Take control of the big screen</title>
   <link rel="stylesheet" href="style.css">
-  <script src="app.js" defer></script>
+  <script src="app.js" type="module"></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
-  <header class="site-header">
+  <header class="site-header wrap">
     <a class="brand" href="#top"><span class="lens" aria-hidden="true"></span>ProjectorConnect</a>
     <nav aria-label="Main navigation">
-      <a href="#features">Features</a><a href="#help">Help</a><a class="nav-setup" href="#setup">Set up</a>
+      <a href="#features">Features</a>
+      <a href="#help">Help</a>
+      <a class="nav-setup" href="#setup">Set up</a>
     </nav>
   </header>
 
   <main id="main">
-    <section class="hero" id="top" aria-labelledby="hero-title">
-      <img class="hero-art" src="assets/projection.webp" width="1536" height="1024" alt="" fetchpriority="high">
-      <div class="hero-shade"></div>
-      <div class="hero-content wrap">
-        <h1 id="hero-title">Your phone is<br>the remote.</h1>
-        <p>Point, type, and straighten the big screen from your Android phone. All over the Wi-Fi you already use.</p>
-        <div class="actions">
-          <a class="button primary" href="#setup">Set up my projector</a>
-          <a class="button outline" href="#features">See what it does</a>
+    <section class="opening" id="top" aria-labelledby="hero-title">
+      <div class="shot" aria-hidden="true">
+        <div class="room">
+          <img class="room-plate" src="assets/room.webp" width="1536" height="1024" alt="" fetchpriority="high">
+          <div class="room-projection">
+            <img src="assets/film.webp" width="960" height="640" alt="">
+            <div class="room-search">
+              <div class="search-entry">Mo<span>▏</span></div>
+              <div class="search-keys">
+                <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span>
+                <span>J</span><span>K</span><span>L</span><span>M</span><span>N</span><span>O</span><span>P</span><span>Q</span><span>R</span>
+                <span>S</span><span>T</span><span>U</span><span class="selected-key">V</span><span>W</span><span>X</span><span>Y</span><span>Z</span>
+              </div>
+            </div>
+          </div>
+          <div class="room-effects"></div>
+          <div class="room-bounce"></div>
+          <canvas class="room-dust" hidden></canvas>
         </div>
-        <small>Android phone + Android projector or TV box</small>
+        <div class="room-scrim"></div>
+      </div>
+
+      <div class="opening-copy">
+        <div class="hero wrap">
+          <div class="opening-text">
+            <h1 id="hero-title">Your projector has a new remote.</h1>
+            <p>Control your Android projector from the phone already in your hand.</p>
+            <a class="button primary" href="#setup">Set up my projector</a>
+          </div>
+          <a class="continue" href="#picture"><span aria-hidden="true"></span>Try the picture</a>
+        </div>
+        <div class="room-beat wrap">
+          <p>Type the title on your phone. Then fix the picture.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="picture" id="picture" aria-labelledby="picture-title">
+      <div class="wrap picture-layout">
+        <div class="picture-copy">
+          <h2 id="picture-title">The wall stays. The picture moves.</h2>
+          <p class="demo-instructions">In the app, drag each corner to fit the picture to your wall.</p>
+          <p class="compatibility">Fine-tuning works on supported Hisilicon projectors.</p>
+        </div>
+        <figure class="demonstration">
+          <div class="demo-wall" aria-label="Interactive perspective correction">
+            <div class="demo-target" aria-hidden="true"></div>
+            <div class="demo-image"><img src="assets/film.webp" width="960" height="640" alt="A red-coated figure looks out across an alpine lake" loading="lazy"></div>
+            <div class="demo-handles" hidden>
+              <p class="sr-only" id="corner-instructions">Use the arrow keys to nudge this corner.</p>
+              <button type="button" class="corner" aria-describedby="corner-instructions" aria-label="Top left corner"></button>
+              <button type="button" class="corner" aria-describedby="corner-instructions" aria-label="Top right corner"></button>
+              <button type="button" class="corner" aria-describedby="corner-instructions" aria-label="Bottom right corner"></button>
+              <button type="button" class="corner" aria-describedby="corner-instructions" aria-label="Bottom left corner"></button>
+            </div>
+          </div>
+          <figcaption>
+            <div class="demo-controls" hidden>
+              <span class="demo-status" aria-live="polite">Drag any corner</span>
+              <div class="demo-actions">
+                <button type="button" class="quiet reset">Reset</button>
+                <button type="button" class="quiet straighten">Square the picture</button>
+              </div>
+            </div>
+          </figcaption>
+        </figure>
       </div>
     </section>
 
     <section class="showcase" id="features" aria-labelledby="features-title">
       <div class="wrap feature-layout">
-        <div>
-          <h2 id="features-title">Make the big screen yours.</h2>
-          <p class="lead">Put down the tiny remote. Pick what you want to do.</p>
-          <div class="feature-list" aria-label="Feature previews">
-            <button type="button" aria-pressed="true" data-feature="remote"><span>Move around</span><small>Touchpad, D-pad, and air mouse</small></button>
-            <button type="button" aria-pressed="false" data-feature="keyboard"><span>Type or speak</span><small>Search, paste text, and open links</small></button>
-            <button type="button" aria-pressed="false" data-feature="apps"><span>Send and launch</span><small>Open apps, install APKs, and send files</small></button>
-            <button type="button" aria-pressed="false" data-feature="fine-tune"><span>Straighten the picture</span><small>Auto keystone and corner controls on supported models</small></button>
+        <div class="feature-copy">
+          <h2 id="features-title">Leave the little remote on the sofa.</h2>
+          <div class="feature-list" role="group" aria-label="Preview a feature" hidden>
+            <button type="button" aria-pressed="true" data-feature="remote"><span>Move around</span></button>
+            <button type="button" aria-pressed="false" data-feature="keyboard"><span>Type or speak</span></button>
+            <button type="button" aria-pressed="false" data-feature="apps"><span>Send files</span></button>
+            <button type="button" aria-pressed="false" data-feature="fine-tune"><span>Fix the picture</span></button>
           </div>
-          <noscript><p>See the <a href="https://github.com/Yuvraj675/projector-control#readme">full screenshot gallery</a>.</p></noscript>
+          <p class="feature-fallback"><a href="https://github.com/Yuvraj675/projector-control#readme">See the app screenshots</a>.</p>
         </div>
-        <figure class="stage" data-feature="remote">
-          <div class="stage-light" aria-hidden="true"></div>
-          <div class="phone"><img id="feature-image" src="assets/remote.webp" width="500" height="1084" loading="lazy" alt="ProjectorConnect touchpad and remote buttons"></div>
-          <figcaption id="feature-caption" aria-live="polite">Swipe to move the pointer. Tap to click.</figcaption>
+        <figure class="feature-proof" data-feature="remote">
+          <div class="feature-frame">
+            <img class="phone-plate" src="assets/phone.webp" width="800" height="1200" alt="" loading="lazy">
+            <div class="phone">
+              <img id="feature-image" src="assets/dpad.webp" width="500" height="1084" loading="lazy" alt="ProjectorConnect directional pad and playback buttons">
+            </div>
+          </div>
+          <figcaption id="feature-caption" aria-live="polite">Use the D-pad, touchpad, or air mouse to move around.</figcaption>
         </figure>
       </div>
     </section>
@@ -57,19 +117,19 @@
     <section class="setup" id="setup" aria-labelledby="setup-title">
       <div class="wrap setup-layout">
         <div>
-          <h2 id="setup-title">Ready for movie night?</h2>
-          <p class="lead">Grab your Android phone, projector remote, and Wi-Fi password. Follow these steps in order.</p>
-          <a class="button dark" href="assets/ProjectorConnect-0.7.2.apk" download>Download Android app</a>
-          <p class="download-info">Version 0.7.2 · Android 8 or later</p>
+          <h2 id="setup-title">Connect your projector.</h2>
+          <p class="lead">You’ll need your Android phone and the projector’s original remote.</p>
+          <a class="button primary" href="assets/ProjectorConnect-0.7.2.apk" download>Download Android app</a>
+          <p class="download-info">Version 0.7.2 for Android 8 or later</p>
         </div>
         <div class="steps">
           <details open>
             <summary><span class="step-number">1</span><span>Install it on your phone</span></summary>
             <div class="step-body">
               <ol>
-                <li>On your Android phone, download the app using the button on this page.</li>
-                <li>Open the downloaded file. It ends in <strong>.apk</strong>, the format Android uses to install apps.</li>
-                <li>If Android asks for permission, tap <strong>Settings</strong> and allow installs from your browser or file manager. Go back and tap <strong>Install</strong>. You can turn that permission back off afterward.</li>
+                <li>Download the app on your Android phone.</li>
+                <li>Open the downloaded <strong>.apk</strong> file.</li>
+                <li>If prompted, tap <strong>Settings</strong> and allow installs from your browser. Go back and tap <strong>Install</strong>, then turn off that permission.</li>
               </ol>
             </div>
           </details>
@@ -106,7 +166,7 @@
     </section>
 
     <section class="help wrap" id="help" aria-labelledby="help-title">
-      <h2 id="help-title">Need a hand?</h2>
+      <h2 id="help-title">If the picture stays dark.</h2>
       <div class="faq">
         <details name="help"><summary>Will my projector work?</summary><p>ProjectorConnect needs an Android projector or TV box with network debugging. The remote, typing, apps, and files work independently of keystone. Auto keystone and live corner adjustment require compatible Hisilicon firmware.</p></details>
         <details name="help"><summary>Why can’t the app find my projector?</summary><p>Check that both devices are on the same Wi-Fi and neither is on a guest network. Confirm network debugging is on, leave the projector awake, and look for an approval prompt on the big screen. In the app, try <strong>Enter IP address</strong> using the address shown in the projector’s Wi-Fi details. Some models need a one-time computer setup or use a different wireless pairing mode. See the <a href="https://github.com/Yuvraj675/projector-control#set-up-your-projector">projector setup notes</a> for the computer method.</p></details>
