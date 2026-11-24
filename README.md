@@ -13,7 +13,6 @@
 [Features](#features) · [Quick start](#quick-start) · [Set up your projector](#set-up-your-projector) · [Using the app](#using-the-app) · [Auto keystone](#auto-keystone) · [Troubleshooting](#troubleshooting) · [How it works](#how-it-works) · [Build from source](#build-from-source)
 
 <p align="center">
-  <img src="docs/screenshots/home.png" width="19%" alt="Home"/>
   <img src="docs/screenshots/remote.png" width="19%" alt="Touchpad remote"/>
   <img src="docs/screenshots/dpad.png" width="19%" alt="D-pad"/>
   <img src="docs/screenshots/keyboard.png" width="19%" alt="Type and speak"/>
