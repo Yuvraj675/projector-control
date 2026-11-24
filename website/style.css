@@ -270,3 +270,28 @@ summary { font-weight: 720; padding-block: .95rem; }
   .feature-example { grid-area: example; min-height: 0; margin-top: 0; }
   .feature-fallback { grid-area: fallback; }
 }
+
+.world-render { position: absolute; inset: 0; opacity: 0; }
+.world-render canvas { display: block; width: 100%; height: 100%; }
+.world-ready .world-render { opacity: 1; transition: opacity .65s ease-out; }
+.world-ready .room-scrim { pointer-events: none; background: linear-gradient(90deg, var(--left-dark), var(--upper-dark) 28%, var(--clear-dark) 64%), linear-gradient(0deg, var(--upper-dark), var(--clear-dark) 30%); }
+.world-ready .opening-copy { pointer-events: none; }
+.world-ready .opening-copy a, .world-controls { pointer-events: auto; }
+.world-ready .opening-text { pointer-events: auto; }
+.world-controls { position: absolute; right: 0; bottom: 1.35rem; display: flex; gap: .25rem; padding: .22rem; border: 1px solid var(--rule); background: var(--midnight); }
+.world-controls button { min-height: 2.75rem; padding-inline: .75rem; border: 1px solid var(--transparent); background: var(--transparent); color: var(--white); }
+.world-controls button:hover { border-color: var(--rule); }
+.world-controls button[aria-pressed="true"] { color: var(--ink); background: var(--white); }
+.world-ready .shot { touch-action: pan-y; }
+@media (max-width: 58rem) {
+  .world-ready .room-scrim { background: linear-gradient(0deg, var(--midnight), var(--clear-dark) 44%, var(--clear-dark) 74%, var(--upper-dark)); }
+  .world-controls { top: calc(clamp(16rem, 58svh, 37rem) - 5rem); bottom: auto; }
+  .world-controls button { padding-inline: .55rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .world-ready .world-render { transition: none; }
+}
+
+.world-controls .world-power { position: absolute; bottom: calc(100% + .5rem); right: 0; background: var(--midnight); border-color: var(--rule); white-space: nowrap; }
+.world-ready[data-camera="projector"] h1,
+.world-ready[data-camera="wall"] h1 { max-width: 10ch; font-size: clamp(3.55rem, 6.4vw, 7rem); }

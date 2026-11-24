@@ -44,6 +44,7 @@
           <div class="room-bounce"></div>
           <canvas class="room-dust" hidden></canvas>
         </div>
+        <div class="world-render"></div>
         <div class="room-scrim"></div>
       </div>
 
@@ -53,6 +54,12 @@
             <h1 id="hero-title">Your projector has a new remote.</h1>
             <p>Control your Android projector from the phone already in your hand.</p>
             <a class="button primary" href="#setup">Set up my projector</a>
+          </div>
+          <div class="world-controls" role="group" aria-label="Room camera position" hidden>
+            <button type="button" aria-pressed="true" data-view="sofa">Sofa</button>
+            <button type="button" aria-pressed="false" data-view="projector">Projector</button>
+            <button type="button" aria-pressed="false" data-view="wall">Wall</button>
+            <button type="button" class="world-power" hidden>Turn projector off</button>
           </div>
           <a class="continue" href="#features"><span aria-hidden="true"></span>Follow the phone</a>
         </div>

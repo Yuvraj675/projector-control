@@ -13,6 +13,8 @@ Open the local URL printed by Vite. Run `npm run build` to produce a static site
 
 ## The scenes
 
+- `world.js` renders an explorable Three.js room with three camera positions. Scroll takes the sofa camera toward the wall. The projector view lets visitors toggle the physical beam, picture, lens, and wall light. The renderer pauses outside the opening and caps its pixel ratio and frame rate. The photographic room serves as the fallback.
+
 - `public/assets/room.webp` is the locked camera plate. `film.webp` is the projected picture in the opening and the perspective demo.
 - `room.js` positions the picture and renders the lens bloom, beam, and dust. The lens and wall coordinates are normalized against the room plate. The canvas pauses outside the opening and in inactive tabs.
 - `perspective.js` maps an image to four corners. `correction.js` provides touch, mouse, and keyboard controls for the demo.
