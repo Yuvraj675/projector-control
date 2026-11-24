@@ -6,27 +6,31 @@
   <meta name="theme-color" content="#141e29">
   <meta name="description" content="Use your Android phone as a projector remote, straighten the picture, and set up the app with a step-by-step guide.">
   <title>ProjectorConnect. Take control of the big screen</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="app.js" type="module"></script>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./app.js" type="module"></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
   <header class="site-header wrap">
     <a class="brand" href="#top"><span class="lens" aria-hidden="true"></span>ProjectorConnect</a>
-    <nav aria-label="Main navigation">
-      <a href="#features">Features</a>
-      <a href="#help">Help</a>
-      <a class="nav-setup" href="#setup">Set up</a>
+    <nav aria-label="Chapters">
+      <div class="chapter-tabs">
+        <span class="chapter-indicator" aria-hidden="true" hidden></span>
+        <a href="#top" id="tab-room" data-chapter-tab="room">Room</a>
+        <a href="#features" id="tab-remote" data-chapter-tab="remote">Remote</a>
+        <a href="#setup" id="tab-setup" data-chapter-tab="setup">Set up</a>
+      </div>
     </nav>
   </header>
 
   <main id="main">
+  <div class="chapter" data-chapter="room" id="chapter-room">
     <section class="opening" id="top" aria-labelledby="hero-title">
       <div class="shot" aria-hidden="true">
         <div class="room">
-          <img class="room-plate" src="assets/room.webp" width="1536" height="1024" alt="" fetchpriority="high">
+          <img class="room-plate" src="/assets/room.webp" width="1536" height="1024" alt="" fetchpriority="high">
           <div class="room-projection">
-            <img src="assets/film.webp" width="960" height="640" alt="">
+            <img src="/assets/film.webp" width="960" height="640" alt="">
             <div class="room-search">
               <div class="search-entry">Mo<span>▏</span></div>
               <div class="search-keys">
@@ -50,7 +54,7 @@
             <p>Control your Android projector from the phone already in your hand.</p>
             <a class="button primary" href="#setup">Set up my projector</a>
           </div>
-          <a class="continue" href="#picture"><span aria-hidden="true"></span>Try the picture</a>
+          <a class="continue" href="#features"><span aria-hidden="true"></span>Follow the phone</a>
         </div>
         <div class="room-beat wrap">
           <p>Type the title on your phone. Then fix the picture.</p>
@@ -68,7 +72,7 @@
         <figure class="demonstration">
           <div class="demo-wall" aria-label="Interactive perspective correction">
             <div class="demo-target" aria-hidden="true"></div>
-            <div class="demo-image"><img src="assets/film.webp" width="960" height="640" alt="A red-coated figure looks out across an alpine lake" loading="lazy"></div>
+            <div class="demo-image"><img src="/assets/film.webp" width="960" height="640" alt="A red-coated figure looks out across an alpine lake" loading="lazy"></div>
             <div class="demo-handles" hidden>
               <p class="sr-only" id="corner-instructions">Use the arrow keys to nudge this corner.</p>
               <button type="button" class="corner" aria-describedby="corner-instructions" aria-label="Top left corner"></button>
@@ -90,23 +94,42 @@
       </div>
     </section>
 
+    <div class="wrap chapter-exit"><a href="#features">See what the phone can do</a></div>
+  </div>
+  <div class="chapter" data-chapter="remote" id="chapter-remote">
     <section class="showcase" id="features" aria-labelledby="features-title">
       <div class="wrap feature-layout">
         <div class="feature-copy">
-          <h2 id="features-title">Leave the little remote on the sofa.</h2>
-          <div class="feature-list" role="group" aria-label="Preview a feature" hidden>
-            <button type="button" aria-pressed="true" data-feature="remote"><span>Move around</span></button>
-            <button type="button" aria-pressed="false" data-feature="keyboard"><span>Type or speak</span></button>
-            <button type="button" aria-pressed="false" data-feature="apps"><span>Send files</span></button>
-            <button type="button" aria-pressed="false" data-feature="fine-tune"><span>Fix the picture</span></button>
+          <h2 id="features-title">Leave the remote on the sofa.</h2>
+          <p class="feature-intro">Pick a moment from movie night.</p>
+          <div class="feature-list" role="group" aria-label="Movie night moments" hidden>
+            <button type="button" aria-pressed="true" data-feature="remote">Pause</button>
+            <button type="button" aria-pressed="false" data-feature="keyboard">Search</button>
+            <button type="button" aria-pressed="false" data-feature="apps">Apps</button>
+            <button type="button" aria-pressed="false" data-feature="fine-tune">Picture</button>
+          </div>
+          <div class="feature-example" hidden>
+            <p class="feature-situation">Someone walks in halfway through the good part.</p>
+            <div class="example-controls">
+              <button type="button" class="quiet example-button">Pause the preview</button>
+              <label class="example-search" hidden><span>Type a movie title</span><input type="text" maxlength="48" placeholder="Search for a movie" autocomplete="off"></label>
+              <a class="quiet example-link" href="#picture" hidden>Try the corner controls</a>
+            </div>
+            <div class="wall-response">
+              <p role="status"><span>Wall preview</span> <output>Playing</output></p>
+              <div class="playback-meter" aria-hidden="true" hidden><div></div></div>
+            </div>
           </div>
           <p class="feature-fallback"><a href="https://github.com/Yuvraj675/projector-control#readme">See the app screenshots</a>.</p>
         </div>
         <figure class="feature-proof" data-feature="remote">
           <div class="feature-frame">
-            <img class="phone-plate" src="assets/phone.webp" width="800" height="1200" alt="" loading="lazy">
-            <div class="phone">
-              <img id="feature-image" src="assets/dpad.webp" width="500" height="1084" loading="lazy" alt="ProjectorConnect directional pad and playback buttons">
+            <div class="feature-camera">
+              <img class="phone-plate" src="/assets/phone.webp" width="800" height="1200" alt="" loading="lazy">
+              <div class="phone">
+                <img id="feature-image" src="/assets/dpad.webp" width="500" height="1084" loading="lazy" alt="ProjectorConnect directional pad and playback buttons">
+                <img class="phone-incoming" src="/assets/dpad.webp" loading="lazy" width="500" height="1084" alt="" aria-hidden="true" hidden>
+              </div>
             </div>
           </div>
           <figcaption id="feature-caption" aria-live="polite">Use the D-pad, touchpad, or air mouse to move around.</figcaption>
@@ -114,12 +137,15 @@
       </div>
     </section>
 
+    <div class="wrap chapter-exit"><a href="#setup">Set up my projector</a></div>
+  </div>
+  <div class="chapter" data-chapter="setup" id="chapter-setup">
     <section class="setup" id="setup" aria-labelledby="setup-title">
       <div class="wrap setup-layout">
         <div>
           <h2 id="setup-title">Connect your projector.</h2>
           <p class="lead">Keep your Android phone and projector remote handy.</p>
-          <a class="button primary" href="assets/ProjectorConnect-0.7.2.apk" download>Download Android app</a>
+          <a class="button primary" href="/assets/ProjectorConnect-0.7.2.apk" download>Download Android app</a>
           <p class="download-info">Version 0.7.2 for Android 8 or later</p>
         </div>
         <div class="steps">
@@ -174,6 +200,7 @@
         <details name="help"><summary>Can I use an iPhone?</summary><p>The app runs on Android phones with Android 8 or later. You can read this guide on any device.</p></details>
       </div>
     </section>
+  </div>
   </main>
 
   <footer class="footer">
