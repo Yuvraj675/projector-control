@@ -1,7 +1,14 @@
 # ProjectorConnect website
 
-A static website with the Android download, setup walkthrough, and an interactive tour of the app.
+A Vite site with React for the interactive sections, Anime.js for the hero's projection timeline, and Motion for the app previews and picture demo. The setup guide and troubleshooting work as HTML disclosures.
 
-From the repository root, run `python3 -m http.server 8080 --bind 127.0.0.1 --directory website` and open <http://127.0.0.1:8080>.
+From this directory:
 
-The `website` directory can be served as-is by any static host. When updating the app version, replace the APK in `assets` and update its download link and version label in `index.html`.
+```sh
+npm ci
+npm run dev
+```
+
+Open the local URL printed by Vite. Edits reload automatically. Run `npm run build` to generate a static site in `dist/`, or `npm run preview` to check that build locally.
+
+When releasing a new app version, replace the APK in `public/assets/` and update the link and version in `index.html`.
