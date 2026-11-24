@@ -5,6 +5,9 @@ import * as THREE from 'three';
 export class Title {
   constructor(text = 'AUTO KEYSTONE') {
     this.text = text;
+    this.baseW = 11.5;
+    this.baseH = 11.5 * 760 / 2800;
+    this.glyph = { top: 0.2, bottom: 0.8 };
     this.canvas = document.createElement('canvas');
     this.canvas.width = 2800;
     this.canvas.height = 760;
@@ -50,7 +53,9 @@ export class Title {
     this.canvas.height = portrait ? 1000 : 760;
     this.mesh.geometry.dispose();
     const w = portrait ? 4.2 : 11.5;
-    this.mesh.geometry = new THREE.PlaneGeometry(w, w * this.canvas.height / this.canvas.width);
+    this.baseW = w;
+    this.baseH = w * this.canvas.height / this.canvas.width;
+    this.mesh.geometry = new THREE.PlaneGeometry(w, this.baseH);
     this.draw();
   }
 
@@ -72,6 +77,8 @@ export class Title {
       c.fillStyle = g;
       c.fillText('AUTO', W / 2, H * 0.3);
       c.fillText('KEYSTONE', W / 2, H * 0.3 + size * 0.86);
+      const ma = c.measureText('AUTO'), mk = c.measureText('KEYSTONE');
+      this.glyph = { top: (H * 0.3 - ma.actualBoundingBoxAscent) / H, bottom: (H * 0.3 + size * 0.86 + mk.actualBoundingBoxDescent) / H };
       this.tex.needsUpdate = true;
       return;
     }
@@ -89,6 +96,8 @@ export class Title {
     g.addColorStop(1, '#9d968e');
     c.fillStyle = g;
     c.fillText(this.text, W / 2, H / 2 + size * 0.04);
+    const mt = c.measureText(this.text);
+    this.glyph = { top: (H / 2 + size * 0.04 - mt.actualBoundingBoxAscent) / H, bottom: (H / 2 + size * 0.04 + mt.actualBoundingBoxDescent) / H };
     this.tex.needsUpdate = true;
   }
 }

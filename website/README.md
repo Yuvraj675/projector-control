@@ -25,14 +25,23 @@ npm run preview
   Demo loops pause for a few seconds after the visitor interacts.
 
 ## Art pipeline (`art/`)
-The hand frames were generated with Codex (`art/prompt-*.md`), then processed by `art/build_frames.py`, which finds each frame's magenta screen
-quad, builds in-between frames with screen-aware optical flow and writes `public/assets/hand/**` and `src/frames.json`.
-The original PNGs are not in git: they live in `projector-redesign/assets/website/hand-frames-v2/` (`raw/`, `raw2/`). To rebuild, copy them to `art/raw` and `art/raw2`
-and run `python3 art/build_frames.py` (needs numpy, opencv-python, Pillow).
+The hand frames were generated with Codex (`art/prompt-*.md`): 16 portrait keyframes (rest, reach, hover, tap, D-pad directions, key presses,
+swipe, air-mouse tilts) plus 12 denser in-between poses, and the landscape two-hand shot. `art/build_frames.py` then:
+1. detects the flat-magenta screen quad of every frame (rotation-safe, so the UI stays glued to the glass on the tilted poses),
+2. makes 3 in-betweens per neighbouring pair with **RIFE** (`rife-ncnn-vulkan`, the engine Flowframes wraps, native on Linux),
+3. writes `public/assets/hand/**` and the pose graph `src/frames.json`.
 
-The room-photo capture screens (`public/assets/ui/capture-*.webp`) are the app's real capture screen with a generated room photograph behind the UI.
+The originals are not in git: they live in `projector-redesign/assets/website/hand-frames-v2/` (`raw/`, `raw2/`, `raw3/`).
+To rebuild, copy them to `art/raw`, `art/raw2`, `art/raw3`, download the RIFE release (`rife-ncnn-vulkan-20221029-ubuntu.zip` from
+github.com/nihui/rife-ncnn-vulkan/releases) into `art/tools/`, and run `python3 art/build_frames.py` (needs numpy, opencv-python, Pillow).
+
+Other generated art: the room photographs (`public/assets/room-*.webp`, used as the Auto keystone backdrop and on the phone's capture screen),
+the context-aware Apps and Type screens (`public/assets/ui/apps.webp`, `keyboard.webp`) and three app icons (`art/raw3/icon-*.png`).
+The other five app icons are exact vector logos from simple-icons, tiled by `art/make_icons.mjs`. The Home, Remote and Connect screens are real app screenshots.
+The site says so in a footnote: app screens are illustrations.
 
 ## Notes
 - Download: replace `public/assets/ProjectorConnect-*.apk` and update the link and version in `index.html`.
 - The old (first) version of the site is backed up in `projector-redesign/website-backup-2026-11-25/`.
-- Phone layout hides the D-pad and app tiles (the hand still demos them); the type field stays.
+- Layout: the desktop wall and hand are fitted from the real DOM and viewport (see `fitWall` in `src/main.js`), so nothing overlaps at other window sizes.
+- Phone layout hides the D-pad and app tiles (the hand still demos them); the type field stays. Mobile polish is still to do.

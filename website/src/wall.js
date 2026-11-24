@@ -39,7 +39,8 @@ void main(){
   vec3 pic = texture2D(uTex, clamp(uv, 0.0, 1.0)).rgb;
   // projector hotspot + falloff
   float v = 1.0 - 0.38 * pow(length((uv - vec2(0.5, 0.58)) * vec2(0.9, 1.1)), 1.8);
-  pic *= v * 1.25;
+  pic *= v;
+  pic = (1.0 - exp(-pic * 1.9)) * 1.0;   // filmic curve: lifts the dark UI, keeps whites from blowing out
   pic += vec3(uFlash) * 0.5;
   // calibration grid
   vec2 g = abs(fract(uv * vec2(16.0, 9.0)) - 0.5);
@@ -58,8 +59,8 @@ void main(){
 }`;
 
 const APPS = [
-  ['Stream', '#ff6a35'], ['Player', '#4f8cff'], ['Music', '#2fd1a0'], ['Files', '#f5b83d'],
-  ['Browser', '#a56bff'], ['Kids', '#ff5b9a'], ['Games', '#46c2ff'], ['Photos', '#8ddc57'],
+  ['YouTube', '#ff0000', 'youtube'], ['Netflix', '#e50914', 'netflix'], ['Prime Video', '#00a8e1', 'prime'], ['JioHotstar', '#a23bff', 'jiohotstar'],
+  ['Spotify', '#1ed760', 'spotify'], ['VLC', '#ff8800', 'vlc'], ['Chrome', '#4285f4', 'chrome'], ['Stremio', '#685cee', 'stremio'],
 ];
 const POSTERS = [
   ['#2b3a67', '#e2a97e'], ['#5a2a3c', '#f08a5d'], ['#1f4f4a', '#b8e0a5'],
@@ -83,6 +84,9 @@ export class Wall {
     this.film.onload = () => { this.filmReady = true; manager?.itemEnd('film'); };
     this.film.onerror = () => manager?.itemEnd('film');
     this.film.src = '/assets/film.webp';
+
+    this.icons = {};
+    APPS.forEach(([, , k]) => { const i = new Image(); i.onload = () => manager?.itemEnd('icon-' + k); i.onerror = () => manager?.itemEnd('icon-' + k); manager?.itemStart('icon-' + k); i.src = `/assets/icons/${k}.png`; this.icons[k] = i; });
 
     this.uniforms = {
       uTex: { value: this.tex },
@@ -133,7 +137,7 @@ export class Wall {
     this.appSel = 0;
     this.launch = 0;
     this.row = 1;
-    this.uniforms.uFlash.value = 0.7;
+    this.uniforms.uFlash.value = 0.3;
   }
 
   /** a press from the remote: advances the selection in the current mode */
@@ -355,41 +359,42 @@ export class Wall {
 
   drawApps(c, t) {
     this.chrome(c, 'Apps');
-    const cols = 4, tw = 250, th = 180, gap = 36;
+    const cols = 4, tw = 252, th = 238, gap = 30;
     for (let i = 0; i < APPS.length; i++) {
       const col = i % cols, row = Math.floor(i / cols);
-      const x = 72 + col * (tw + gap), y = 140 + row * (th + gap);
+      const x = 72 + col * (tw + gap), y = 128 + row * (th + gap);
       const sel = i === this.appSel;
       c.save();
       c.translate(x + tw / 2, y + th / 2);
-      const s = sel ? 1.07 : 1;
+      const s = sel ? 1.06 + this.pressPulse * 0.02 : 1;
       c.scale(s, s);
       c.translate(-tw / 2, -th / 2);
-      this.rr(c, 0, 0, tw, th, 26);
-      c.fillStyle = APPS[i][1];
-      c.globalAlpha = sel ? 1 : 0.85;
+      this.rr(c, 0, 0, tw, th, 28);
+      c.fillStyle = sel ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.06)';
       c.fill();
-      c.globalAlpha = 1;
-      if (sel) { c.lineWidth = 5; c.strokeStyle = '#fff'; c.stroke(); }
-      c.fillStyle = 'rgba(0,0,0,0.78)';
-      c.font = '700 34px "Instrument Sans Variable", sans-serif';
-      c.fillText(APPS[i][0], 24, th - 28);
+      if (sel) { c.lineWidth = 4; c.strokeStyle = '#fff'; c.stroke(); }
+      const ic = this.icons[APPS[i][2]];
+      if (ic && ic.complete) c.drawImage(ic, tw / 2 - 66, 26, 132, 132);
+      c.fillStyle = sel ? '#fff' : 'rgba(255,255,255,0.72)';
+      c.font = '600 26px "Instrument Sans Variable", sans-serif';
+      c.textAlign = 'center';
+      c.fillText(APPS[i][0], tw / 2, th - 30);
+      c.textAlign = 'left';
       c.restore();
     }
-    c.fillStyle = 'rgba(255,255,255,0.4)';
-    c.font = '500 20px "Instrument Sans Variable", sans-serif';
-    c.fillText('Send an APK from your phone  ·  Open, stop, uninstall', 72, H - 52);
     if (this.launch > 0.01) {
       const k = this.launch;
-      c.globalAlpha = Math.min(1, k * 1.6);
-      c.fillStyle = this.launchColor || '#ff6a35';
-      const inset = (1 - k) * 260;
-      this.rr(c, 72 + inset * 0.6, 140 + inset * 0.4, W - 144 - inset * 1.2, 330 - inset * 0.3 + (H - 470) * k, 26 * (1 - k) + 6);
+      c.globalAlpha = Math.min(1, k * 1.5);
+      const inset = (1 - k) * 300;
+      c.fillStyle = '#07080b';
+      this.rr(c, inset * 0.7, inset * 0.4, W - inset * 1.4, H - inset * 0.8, 24 * (1 - k) + 4);
       c.fill();
-      c.fillStyle = 'rgba(0,0,0,0.8)';
-      c.font = '800 96px "Bricolage Grotesque Variable", sans-serif';
+      const ic = this.icons[APPS.find((a) => a[0] === this.launchName)?.[2]];
+      if (ic && ic.complete) { const sz = 120 + 90 * k; c.drawImage(ic, W / 2 - sz / 2, H / 2 - sz / 2 - 30, sz, sz); }
+      c.fillStyle = '#fff';
+      c.font = '700 40px "Bricolage Grotesque Variable", sans-serif';
       c.textAlign = 'center';
-      c.fillText(this.launchName || '', W / 2, H / 2 + 20);
+      c.fillText(this.launchName || '', W / 2, H / 2 + 150 * k);
       c.textAlign = 'left';
       c.globalAlpha = 1;
     }

@@ -10,13 +10,7 @@
   <script type="module" src="/src/main.js"></script>
 </head>
 <body class="is-loading">
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
-    <filter id="lens-refract" x="-10%" y="-30%" width="120%" height="160%" color-interpolation-filters="sRGB">
-      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.03" numOctaves="2" seed="4" result="n"/>
-      <feGaussianBlur in="n" stdDeviation="2" result="nb"/>
-      <feDisplacementMap in="SourceGraphic" in2="nb" scale="14" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-  </svg>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs id="glass-defs"></defs></svg>
 
   <div id="loader" aria-hidden="true">
     <img class="loader-logo" src="/assets/logo.png" width="72" height="72" alt="">
@@ -31,14 +25,17 @@
       <img src="/assets/logo.png" width="46" height="46" alt="">
       <span class="wordmark">Projector<b>Connect</b></span>
     </a>
-    <nav aria-label="Chapters" class="nav" id="nav">
+    <div class="nav-wrap" id="nav-wrap">
+      <span class="nav-glass" aria-hidden="true"></span>
+      <nav aria-label="Chapters" class="nav" id="nav">
+        <a href="#remote" data-go="1">Remote</a>
+        <a href="#type" data-go="2">Type</a>
+        <a href="#apps" data-go="3">Apps</a>
+        <a href="#picture" data-go="4">Auto keystone</a>
+        <a href="#setup" data-go="5">Set up</a>
+      </nav>
       <span class="nav-lens" aria-hidden="true"></span>
-      <a href="#remote" data-go="1">Remote</a>
-      <a href="#type" data-go="2">Type</a>
-      <a href="#apps" data-go="3">Apps</a>
-      <a href="#picture" data-go="4">Auto keystone</a>
-      <a href="#setup" data-go="5">Set up</a>
-    </nav>
+    </div>
     <a class="get magnetic" href="#setup" data-go="5">Get the app</a>
   </header>
 
@@ -47,6 +44,8 @@
     <div class="hud-bar"><span id="hud-fill"></span></div>
     <span class="hud-count"><b id="hud-i">1</b> / 6</span>
   </div>
+
+  <p class="footnote">* App screens shown are illustrations and may differ from the real app.</p>
 
   <main id="top">
     <div class="copy-stack" id="copy">
@@ -89,10 +88,7 @@
         <p class="kicker">Apps and files</p>
         <h2 id="h3" class="display"><span class="line">Every app,</span><span class="line">one <em>tap.</em></span></h2>
         <p class="lede">Open, stop and pin apps. Send an APK or a video from your phone and it installs or plays on the projector.</p>
-        <div class="try try-apps" aria-label="Try opening an app">
-          <button data-app="0" style="--c:#ff6a35">Stream</button><button data-app="1" style="--c:#4f8cff">Player</button><button data-app="2" style="--c:#2fd1a0">Music</button><button data-app="3" style="--c:#f5b83d">Files</button>
-          <button data-app="4" style="--c:#a56bff">Browser</button><button data-app="5" style="--c:#ff5b9a">Kids</button><button data-app="6" style="--c:#46c2ff">Games</button><button data-app="7" style="--c:#8ddc57">Photos</button>
-        </div>
+        <div class="try try-apps" aria-label="Try opening an app"><button data-app="0" style="--c:#ff0000" aria-label="YouTube"><img src="/assets/icons/youtube.png" width="44" height="44" alt=""><span>YouTube</span></button><button data-app="1" style="--c:#e50914" aria-label="Netflix"><img src="/assets/icons/netflix.png" width="44" height="44" alt=""><span>Netflix</span></button><button data-app="2" style="--c:#00a8e1" aria-label="Prime Video"><img src="/assets/icons/prime.png" width="44" height="44" alt=""><span>Prime Video</span></button><button data-app="3" style="--c:#a23bff" aria-label="JioHotstar"><img src="/assets/icons/jiohotstar.png" width="44" height="44" alt=""><span>JioHotstar</span></button><button data-app="4" style="--c:#1ed760" aria-label="Spotify"><img src="/assets/icons/spotify.png" width="44" height="44" alt=""><span>Spotify</span></button><button data-app="5" style="--c:#ff8800" aria-label="VLC"><img src="/assets/icons/vlc.png" width="44" height="44" alt=""><span>VLC</span></button><button data-app="6" style="--c:#4285f4" aria-label="Chrome"><img src="/assets/icons/chrome.png" width="44" height="44" alt=""><span>Chrome</span></button><button data-app="7" style="--c:#685cee" aria-label="Stremio"><img src="/assets/icons/stremio.png" width="44" height="44" alt=""><span>Stremio</span></button></div>
       </section>
 
       <section class="copy copy-wide" data-i="4" id="picture" aria-labelledby="h4">
@@ -124,6 +120,13 @@
 
     <section class="setup" id="setup" aria-labelledby="h5">
       <div class="setup-inner">
+        <div class="setup-col">
+        <div class="setup-head">
+          <h2 id="h5" class="display"><span class="line">Three steps to</span><span class="line">the <em>big screen.</em></span></h2>
+          <p class="lede">Keep your projector's original remote nearby for the first minute. After that, you won't need it.</p>
+          <a class="btn magnetic" href="/assets/ProjectorConnect-0.7.2.apk" download><span>Download for Android</span><i aria-hidden="true">↓</i></a>
+          <p class="meta">Version 0.7.2 · Android 8 or later · 7.6 MB</p>
+        </div>
         <div class="steps">
           <details class="step" open>
             <summary><span class="step-n">1</span><span>Install it on your phone</span><b aria-hidden="true"></b></summary>
@@ -162,11 +165,6 @@
             </div>
           </details>
         </div>
-        <div class="setup-head">
-          <h2 id="h5" class="display"><span class="line">Three steps to</span><span class="line">the <em>big screen.</em></span></h2>
-          <p class="lede">Keep your projector's original remote nearby for the first minute. After that, you won't need it.</p>
-          <a class="btn magnetic" href="/assets/ProjectorConnect-0.7.2.apk" download><span>Download for Android</span><i aria-hidden="true">↓</i></a>
-          <p class="meta">Version 0.7.2 · Android 8 or later · 7.6 MB</p>
         </div>
       </div>
 
@@ -182,7 +180,7 @@
 
       <footer class="footer">
         <a class="brand" href="#top"><img src="/assets/logo.png" width="34" height="34" alt=""><span class="wordmark">Projector<b>Connect</b></span></a>
-        <p>An independent project. Not affiliated with any projector maker.</p>
+        <p>An independent project. Not affiliated with any projector maker or app shown. App names and logos belong to their owners. * Screens are illustrations.</p>
         <a href="https://github.com/Yuvraj675/projector-control">Source on GitHub</a>
       </footer>
     </section>

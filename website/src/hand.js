@@ -25,7 +25,7 @@ uniform float uScrMix; uniform float uScrShift;
 uniform float uGlow; uniform float uTouch; uniform vec2 uTouchAt; uniform float uSheen;
 uniform float uFlash;
 
-float magenta(vec3 c){ return smoothstep(0.22, 0.62, min(c.r,c.b) - c.g); }
+float magenta(vec3 c){ return smoothstep(0.1, 0.5, min(c.r,c.b) - c.g); }
 
 vec3 screenAt(vec2 su){
   vec2 a = su + vec2(0.0, -uScrShift * uScrMix);
@@ -36,8 +36,8 @@ vec3 screenAt(vec2 su){
 vec4 layer(sampler2D tex, mat3 H, vec2 uv){
   vec3 c = texture2D(tex, uv).rgb;
   float k = magenta(c);
-  float spill = clamp((min(c.r,c.b) - c.g) * 2.0, 0.0, 1.0) * (1.0 - k);
-  c.rb = mix(c.rb, vec2(c.g * 1.2), spill);
+  float spill = clamp((min(c.r,c.b) - c.g) * 4.0, 0.0, 1.0) * (1.0 - k);
+  c.rb = mix(c.rb, vec2(c.g * 1.1), spill);
   vec3 q = H * vec3(uv, 1.0);
   vec2 su = q.xy / q.z;
   vec3 s = screenAt(clamp(su, 0.001, 0.999));
@@ -197,16 +197,16 @@ export class Hand {
       t.anisotropy = 8;
       this.screens[n] = t;
     };
-    ['remote', 'dpad', 'keyboard', 'apps', 'install'].forEach((n) => mk(n, `/assets/ui/${n}.webp`));
+    ['home', 'remote', 'dpad', 'keyboard', 'apps', 'connect'].forEach((n) => mk(n, `/assets/ui/${n}.webp`));
     mk('capture-idle', '/assets/ui/capture-idle.webp');
     mk('capture-ready', '/assets/ui/capture-ready.webp');
 
     this.shared = {
-      uScrA: { value: this.screens.remote },
-      uScrB: { value: this.screens.remote },
+      uScrA: { value: this.screens.home },
+      uScrB: { value: this.screens.home },
       uScrMix: { value: 0 },
       uScrShift: { value: 0 },
-      uGlow: { value: 1 },
+      uGlow: { value: 0.9 },
       uTouch: { value: 0 },
       uTouchAt: { value: new THREE.Vector2(...DEFAULT_TIP) },
       uSheen: { value: 0 },
@@ -222,7 +222,7 @@ export class Hand {
     this.rigs.landscape.uniforms.uOpacity.value = 0;
     this.rig = this.rigs.portrait;
     this.rigName = 'portrait';
-    this.screenName = 'remote';
+    this.screenName = 'home';
     this.mixTween = null;
     this.touch = 0;
   }

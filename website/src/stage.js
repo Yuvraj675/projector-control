@@ -39,6 +39,40 @@ const FinalPass = {
     }`,
 };
 
+class Room {
+  /** full-screen photograph of the living room: what the phone's camera is looking at in the Auto keystone chapter */
+  constructor(manager) {
+    const l = new THREE.TextureLoader(manager);
+    const ld = (u) => { const t = l.load(u); t.colorSpace = THREE.SRGBColorSpace; return t; };
+    this.uniforms = {
+      uA: { value: ld('/assets/room-pattern.webp') }, uB: { value: ld('/assets/room-straight.webp') },
+      uMix: { value: 0 }, uOpacity: { value: 0 }, uAspect: { value: 1.6 }, uMouse: { value: new THREE.Vector2() }, uFlash: { value: 0 },
+    };
+    this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
+      uniforms: this.uniforms, transparent: true, depthTest: false, depthWrite: false,
+      vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+      fragmentShader: /* glsl */ `
+        precision highp float;
+        varying vec2 vUv;
+        uniform sampler2D uA, uB; uniform float uMix, uOpacity, uAspect, uFlash; uniform vec2 uMouse;
+        void main(){
+          vec2 p = vUv - 0.5;
+          float tr = 1.5;                                   // photo aspect
+          if (uAspect > tr) p.y *= tr / uAspect; else p.x *= uAspect / tr;
+          p = p * 0.94 + 0.5 + uMouse * 0.012;              // slight overscan + parallax
+          vec3 col = mix(texture2D(uA, p).rgb, texture2D(uB, p).rgb, uMix);
+          float d = length((vUv - 0.5) * vec2(1.0, 0.9));
+          col *= 0.52 * (1.0 - smoothstep(0.25, 0.95, d) * 0.7);
+          col *= 0.65 + 0.35 * smoothstep(0.0, 0.55, vUv.y);   // darker towards the top where the title sits
+          col += uFlash;
+          gl_FragColor = vec4(col, uOpacity);
+        }`,
+    }));
+    this.mesh.renderOrder = -9;
+    this.mesh.frustumCulled = false;
+  }
+}
+
 export class Stage {
   constructor(canvas, manager) {
     this.canvas = canvas;
@@ -54,6 +88,9 @@ export class Stage {
     this.atmo = new Atmosphere();
     this.scene.add(this.atmo.mesh);
 
+    this.room = new Room(manager);
+    this.scene.add(this.room.mesh);
+
     this.wallGroup = new THREE.Group();
     this.wall = new Wall(manager);
     this.wallGroup.add(this.wall.mesh);
@@ -64,8 +101,7 @@ export class Stage {
     this.scene.add(this.beam.mesh);
 
     this.title = new Title('AUTO KEYSTONE');
-    this.title.mesh.position.set(0, 1.35, -3.2);
-    this.scene.add(this.title.mesh);
+        this.scene.add(this.title.mesh);
     this.title.draw();
 
     // the projector that casts the beam: a soft, slightly out-of-focus foreground object
@@ -113,7 +149,7 @@ export class Stage {
 
     /* Animated state: GSAP tweens these, the loop eases the scene toward them. */
     this.state = {
-      title: 0, proj: 0, hx: 0, hy: -7, hz: 0, hrx: 0.0, hry: 0, hrz: 0, hs: 5.2,
+      room: 0, title: 0, proj: 0, hx: 0, hy: -7, hz: 0, hrx: 0.0, hry: 0, hrz: 0, hs: 5.2,
       cx: 0, cy: 0, cz: 9, lx: 0, ly: 0,
       wx: 0, wy: 3, wz: -15, ws: 1, key: 0, wpow: 0,
       beam: 0, dust: 0.0, warm: 0.2, spill: 0, fade: 1, scroll: 0, intro: 0, grid: 0, flash: 0, fix: 0,
@@ -201,6 +237,34 @@ export class Stage {
     this.state.flash = 1;
   }
 
+  /** Pin the big title to a fixed screen band (so it never depends on camera or aspect), size it to the viewport
+   *  and publish where its glyphs end (--ks-top) so the explanation columns can sit right under it. */
+  layoutTitle() {
+    const cam = this.camera, tt = this.title, g = tt.glyph;
+    const zPlane = -3.2;
+    const mid = this.portrait ? 0.30 : 0.265;
+    const ndcY = 1 - 2 * mid;
+    const dir = new THREE.Vector3(0, ndcY, 0.5).unproject(cam).sub(cam.position).normalize();
+    const k = (zPlane - cam.position.z) / dir.z;
+    const p = cam.position.clone().addScaledVector(dir, k);
+    const depth = cam.position.z - zPlane;
+    const visH = 2 * depth * Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
+    const visW = visH * this.aspect;
+    let scale = (visW * (this.portrait ? 0.86 : 0.9)) / tt.baseW;
+    const glyphH = (g.bottom - g.top) * tt.baseH;
+    scale = Math.min(scale, (this.portrait ? 0.3 : 0.19) * visH / glyphH);
+    tt.mesh.scale.setScalar(scale);
+    // centre the GLYPHS (not the canvas) on the chosen band
+    const glyphMid = (g.top + g.bottom) / 2;
+    tt.mesh.position.set(p.x - this.mouseS.x * 0.35, p.y + (glyphMid - 0.5) * tt.baseH * scale + this.mouseS.y * 0.15, zPlane);
+    if (this.cur.title > 0.4) {
+      const bottomY = tt.mesh.position.y - (g.bottom - 0.5) * tt.baseH * scale;
+      const v = new THREE.Vector3(0, bottomY, zPlane).project(cam);
+      const px = Math.round((1 - v.y) / 2 * window.innerHeight);
+      if (Math.abs(px - (this._ksTop ?? -99)) > 1) { this._ksTop = px; document.documentElement.style.setProperty('--ks-top', px + 'px'); }
+    }
+  }
+
   frame() {
     const dt = Math.min(this.clock.getDelta(), 0.05);
     this.time += dt;
@@ -211,7 +275,7 @@ export class Stage {
       if (typeof s[k] === 'number') c[k] = damp(c[k] ?? s[k], s[k], k === 'hy' || k === 'hs' ? 4.2 : 3.4, dt);
     }
 
-    c.key = s.key; c.fix = s.fix; c.title = damp(c.title, s.title, 5, dt); c.proj = damp(c.proj, s.proj, 4, dt);
+    c.key = s.key; c.fix = s.fix; c.title = damp(c.title, s.title, 5, dt); c.proj = damp(c.proj, s.proj, 4, dt); c.room = damp(c.room, s.room, 4, dt);
 
     this.mouseS.x = damp(this.mouseS.x, this.mouse.x, 4, dt);
     this.mouseS.y = damp(this.mouseS.y, this.mouse.y, 4, dt);
@@ -250,8 +314,13 @@ export class Stage {
     this.title.uniforms.uReveal.value = clamp(c.title * 1.05, 0, 1);
     this.title.uniforms.uTime.value = t;
     this.title.uniforms.uMouse.value.copy(this.mouseS);
-    this.title.mesh.position.x = -this.mouseS.x * 0.45;
-    this.title.mesh.position.y = (this.titleY ?? 1.35) + this.mouseS.y * 0.2;
+    this.layoutTitle();
+    const ru = this.room.uniforms;
+    ru.uOpacity.value = clamp(c.room, 0, 1) * introP;
+    ru.uMix.value = c.fix;
+    ru.uAspect.value = this.aspect;
+    ru.uMouse.value.copy(this.mouseS);
+    ru.uFlash.value *= Math.exp(-dt * 6);
     this.projector.material.opacity = c.proj * introP * 0.95;
     this.projector.position.y = 1.5 + Math.sin(t * 0.6) * 0.04 - this.mouseS.y * 0.12;
     this.projector.position.x = -3.5 + this.mouseS.x * 0.2;

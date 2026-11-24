@@ -5,6 +5,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
 import { animate, spring } from 'motion';
 import { Stage } from './stage.js';
+import { initNavGlass } from './glass.js';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -36,37 +37,63 @@ try {
 /* ----------------------------------------------------------- chapter table */
 const NAMES = ['Welcome', 'Remote', 'Type and speak', 'Apps and files', 'Auto keystone', 'Set up'];
 
-// Desktop: hand on the left (its cropped arm leaves the frame), wall floating up-right.
+const metrics = () => {
+  const tan = Math.tan((stage.camera.fov * Math.PI) / 360);
+  const H0 = 2 * 9 * tan;                      // visible height at the hand's depth (camera z = 9)
+  return { tan, H0, W0: H0 * (window.innerWidth / window.innerHeight) };
+};
+
+/** Fit the projected wall into the band between the nav and the chapter's headline, so it never overlaps text
+ *  and never leaves a hole, whatever the window size. Returns world transform values for the wall. */
+function fitWall(i, cz = 9, wz = -15) {
+  const W = window.innerWidth, H = window.innerHeight;
+  const { tan } = metrics();
+  const perPx = (2 * (cz - wz) * tan) / H;
+  const r = copies[i].getBoundingClientRect();
+  const top = Math.round($('#nav-wrap').getBoundingClientRect().bottom) + 24;
+  const bottom = r.top - 34;
+  let h = Math.max(150, Math.min(bottom - top, H * 0.5));
+  let w = (h * 16) / 9;
+  if (w > W * 0.5) { w = W * 0.5; h = (w * 9) / 16; }
+  const right = Math.min(r.right, W - 40);
+  const cx = Math.max(right - w / 2, W * 0.5 + w / 2 - 20);
+  const cy = top + (bottom - top) / 2;
+  return { wx: (cx - W / 2) * perPx, wy: (H / 2 - cy) * perPx, ws: (h * perPx) / 9 };
+}
+
+// Desktop: the hand on the left (its cropped arm leaves the frame), the wall in the free band above the copy.
 function keyframes(portrait) {
   if (!portrait) {
-    const w = { wz: -15, key: 0, wpow: 1, cz: 9, cx: 0, cy: 0, lx: 0, ly: 0.2 };
+    const { H0, W0 } = metrics();
+    const hand = (fx, fy, fs, ry, rx = 0, rz = 0) => ({ hx: fx * W0, hy: fy * H0, hs: fs * H0, hrx: rx, hry: ry, hrz: rz });
+    const b = { wz: -15, key: 0, wpow: 1, cz: 9, cx: 0, cy: 0, lx: 0, ly: 0.2, title: 0, proj: 0, room: 0 };
     return [
-      { ...w, hx: -2.45, hy: -0.4, hs: 5.9, hrx: 0, hry: 0.22, hrz: 0, wx: 2.4, wy: 4.0, ws: 0.5, beam: 0.9, dust: 0.5, warm: 0.2, spill: 0.55, scroll: 0, title: 0, proj: 1 },
-      { ...w, hx: -2.3, hy: -0.55, hs: 6.3, hrx: 0.04, hry: 0.12, hrz: 0.03, wx: 2.55, wy: 4.3, ws: 0.44, beam: 1.0, dust: 0.8, warm: 0.35, spill: 0.8, scroll: 0.4, cx: -0.2, title: 0, proj: 0.7 },
-      { ...w, hx: -2.35, hy: -0.7, hs: 6.5, hrx: 0.06, hry: 0.2, hrz: -0.02, wx: 2.5, wy: 4.3, ws: 0.44, beam: 1.0, dust: 0.8, warm: 0.45, spill: 0.9, scroll: 0.8, cx: 0.1, title: 0, proj: 0.6 },
-      { ...w, hx: -2.3, hy: -0.5, hs: 6.2, hrx: 0, hry: 0.28, hrz: -0.05, wx: 2.5, wy: 4.3, ws: 0.44, beam: 1.0, dust: 0.9, warm: 0.5, spill: 0.8, scroll: 1.2, cx: -0.1, title: 0, proj: 0.5 },
-      { ...w, hx: 0, hy: -1.05, hs: 3.3, hrx: 0.03, hry: 0, hrz: 0, wx: 0, wy: 2.4, ws: 1.0, wpow: 0.42, beam: 1.1, dust: 1.0, warm: 0.3, spill: 0.6, scroll: 1.6, cz: 9.4, ly: 0.4, title: 1, proj: 0 },
-      { ...w, hx: -3.1, hy: -1.2, hs: 5.0, hrx: 0, hry: 0.3, hrz: 0, wx: 2.8, wy: 3.4, ws: 0.5, wpow: 0, beam: 0.25, dust: 0.6, warm: 0.5, spill: 0.5, scroll: 2.0, cz: 10, ly: 0.4, title: 0, proj: 0 },
+      { ...b, ...hand(-0.3, -0.08, 1.14, 0.22), ...fitWall(0), beam: 0.9, dust: 0.5, warm: 0.2, spill: 0.55, scroll: 0, proj: 1 },
+      { ...b, ...hand(-0.29, -0.11, 1.22, 0.12, 0.04, 0.03), ...fitWall(1), beam: 1.0, dust: 0.8, warm: 0.35, spill: 0.8, scroll: 0.4, proj: 0.7 },
+      { ...b, ...hand(-0.3, -0.13, 1.26, 0.2, 0.06, -0.02), ...fitWall(2), beam: 1.0, dust: 0.8, warm: 0.45, spill: 0.9, scroll: 0.8, proj: 0.6 },
+      { ...b, ...hand(-0.29, -0.1, 1.2, 0.28, 0, -0.05), ...fitWall(3), beam: 1.0, dust: 0.9, warm: 0.5, spill: 0.8, scroll: 1.2, proj: 0.5 },
+      { ...b, ...hand(0, -0.2, 0.58, 0, 0.03, 0), wx: 0, wy: 2.4, ws: 1.0, wpow: 0, beam: 0.15, dust: 1.0, warm: 0.3, spill: 0.6, scroll: 1.6, title: 1, room: 1, ly: 0.3 },
+      { ...b, ...hand(-0.3, -0.17, 1.0, 0.3), wx: 2.8, wy: 3.4, ws: 0.5, wpow: 0, beam: 0.25, dust: 0.6, warm: 0.5, spill: 0.5, scroll: 2.0, cz: 10 },
     ];
   }
-  const b = { cx: 0, cy: 0, cz: 10, lx: 0, ly: 0, wz: -15, wpow: 0.5, key: 0, title: 0, proj: 0 };
+  const b = { cx: 0, cy: 0, cz: 10, lx: 0, ly: 0, wz: -15, wpow: 0.5, key: 0, title: 0, proj: 0, room: 0 };
   return [
     { ...b, hx: -0.1, hy: -2.5, hs: 6.3, hrx: 0, hry: 0.15, hrz: 0, wx: 0, wy: 2.6, ws: 0.4, beam: 0.8, dust: 0.5, warm: 0.2, spill: 0.5, scroll: 0 },
     { ...b, hx: -0.15, hy: -2.7, hs: 6.5, hrx: 0.04, hry: 0.1, hrz: 0, wx: 0, wy: 2.7, ws: 0.4, beam: 0.9, dust: 0.8, warm: 0.35, spill: 0.8, scroll: 0.4 },
     { ...b, hx: -0.15, hy: -2.7, hs: 6.5, hrx: 0.06, hry: 0.16, hrz: 0.02, wx: 0, wy: 2.7, ws: 0.4, beam: 0.9, dust: 0.8, warm: 0.45, spill: 0.9, scroll: 0.8 },
     { ...b, hx: -0.1, hy: -2.6, hs: 6.4, hrx: 0, hry: 0.2, hrz: -0.04, wx: 0, wy: 2.65, ws: 0.4, beam: 0.9, dust: 0.9, warm: 0.5, spill: 0.8, scroll: 1.2 },
-    { ...b, hx: 0, hy: -1.5, hs: 2.6, hrx: 0.02, hry: 0, hrz: 0, wx: 0, wy: 2.9, ws: 0.62, wpow: 0.55, beam: 1.0, dust: 1.0, warm: 0.3, spill: 0.7, scroll: 1.6, title: 1 },
+    { ...b, hx: 0, hy: -1.5, hs: 2.6, hrx: 0.02, hry: 0, hrz: 0, wx: 0, wy: 2.9, ws: 0.62, wpow: 0, beam: 0.3, dust: 1.0, warm: 0.3, spill: 0.7, scroll: 1.6, title: 1, room: 1 },
     { ...b, hx: -0.6, hy: -4.4, hs: 5.2, hrx: 0, hry: 0.2, hrz: 0, wx: 0, wy: 3.4, ws: 0.4, beam: 0.4, dust: 0.6, warm: 0.5, spill: 0.4, scroll: 2.0, wpow: 0 },
   ];
 }
 
 const SCENES = [
-  { rig: 'portrait', pose: 'hold', screen: 'remote', wall: 'film' },
+  { rig: 'portrait', pose: 'hold', screen: 'home', wall: 'film' },
   { rig: 'portrait', pose: 'dpad-hover', screen: 'dpad', wall: 'tv' },
   { rig: 'portrait', pose: 'key-mid', screen: 'keyboard', wall: 'search' },
   { rig: 'portrait', pose: 'swipe-start', screen: 'apps', wall: 'apps' },
-  { rig: 'landscape', pose: 'land-hold', screen: 'capture-idle', wall: 'pattern' },
-  { rig: 'portrait', pose: 'hold', screen: 'install', wall: 'setup' },
+  { rig: 'landscape', pose: 'land-hold', screen: 'capture-idle', wall: 'film' },
+  { rig: 'portrait', pose: 'hold', screen: 'connect', wall: 'film' },
 ];
 
 let active = -1;
@@ -128,6 +155,7 @@ function setChapter(i, from) {
   $('.site-header').classList.toggle('solid', inSetup);
   copyStack.classList.toggle('off', inSetup);
   $('.hud').classList.toggle('off', inSetup);
+  $('.footnote').classList.toggle('off', inSetup);
 }
 
 const DIR_POSE = { up: 'dpad-up', left: 'dpad-left', right: 'dpad-right', down: 'tap', ok: 'tap' };
@@ -177,9 +205,8 @@ let ksRan = false;
 const ksBtn = $('#ks-capture'), ksReset = $('#ks-reset'), ksStatus = $('#ks-status');
 
 function resetKeystone(instant) {
-  stage.state.key = 1;
   stage.state.fix = 0;
-  if (instant) stage.cur.key = 1;
+  if (instant) stage.cur.fix = 0;
   ksStatus.textContent = 'The projector is tilted. The picture is a trapezoid.';
   ksBtn.disabled = false;
 }
@@ -191,28 +218,27 @@ async function runKeystone() {
   stage.lastInput = performance.now();
   const s = stage.state;
   ksStatus.textContent = 'Hold steady…';
-  stage.hand.setPose('land-press-1', 16);
-  await wait(450);
-  stage.hand.setPose('land-press-2', 20);
-  await wait(320);
+  stage.hand.setPose('land-press-1', 18);
+  await wait(420);
+  stage.hand.setPose('land-press-2', 22);
+  await wait(300);
   stage.hand.setScreen('capture-ready', 1);
   stage.hand.flash(1.1);
+  stage.room.uniforms.uFlash.value = 0.35;
   stage.signals.burst(stage.time, 40);
   ksStatus.textContent = 'Photo taken. Finding the four circles…';
-  await wait(700);
-  stage.hand.setPose('land-hold', 14);
+  await wait(650);
+  stage.hand.setPose('land-hold', 16);
   ksStatus.textContent = 'Solving for the largest rectangle…';
-  gsap.to(s, { key: 0, duration: 1.9, ease: 'expo.inOut' });
-  gsap.to(s, { fix: 1, duration: 1.0, delay: 1.5, ease: 'power2.inOut' });
-  await wait(1700);
+  await wait(700);
+  stage.room.uniforms.uFlash.value = 0.55;           // the projector redraws the picture straight
+  gsap.to(s, { fix: 1, duration: 0.9, ease: 'power2.inOut' });
   stage.signals.burst(stage.time, 60);
-  stage.wall.uniforms.uFlash.value = 0.5;
-  await wait(900);
+  await wait(1200);
   stage.hand.setScreen('capture-idle', -1);
   ksStatus.textContent = 'Straight. Done.';
   ksBusy = false;
   ksBtn.disabled = false;
-  ksBtn.querySelector('span').textContent = 'Take the photo';
 }
 
 function keystoneAutoRun() {
@@ -221,12 +247,12 @@ function keystoneAutoRun() {
   setTimeout(() => { if (active === 4) runKeystone(); }, 2400);
 }
 
-ksBtn?.addEventListener('click', () => { if (stage.state.key < 0.05) { resetKeystone(); setTimeout(runKeystone, 700); } else runKeystone(); });
+ksBtn?.addEventListener('click', () => { if (stage.state.fix > 0.5) { resetKeystone(); setTimeout(runKeystone, 600); } else runKeystone(); });
 ksReset?.addEventListener('click', () => {
   if (ksBusy) return;
   stage.lastInput = performance.now();
-  gsap.to(stage.state, { key: 1, duration: 1.2, ease: 'expo.inOut' });
-  gsap.to(stage.state, { fix: 0, duration: 0.5 });
+  stage.room.uniforms.uFlash.value = 0.3;
+  gsap.to(stage.state, { fix: 0, duration: 0.7, ease: 'power2.inOut' });
   ksStatus.textContent = 'The projector is tilted again.';
 });
 
@@ -258,42 +284,13 @@ function interactions() {
   });
 }
 
-/* ------------------------------------------------------------- nav lens */
-function navLens() {
-  const nav = $('#nav');
-  const lens = $('.nav-lens');
-  if (!nav || !matchMedia('(hover: hover)').matches) return;
-  const links = $$('a', nav);
-  let shownOn = false;
-  const place = (a, px) => {
-    const r = a.getBoundingClientRect(), n = nav.getBoundingClientRect();
-    const cx = r.left - n.left + r.width / 2;
-    const pull = px == null ? 0 : (px - (r.left + r.width / 2)) * 0.22;
-    const w = r.width + 22;
-    animate(lens, { x: cx - w / 2 + pull, width: w }, { type: spring, stiffness: shownOn ? 380 : 900, damping: shownOn ? 30 : 60 });
-  };
-  links.forEach((a) => {
-    a.addEventListener('pointerenter', (e) => {
-      links.forEach((l) => l.classList.toggle('hot', l === a));
-      place(a, e.clientX);
-      shownOn = true;
-      animate(lens, { opacity: 1, scaleX: 1.04, scaleY: 1.42 }, { type: spring, stiffness: 320, damping: 20 });
-    });
-    a.addEventListener('pointermove', (e) => place(a, e.clientX));
-  });
-  nav.addEventListener('pointerleave', () => {
-    shownOn = false;
-    links.forEach((l) => l.classList.remove('hot'));
-    animate(lens, { opacity: 0, scaleX: 0.9, scaleY: 1 }, { duration: 0.28 });
-  });
-}
-
 /* --------------------------------------------------------------- scrolling */
 let lenis;
 function setupScroll() {
   lenis = new Lenis({ lerp: 0.085, wheelMultiplier: 0.9, smoothWheel: !reduce });
   lenis.on('scroll', (e) => {
     ScrollTrigger.update();
+    syncChapter();
     if (stage) stage.vel = e.velocity;
     $('.site-header').classList.toggle('hide', e.direction === 1 && e.scroll > 160);
   });
@@ -310,7 +307,8 @@ function buildStory() {
   const s = stage.state;
   const n = kf.length;
   const { key, ...first } = kf[0];
-  Object.assign(s, first);
+  if (!buildStory.done) Object.assign(s, first);
+  buildStory.done = true;
   tl = gsap.timeline({
     defaults: { ease: 'power2.inOut' },
     scrollTrigger: {
@@ -319,7 +317,7 @@ function buildStory() {
         const p = self.progress * (n - 1);
         $('#hud-fill').style.transform = `scaleX(${self.progress})`;
         const next = Math.round(p);
-        if (next !== active && !lockedToSetup) setChapter(next, active);
+        if (!lockedToSetup && next !== active) setChapter(next, active);
       },
     },
   });
@@ -329,11 +327,19 @@ function buildStory() {
   }
 }
 
+/** Single source of truth for which chapter we are in, derived from the scroll position only,
+ *  so a fast jump (back button, anchor, restored scroll) can never leave a stale chapter behind. */
+function syncChapter() {
+  if (!tl?.scrollTrigger) return;
+  const inSetup = $('#setup').getBoundingClientRect().top < window.innerHeight * 0.7;
+  lockedToSetup = inSetup;
+  setChapter(inSetup ? 5 : Math.round(tl.scrollTrigger.progress * 5), active);
+}
+
 function watchSetup() {
   ScrollTrigger.create({
     trigger: '#setup', start: 'top 70%',
-    onEnter: () => { lockedToSetup = true; setChapter(5, active); },
-    onLeaveBack: () => { lockedToSetup = false; setChapter(4, 5); },
+    onEnter: syncChapter, onLeaveBack: syncChapter, onRefresh: syncChapter,
   });
 }
 
@@ -375,7 +381,7 @@ if (stage) {
   watchSetup();
   anchors();
   interactions();
-  navLens();
+  initNavGlass();
   cursor();
   magnetic();
   copies.forEach((c) => { c.classList.remove('is-active'); c.dataset.shown = '0'; });
@@ -383,8 +389,10 @@ if (stage) {
   let lastPortrait = portrait, rt;
   window.addEventListener('resize', () => {
     clearTimeout(rt);
-    rt = setTimeout(() => { if (stage.portrait !== lastPortrait) { lastPortrait = stage.portrait; buildStory(); } ScrollTrigger.refresh(); }, 200);
+    rt = setTimeout(() => { lastPortrait = stage.portrait; buildStory(); ScrollTrigger.refresh(); }, 200);
   });
+
+  (document.fonts?.ready ?? Promise.resolve()).then(() => { buildStory(); ScrollTrigger.refresh(); });
 
   const s = stage.state;
   s.intro = 0;

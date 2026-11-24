@@ -3,5 +3,8 @@ node_modules/
 dist/
 art/raw/
 art/raw2/
+art/raw3/
 art/ref/
+art/tools/
+art/cache/
 art/*.log
