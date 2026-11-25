@@ -80,3 +80,11 @@ After `art/build_frames.py`, run `python3 art/polish_frames.py` once (needs nump
 exposure between poses (gain clamped to +-8%), and writes the half-size phone sets `public/assets/hand/portrait-m` and `landscape-m` that `src/hand.js` loads on small or touch screens.
 Playback (`hand.js`): linear blend between frames (a smoothstep per pair made the picture dwell and then jump), a deep texture cache (80 desktop, 56 phone) and idle prefetch of every
 frame one hop from the current pose, so a move never waits for a decode. Known limit: the biggest thumb moves (tilts, key presses) have few in-betweens and still step visibly; they need more generated midpoints.
+
+## Phone layout (portrait, aspect < 17:20)
+References looked at: Awwwards "mobile" collections (scroll-driven product stories keep one pinned object and swap short copy above it) and Framer's phone-scroll components (device pinned to the lower half, progress shown as dots). The site follows that pattern: copy on top, a small projected wall, then the phone as the hero, bleeding off the bottom edge.
+- `portraitFrames()` in `main.js` fits copy / wall / phone from the real viewport; the phone gets at least half of the height.
+- Auto keystone chapter: `.copy-wide` is a flex column pinned between the 3D title (`--ks-top`) and the hands, buttons in the flow, so nothing can overlap. `fitKeystone()` (re-run when `--ks-top` changes, on resize and on entering the chapter) drops the steps one notch at a time (`k2`: third step, `k3`: all steps) only if the column still does not fit. Phones show the short step text (`.m`), portrait tablets the long one (`.d`).
+- Short phones (<= 680px high) drop the one-line lede on chapters 2-4; widths under 360px shrink the brand and hide the GitHub button; portrait tablets (>= 600px) get larger type.
+- The fixed "screens are illustrations" footnote is hidden on phones (the footer says it).
+- Checked at 320x568, 360x640, 390x664, 390x844, 412x915, 430x932, 600x960, 768x1024, 820x1180. Landscape phones keep the desktop layout (tested at 844x390: cramped but nothing breaks).

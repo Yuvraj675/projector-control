@@ -153,7 +153,7 @@ function portraitFrames() {
     const r = copies[i].getBoundingClientRect();
     const copyBottom = r.bottom;
     const wallMaxH = ((W - 2 * pad - 24) * 9) / 16;
-    const wallH = Math.max(84, Math.min(wallMaxH, H - H * 0.44 - copyBottom - 18));
+    const wallH = Math.max(84, Math.min(wallMaxH, H - H * 0.5 - copyBottom - 18));
     const wallTop = copyBottom + 8;
     const wp = place(W / 2 - 8, wallTop, wallTop + wallH, wz);
     const phoneTop = wallTop + wallH + 12;
@@ -228,6 +228,7 @@ const idle = () => performance.now() - (stage?.lastInput || 0) > 5500;
 function setChapter(i, from) {
   if (i === active || !stage) return;
   active = i;
+  if (i === 4) requestAnimationFrame(fitKeystone);
   const sc = SCENES[i];
   const dir = from == null || i >= from ? 1 : -1;
   stage.hand.setRig(sc.rig);
@@ -478,12 +479,27 @@ function setupScroll() {
   gsap.ticker.lagSmoothing(0);
 }
 
+/** Phones: make the Auto keystone column fit between the 3D title and the hands, tightening one notch at a time (short step text is already on). */
+function fitKeystone() {
+  const box = document.querySelector('#picture');
+  if (!box) return;
+  box.classList.remove('k2', 'k3');
+  if (!portrait) return;
+  const col = box.querySelector('.ks-left'), act = box.querySelector('.ks-actions');
+  const fits = () => col.offsetHeight + act.offsetHeight + 14 <= box.clientHeight;
+  if (!fits()) box.classList.add('k2');
+  if (!fits()) box.classList.add('k3');
+}
+
+window.addEventListener('kstop', () => fitKeystone());
+
 function buildStory() {
   tl?.scrollTrigger?.kill();
   tl?.kill();
   if (!stage) return;
   portrait = stage.portrait;
   const kf = keyframes(portrait);
+  fitKeystone();
   const s = stage.state;
   const n = kf.length;
   const { key, ...first } = kf[0];

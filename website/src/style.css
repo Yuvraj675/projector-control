@@ -149,6 +149,7 @@ main { position: relative; z-index: 10; }
 .ks-col em { font-style: normal; color: var(--ink); font-weight: 600; }
 .ks-steps { margin: 1.2rem 0 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 0.9rem; }
 .ks-steps li { counter-increment: s; display: grid; grid-template-columns: 1.6rem 1fr; gap: 0.6rem; color: var(--mute); font-size: 0.98rem; }
+.ks-steps .m { display: none; }
 .ks-steps li::before { content: counter(s); display: grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; border: 1px solid rgba(255, 106, 53, 0.6); color: var(--accent); font-size: 0.78rem; font-weight: 700; }
 .ks-actions { position: absolute; left: 0; right: 0; bottom: 3.2rem; display: flex; align-items: center; justify-content: center; gap: 1.4rem; white-space: nowrap; pointer-events: none; }
 .ks-actions > * { pointer-events: auto; }
@@ -232,21 +233,30 @@ details[open]:not(.closing) > summary b { transform: rotate(180deg); }
   .cta-row { margin-top: 0.75rem; }
   .btn { padding: 0.72rem 0.95rem 0.72rem 1.2rem; font-size: 0.92rem; border-radius: 12px; }
   .hud { display: none; }
-  .footnote { display: block; left: var(--pad); right: 3.2rem; bottom: 0.55rem; max-width: none; font-size: 0.62rem; line-height: 1.3; }
+  .footnote { display: none; }                      /* the footer carries the 'screens are illustrations' note, the hand needs the room */
 
-  /* Auto keystone */
-  .copy-wide { top: 0; bottom: 0; right: 0; left: 0; padding: 0; }
+  /* Auto keystone: one flex column pinned between the 3D title and the hands, so text and buttons can never overlap.
+     fitKeystone() in main.js tightens the step text one notch at a time if the column still does not fit. */
+  .copy-wide { inset: auto; left: var(--pad); right: calc(var(--pad) + 1.6rem); top: calc(var(--ks-top, calc(var(--vh, 1vh) * 36)) + 0.5rem); bottom: calc(var(--vh, 1vh) * 33 + 0.3rem);
+    padding: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 0.7rem; width: auto; max-width: none; }
   .copy-wide::before { display: none; }
-  .ks-col { position: absolute; left: var(--pad); right: calc(var(--pad) + 1.6rem); top: calc(var(--ks-top, calc(var(--vh, 1vh) * 36)) + 0.6rem); width: auto; transform: none; }
+  .ks-col { position: relative; top: auto; left: auto; right: auto; width: auto; transform: none; }
+  .ks-col::before { content: ''; position: absolute; z-index: -1; inset: -1.6rem -1.8rem -1.4rem -1.8rem; background: rgba(5, 6, 8, 0.66); -webkit-mask-image: radial-gradient(ellipse 72% 68% at 50% 50%, #000 55%, transparent 100%); mask-image: radial-gradient(ellipse 72% 68% at 50% 50%, #000 55%, transparent 100%); pointer-events: none; }
   .ks-right { display: none; }
-  .ks-col h3 { font-size: 1.45rem; line-height: 1.05; }
-  .ks-steps { margin-top: 0.7rem; gap: 0.45rem; }
-  .ks-steps li { font-size: 0.84rem; line-height: 1.3; grid-template-columns: 1.35rem 1fr; }
+  .ks-col .kicker { margin-bottom: 0.15rem; }
+  .ks-col h3 { font-size: clamp(1.3rem, 6vw, 1.9rem); line-height: 1.05; }
+  .ks-steps { margin-top: 0.6rem; gap: 0.4rem; }
+  .ks-steps li { font-size: clamp(0.8rem, 3.5vw, 0.95rem); line-height: 1.28; grid-template-columns: 1.35rem 1fr; }
   .ks-steps li::before { width: 1.35rem; height: 1.35rem; font-size: 0.7rem; }
-  .ks-actions { bottom: calc(var(--vh, 1vh) * 33); gap: 1rem; }
-  .ks-status { bottom: 0.45rem; font-size: 0.74rem; padding: 0 15vw; white-space: normal; }
+  .ks-steps .d { display: none; } .ks-steps .m { display: inline; }
+  .ks-actions { position: static; justify-content: flex-start; flex-wrap: wrap; gap: 0.6rem 1rem; white-space: normal; }
+  .copy-wide.k2 .ks-steps li:nth-child(3) { display: none; }
+  .copy-wide.k3 .ks-steps { display: none; }
+  .copy-wide.k3 .ks-col .kicker { display: none; }
+  .ks-status { position: absolute; left: 0; right: 0; bottom: calc(var(--vh, 1vh) * -33 + 0.2rem); font-size: 0.74rem; padding: 0 12vw; white-space: normal; }  /* the box ends 33vh above the screen bottom: put the line back at the bottom */
   .footnote.ks-hide { opacity: 0; }
-
+  .wordmark { white-space: nowrap; }
+  .lede-short { font-size: clamp(0.88rem, 3.7vw, 1.02rem); }
   /* Set up: the hand stays visible at the top, the content slides up over it */
   .setup { padding: calc(var(--vh, 1vh) * 52) var(--pad) 2rem; }
   .setup::before { inset: 0; -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 calc(var(--vh, 1vh) * 36)); mask-image: linear-gradient(180deg, transparent 0, #000 calc(var(--vh, 1vh) * 36)); -webkit-mask-composite: initial; mask-composite: initial; }
@@ -259,6 +269,16 @@ details[open]:not(.closing) > summary b { transform: rotate(180deg); }
   .faq { margin-top: 4rem; }
   .faq-grid { grid-template-columns: 1fr; }
   .footer { margin-top: 3.5rem; }
+}
+
+@media (max-aspect-ratio: 17/20) and (max-height: 680px) { .copy:not(#hero) .lede-short { display: none; } }
+@media (max-aspect-ratio: 17/20) and (max-width: 359px) { .wordmark { font-size: 0.98rem; } .brand img { width: 32px; height: 32px; } .gh { width: 2.2rem; height: 2.2rem; } .get { padding: 0.55rem 0.7rem; } .gh { display: none; } }
+/* portrait tablets: the same layout, bigger type and the long step text */
+@media (max-aspect-ratio: 17/20) and (min-width: 600px) {
+  .display, .copy:not(#hero) .display, #hero .display { font-size: clamp(3.4rem, 9vw, 5.6rem); }
+  .lede-short { font-size: 1.15rem; max-width: 34rem; } .kicker { font-size: 1rem; }
+  .ks-steps .d { display: inline; } .ks-steps .m { display: none; } .ks-steps li { font-size: 1.05rem; } .ks-col h3 { font-size: 2.1rem; }
+  .btn { font-size: 1.05rem; }
 }
 /* short desktop windows: tighter copy and smaller controls so the wall keeps a sensible size and nothing overlaps */
 @media (max-height: 820px) and (min-aspect-ratio: 17/20) {

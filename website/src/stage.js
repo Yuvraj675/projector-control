@@ -303,7 +303,7 @@ export class Stage {
       const bottomY = tt.mesh.position.y - (g.bottom - 0.5) * tt.baseH * scale;
       const v = new THREE.Vector3(0, bottomY, zPlane).project(cam);
       const px = Math.round((1 - v.y) / 2 * vp.h);
-      if (Math.abs(px - (this._ksTop ?? -99)) > 1) { this._ksTop = px; document.documentElement.style.setProperty('--ks-top', px + 'px'); }
+      if (Math.abs(px - (this._ksTop ?? -99)) > 1) { this._ksTop = px; document.documentElement.style.setProperty('--ks-top', px + 'px'); window.dispatchEvent(new Event('kstop')); }
     }
   }
 
