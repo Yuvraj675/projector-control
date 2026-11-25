@@ -119,7 +119,7 @@ export function initNavGlass() {
     const first = !visible;
     lens.style.height = s.h + 'px';
     lens.style.top = s.y + 'px';
-    if (chromium) lens.style.backdropFilter = `url(#lens-${i}) blur(0.6px) saturate(1.7) brightness(1.12)`;
+    if (chromium) lens.style.backdropFilter = `url(#lens-${i}) saturate(1.6) brightness(1.12)`;
     // a little pull towards the pointer so the lens feels attached to the finger
     const pull = px == null ? 0 : (px - (links[i].getBoundingClientRect().left + links[i].offsetWidth / 2)) * 0.12;
     if (first) {

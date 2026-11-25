@@ -31,12 +31,23 @@ button, input { font: inherit; color: inherit; }
 #gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
 
 /* ------------------------------------------------------------------ loader */
-#loader { position: fixed; inset: 0; z-index: 100; display: grid; place-content: center; justify-items: center; gap: 1.1rem; background: var(--bg); transition: opacity 0.9s var(--ease), visibility 0.9s; }
+#loader { position: fixed; inset: 0; z-index: 100; display: grid; place-content: center; justify-items: center; gap: 1.6rem; background: var(--bg); transition: opacity 0.9s var(--ease), visibility 0.9s; }
 #loader.done { opacity: 0; visibility: hidden; }
 .loader-logo { animation: breathe 2.2s ease-in-out infinite; }
-.loader-count { font: 700 1.6rem/1 var(--display); letter-spacing: -0.02em; }
-.loader-count i { font-style: normal; font-size: 0.9rem; color: var(--mute); margin-left: 3px; }
-@keyframes breathe { 50% { transform: scale(1.08); opacity: 0.75; } }
+.loader-logo { opacity: 0.8; }
+/* an old film leader: crosshair, two rings and a sweep that goes round once a second */
+.leader { position: relative; display: grid; place-items: center; width: min(46vw, 15rem); aspect-ratio: 1; }
+.leader i { position: absolute; }
+.leader-ring { inset: 0; border-radius: 50%; border: 2px solid rgba(244, 239, 232, 0.55); }
+.leader-ring.r2 { inset: 17%; border-width: 1px; border-color: rgba(244, 239, 232, 0.25); }
+.leader-h, .leader-v { background: rgba(244, 239, 232, 0.3); }
+.leader-h { left: -9%; right: -9%; top: calc(50% - 0.5px); height: 1px; }
+.leader-v { top: -9%; bottom: -9%; left: calc(50% - 0.5px); width: 1px; }
+.leader-sweep { inset: 0; border-radius: 50%; background: conic-gradient(from 0deg, rgba(255, 106, 53, 0) 0turn, rgba(255, 106, 53, 0) 0.7turn, rgba(255, 106, 53, 0.5) 1turn); animation: sweep 1s linear infinite; }
+@keyframes sweep { to { transform: rotate(1turn); } }
+.loader-count { position: relative; font: 800 clamp(3.4rem, 9vw, 5.6rem)/1 var(--display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; text-shadow: 0 0 40px rgba(5, 6, 8, 0.9); }
+.loader-count i { position: static; font-style: normal; font-size: 1rem; font-weight: 600; color: var(--mute); margin-left: 3px; }
+@keyframes breathe { 50% { transform: scale(1.08); opacity: 0.55; } }
 
 /* ------------------------------------------------------------------ cursor */
 .cursor { position: fixed; z-index: 90; top: 0; left: 0; pointer-events: none; mix-blend-mode: difference; display: none; }
@@ -70,7 +81,8 @@ button, input { font: inherit; color: inherit; }
 .nav-lens { position: absolute; z-index: 3; left: 0; top: -9px; width: 90px; height: 70px; border-radius: 99px; pointer-events: none; opacity: 0;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.02) 55%, rgba(255, 255, 255, 0.1));
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28), inset 1.5px 2px 3px -1px rgba(255, 255, 255, 0.75), inset -1.5px -2px 3px -1px rgba(255, 255, 255, 0.4), inset 0 -9px 14px -8px rgba(255, 255, 255, 0.18), 0 16px 30px -6px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(5px) saturate(1.7) brightness(1.1); -webkit-backdrop-filter: blur(5px) saturate(1.7) brightness(1.1); }
+  /* no blur here, ever: the labels under the lens must stay sharp in every engine */
+  backdrop-filter: saturate(1.6) brightness(1.12); -webkit-backdrop-filter: saturate(1.6) brightness(1.12); }
 
 /* --------------------------------------------------------------------- hud */
 .hud { position: fixed; z-index: 20; right: var(--pad); bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; font-size: 0.82rem; color: var(--mute); font-variant-numeric: tabular-nums; transition: opacity 0.6s; }
@@ -140,8 +152,10 @@ main { position: relative; z-index: 10; }
 .ks-steps { margin: 1.2rem 0 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 0.9rem; }
 .ks-steps li { counter-increment: s; display: grid; grid-template-columns: 1.6rem 1fr; gap: 0.6rem; color: var(--mute); font-size: 0.98rem; }
 .ks-steps li::before { content: counter(s); display: grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; border: 1px solid rgba(255, 106, 53, 0.6); color: var(--accent); font-size: 0.78rem; font-weight: 700; }
-.ks-actions { position: absolute; left: 50%; bottom: 3.2rem; transform: translateX(-50%); display: flex; align-items: center; gap: 1.4rem; white-space: nowrap; }
-.ks-status { position: absolute; left: 50%; bottom: 1.2rem; transform: translateX(-50%); margin: 0; font-size: 0.86rem; color: var(--mute); }
+.ks-actions { position: absolute; left: 0; right: 0; bottom: 3.2rem; display: flex; align-items: center; justify-content: center; gap: 1.4rem; white-space: nowrap; pointer-events: none; }
+.ks-actions > * { pointer-events: auto; }
+/* centred with left/right + text-align, never a translate: GSAP animates these layers and bakes a translateX(-50%) into pixels measured on whatever text was showing */
+.ks-status { position: absolute; left: 0; right: 0; bottom: 1.2rem; margin: 0; text-align: center; font-size: 0.86rem; color: var(--mute); }
 
 /* ------------------------------------------------------------------- setup */
 .setup { position: relative; isolation: isolate; padding: 16vh var(--pad) 3rem; }
@@ -160,7 +174,7 @@ main { position: relative; z-index: 10; }
 .meta { margin: 1rem 0 0; font-size: 0.82rem; color: rgba(244, 239, 232, 0.55); font-variant-numeric: tabular-nums; }
 .steps { display: grid; gap: 0.7rem; margin-top: 3rem; }
 .step, .faq details { border: 1px solid var(--faint); border-radius: 1.1rem; background: rgba(12, 13, 17, 0.78); transition: border-color 0.4s, background 0.4s; }
-.step[open], .faq details[open] { border-color: rgba(255, 106, 53, 0.5); background: rgba(24, 12, 8, 0.6); }
+.step[open]:not(.closing), .faq details[open]:not(.closing) { border-color: rgba(255, 106, 53, 0.5); background: rgba(24, 12, 8, 0.6); }
 summary { list-style: none; display: flex; align-items: center; gap: 1rem; padding: 1.15rem 1.3rem; cursor: pointer; font-weight: 600; font-size: 1.08rem; letter-spacing: -0.01em; }
 summary::-webkit-details-marker { display: none; }
 summary span:nth-child(2) { flex: 1; }
@@ -168,7 +182,9 @@ summary span:nth-child(2) { flex: 1; }
 summary b { width: 14px; height: 14px; position: relative; flex: none; margin-left: auto; }
 summary b::before, summary b::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1.5px; background: var(--ink); transition: transform 0.4s var(--ease); }
 summary b::after { transform: rotate(90deg); }
-details[open] > summary b::after { transform: rotate(0); }
+details[open]:not(.closing) > summary b::after { transform: rotate(0); }
+summary b { transition: transform 0.5s var(--ease); }
+details[open]:not(.closing) > summary b { transform: rotate(180deg); }
 .step-body { padding: 0 1.4rem 1.4rem 4.3rem; color: var(--mute); font-size: 0.98rem; }
 .step-body ol { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.55rem; }
 .step-body strong { color: var(--ink); font-weight: 600; }
@@ -230,7 +246,7 @@ details[open] > summary b::after { transform: rotate(0); }
   .ks-steps li { font-size: 0.84rem; line-height: 1.3; grid-template-columns: 1.35rem 1fr; }
   .ks-steps li::before { width: 1.35rem; height: 1.35rem; font-size: 0.7rem; }
   .ks-actions { bottom: 33vh; gap: 1rem; }
-  .ks-status { bottom: 0.45rem; font-size: 0.74rem; max-width: 70vw; text-align: center; white-space: normal; }
+  .ks-status { bottom: 0.45rem; font-size: 0.74rem; padding: 0 15vw; white-space: normal; }
   .footnote.ks-hide { opacity: 0; }
 
   /* Set up: the hand stays visible at the top, the content slides up over it */
@@ -285,4 +301,32 @@ details[open] > summary b::after { transform: rotate(0); }
   .site-header { padding: 0.5rem var(--pad); }
   .ks-col p, .ks-steps { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { .loader-logo { animation: none; } }
+
+/* ---------------------------------------------------------------- cinema layer */
+.vignette { position: fixed; inset: 0; z-index: 9; pointer-events: none; background: radial-gradient(125% 95% at 50% 46%, transparent 52%, rgba(2, 3, 5, 0.5) 100%); transition: opacity 0.9s; }
+.grain { position: fixed; inset: -50%; z-index: 89; pointer-events: none; opacity: 0.085; animation: grain 0.9s steps(1) infinite, flicker 7s linear infinite;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n' x='0' y='0' width='100%25' height='100%25'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  1.6 0 0 0 -0.55'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>"); background-size: 180px 180px; }
+@keyframes grain { 0% { transform: translate(0, 0); } 17% { transform: translate(-7%, 4%); } 33% { transform: translate(5%, -9%); } 50% { transform: translate(-3%, 8%); } 67% { transform: translate(9%, 2%); } 83% { transform: translate(-6%, -5%); } }
+@keyframes flicker { 0%, 100% { opacity: 0.085; } 8% { opacity: 0.11; } 9% { opacity: 0.075; } 31% { opacity: 0.09; } 52% { opacity: 0.1; } 53% { opacity: 0.07; } 77% { opacity: 0.09; } }
+.glow { position: fixed; z-index: 8; left: 0; top: 0; width: 0; height: 0; pointer-events: none; opacity: 0; transition: opacity 0.8s; }
+.glow::before { content: ''; position: absolute; left: -22rem; top: -22rem; width: 44rem; height: 44rem; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 150, 90, 0.2), rgba(255, 106, 53, 0.07) 55%, transparent); mix-blend-mode: screen; }
+.glow.on { opacity: 1; }
+/* reel-change cue: the pair of circles in the top-right corner of a projected print */
+.cue { position: fixed; z-index: 88; top: 5.4rem; right: calc(var(--pad) + 0.2rem); display: flex; gap: 0.7rem; pointer-events: none; opacity: 0; }
+.cue i { display: block; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: radial-gradient(circle, rgba(255, 240, 220, 0.95) 0 38%, rgba(255, 240, 220, 0.4) 62%, transparent 72%); }
+.cue.go { animation: cue 0.9s steps(1) both; }
+.cue.go i:last-child { animation: cue-b 0.9s steps(1) both; }
+@keyframes cue { 0% { opacity: 0; } 8% { opacity: 1; } 40% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes cue-b { 0%, 44% { opacity: 0; } 48% { opacity: 1; } 78% { opacity: 0; } 100% { opacity: 0; } }
+.hud-tc { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.74rem; letter-spacing: 0.04em; color: rgba(244, 239, 232, 0.5); }
+.lights { position: fixed; z-index: 25; left: var(--pad); top: 5.2rem; display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border: 0; border-radius: 50%; color: var(--mute); background: rgba(255, 255, 255, 0.06); box-shadow: inset 0 0 0 1px var(--faint); transition: color 0.3s, background 0.3s, transform 0.4s var(--ease); }
+.lights:hover { color: var(--ink); background: rgba(255, 255, 255, 0.14); transform: translateY(-2px); }
+.lights[aria-pressed='true'] { color: #170800; background: var(--accent); }
+/* lights down: the room goes dark around the picture */
+body.lights-down .vignette { background: radial-gradient(70% 62% at 56% 42%, transparent 20%, rgba(1, 2, 3, 0.88) 100%); }
+body.lights-down .grain { opacity: 0.12; }
+body.lights-down .site-header { opacity: 0.55; }
+body.lights-down .site-header:hover { opacity: 1; }
+.site-header { transition: transform 0.6s var(--ease), opacity 0.6s; }
+@media (max-aspect-ratio: 17/20) { .lights { top: auto; bottom: 0.9rem; left: auto; right: 0.6rem; width: 2.1rem; height: 2.1rem; } .cue { top: 4.4rem; } }
+@media (prefers-reduced-motion: reduce) { .loader-logo, .leader-sweep { animation: none; } .grain { animation: none; } .cue, .glow { display: none; } }

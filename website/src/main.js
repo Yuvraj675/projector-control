@@ -6,6 +6,8 @@ import Lenis from 'lenis';
 import { animate, spring } from 'motion';
 import { Stage } from './stage.js';
 import { initNavGlass } from './glass.js';
+import { initAccordions } from './accordion.js';
+import { initCinema, cue, timecode } from './cinema.js';
 import kb from './keyboard-layout.json';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -200,6 +202,7 @@ function setChapter(i, from) {
   stage.hand.setScreen(sc.screen, dir);
   stage.wall.setMode(sc.wall);
   showCopy(i);
+  cue();
   startDemo(i);
   if (i === 4) { resetKeystone(true); keystoneAutoRun(); }
 
@@ -270,7 +273,7 @@ function openApp(i) {
 }
 
 /** a tap on the phone's own glass does what the matching on-page control does */
-const PAD = { up: [0.5, 0.408], down: [0.5, 0.609], left: [0.282, 0.508], right: [0.718, 0.508], ok: [0.5, 0.509] };
+const PAD = { up: [0.625, 0.512], down: [0.625, 0.678], left: [0.445, 0.595], right: [0.805, 0.595], ok: [0.625, 0.595] };   // matches ui/dpad.webp: the pad sits where the thumb lands
 const APP_GRID = { x: [0.198, 0.501, 0.805], y: [0.224, 0.356, 0.487] };
 function phoneTap(p) {
   stage.lastInput = performance.now();
@@ -460,6 +463,7 @@ function buildStory() {
       onUpdate: (self) => {
         const p = self.progress * (n - 1);
         $('#hud-fill').style.transform = `scaleX(${self.progress})`;
+        timecode(self.progress);
         const next = Math.round(p);
         if (!lockedToSetup && next !== active) setChapter(next, active);
       },
@@ -529,6 +533,8 @@ if (stage) {
   anchors();
   interactions();
   initNavGlass();
+  initAccordions();
+  initCinema();
   cursor();
   magnetic();
   copies.forEach((c) => { c.classList.remove('is-active'); c.dataset.shown = '0'; });

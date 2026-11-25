@@ -123,6 +123,7 @@ export class Stage {
     this.projector.scale.set(-1.5, 1.5, 1); // lens faces right, towards the wall
     this.projector.position.set(-3.5, 1.5, 2.2);
     this.projector.rotation.z = 0.05;
+    this.projector.renderOrder = 0;
     this.scene.add(this.projector);
     this.dust = new Dust(window.innerWidth < 800 ? 3500 : 7000);
     this.scene.add(this.dust.points);
@@ -144,6 +145,7 @@ export class Stage {
       })
     );
     spill.position.set(0.05, 0.1, -0.02);
+    spill.renderOrder = 0.8;              // light stays in front of the hand
     this.spill = spill;
     this.hand.group.add(spill);
 
@@ -246,7 +248,7 @@ export class Stage {
   /** thumb tip on the glass (screen uv) for each frame, used to place the touch ripple */
   tipOf(id) {
     return {
-      'tap': [0.67, 0.385], 'dpad-hover': [0.66, 0.41], 'up-1': [0.6, 0.52], 'left-1': [0.45, 0.4], 'right-1': [0.78, 0.395], 'dpad-up': [0.69, 0.65], 'dpad-left': [0.23, 0.4], 'dpad-right': [0.88, 0.39],
+      'tap': [0.625, 0.405], 'dpad-hover': [0.625, 0.405], 'up-1': [0.625, 0.488], 'left-1': [0.445, 0.405], 'right-1': [0.805, 0.405], 'dpad-up': [0.69, 0.65], 'dpad-left': [0.23, 0.4], 'dpad-right': [0.88, 0.39],
       'key-mid': [0.5, 0.3], 'key-low-left': [0.38, 0.18], 'key-low-right': [0.66, 0.2],
       'swipe-start': [0.45, 0.38], 'swipe-mid': [0.55, 0.52], 'swipe-end': [0.6, 0.65],
       'land-press-2': [0.9, 0.5], 'land-press-1': [0.93, 0.5],

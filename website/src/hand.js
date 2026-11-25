@@ -106,6 +106,7 @@ class Rig {
         blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor,
       })
     );
+    this.mesh.renderOrder = 0.5;                                // after the projector overlay (0), before dust, particles and light (1+)
     this.group = new THREE.Group();
     this.group.add(this.mesh);
     const q = this.def.frames[this.def.rest].quad;

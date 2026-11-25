@@ -106,22 +106,34 @@ def clean_magenta(arr, quad):
     return out
 
 def matte(arr):
-    """Silhouette alpha: hand + phone (including the near-black bezel) on the pure-black background."""
+    """Tight binary silhouette of hand + phone (the near-black bezel included) on the dark generated background.
+    The generated background is not pure black: it carries a dark smudge of cast shadow (value ~35-40) around the phone and the
+    fingers. The old matte kept that as soft alpha, which showed up on the page as a jagged black halo and hairy edges, so the
+    threshold now sits above it and only the real object (rim light, skin, sleeve) is kept."""
     a = arr.astype(np.int32)
     mx = a.max(axis=2)
-    core = (mx > 14).astype(np.uint8)
+    h0, w0 = mx.shape
+    core = (mx > 46).astype(np.uint8)
+    core = cv2.morphologyEx(core, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9)))   # thin slivers of cast shadow
+    sleeve = np.zeros_like(core); sleeve[int(h0 * 0.74):, :int(w0 * 0.32)] = 1                            # the dark knit cuff is lower than the smudge
+    core |= ((mx > 17) & (sleeve > 0)).astype(np.uint8)
+    # the phone's bezel is almost black, so it is kept by position instead: everything within a bezel's width of the screen
+    scr = cv2.morphologyEx(magenta_mask(arr), cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
+    core |= cv2.dilate(scr, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (27, 27)))
     core = cv2.morphologyEx(core, cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8))
+    n, lab, stats, _ = cv2.connectedComponentsWithStats(core, connectivity=8)
+    for i in range(1, n):                                     # drop specks and shadow islands
+        if stats[i, cv2.CC_STAT_AREA] < 2500: core[lab == i] = 0
     # fill holes only: background components that touch ANY image border stay transparent
     h, w = core.shape
     inv = (1 - core).astype(np.uint8)
     n, lab = cv2.connectedComponents(inv, connectivity=4)
     border = set(np.unique(np.concatenate([lab[0, :], lab[-1, :], lab[:, 0], lab[:, -1]])).tolist())
-    filled = np.ones((h, w), np.float32)
+    filled = np.ones((h, w), np.uint8)
     for i in range(1, n):
         if i in border: filled[lab == i] = 0
-    filled = cv2.GaussianBlur(filled, (0, 0), 1.1)
-    soft = np.clip((mx - 3) / 28.0, 0, 1).astype(np.float32)   # keeps soft shadows / rim glow
-    return np.maximum(filled, soft)
+    # round off the staircase edges left by thresholding
+    return (cv2.GaussianBlur(filled.astype(np.float32), (0, 0), 2.4) > 0.5).astype(np.uint8)
 
 def rife(a, b, step, out):
     os.makedirs(os.path.dirname(out), exist_ok=True)
@@ -141,8 +153,13 @@ def despill(arr):
 def save(arr, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     arr = despill(arr)
-    al = (matte(arr) * 255).astype(np.uint8)
-    rgb = arr.copy(); rgb[al == 0] = 0
+    sil = matte(arr)
+    core = cv2.erode(sil, np.ones((3, 3), np.uint8))                        # lose the 1px dark fringe at the edge
+    al = (cv2.GaussianBlur(core.astype(np.float32), (0, 0), 0.9) * 255).astype(np.uint8)
+    # colours of the edge band come from the object just inside it, not from the dark background it was cut from
+    band = ((core == 0) & (cv2.dilate(core, np.ones((7, 7), np.uint8)) > 0)).astype(np.uint8) * 255
+    rgb = cv2.inpaint(np.ascontiguousarray(arr), band, 3, cv2.INPAINT_TELEA)
+    rgb[al == 0] = 0
     Image.fromarray(np.dstack([rgb, al]), 'RGBA').save(path, quality=88, alpha_quality=92, method=6)
 
 if not os.path.exists(RIFE):
