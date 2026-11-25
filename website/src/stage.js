@@ -213,8 +213,13 @@ export class Stage {
 
   resize() {
     const w = vp.w, h = vp.h;
-    this.aspect = w / h;
     const dpr = Math.min(window.devicePixelRatio || 1, w < 800 ? 1.75 : 2, this.maxDpr ?? 2);
+    // resize events also fire for the mobile address bar and scroll-driven layout changes; reassigning canvas.width clears the canvas
+    // (even to the same value), which showed as a flicker, so do nothing unless the size or pixel ratio really changed
+    const key = `${w}x${h}@${dpr}`;
+    if (key === this._resizeKey) return;
+    this._resizeKey = key;
+    this.aspect = w / h;
     this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(w, h, false);
     this.composer.setPixelRatio(dpr);

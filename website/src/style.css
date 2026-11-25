@@ -15,7 +15,7 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { background: var(--bg); color: var(--ink); -webkit-text-size-adjust: 100%; overflow-x: clip; }
+html { overflow-anchor: none; background: var(--bg); color: var(--ink); -webkit-text-size-adjust: 100%; overflow-x: clip; }
 html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
 body { margin: 0; font-family: var(--body); font-size: 1rem; line-height: 1.5; background: var(--bg); -webkit-font-smoothing: antialiased; overflow-x: clip; }
@@ -29,7 +29,8 @@ button, input { font: inherit; color: inherit; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 #gl { position: fixed; top: 0; left: 0; width: 100%; height: calc(var(--vh, 1vh) * 100); display: block; z-index: 0; }   /* the stable height, never the live one: a taller live viewport used to stretch the picture */
-html.has-gap #gl { -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 3rem), transparent); mask-image: linear-gradient(180deg, #000 calc(100% - 3rem), transparent); }
+.gl-fade { position: fixed; left: 0; right: 0; top: calc(var(--vh, 1vh) * 100 - 3rem); height: 3rem; z-index: 1; pointer-events: none; opacity: 0; background: linear-gradient(180deg, rgba(5, 6, 8, 0), var(--bg)); }
+html.has-gap .gl-fade { opacity: 1; }
 
 /* ------------------------------------------------------------------ loader */
 #loader { position: fixed; inset: 0; z-index: 100; display: grid; place-content: center; justify-items: center; gap: 1.5rem; background: var(--bg); overflow: hidden; transition: opacity 0.9s 0.25s var(--ease), visibility 0s 1.15s; }
@@ -265,7 +266,7 @@ details[open]:not(.closing) > summary b { transform: rotate(180deg); }
   /* Set up: the hand stays visible at the top, the content slides up over it */
   .setup { padding: calc(var(--vh, 1vh) * 52) var(--pad) 2rem; }
   /* the hand is pinned bottom-left by the scene: the backdrop is translucent frosted glass for the first screenful so it shows through, solid below so the FAQ and footer stay clean */
-  .setup::before { inset: 0; background: linear-gradient(180deg, rgba(4, 5, 7, 0) 0, rgba(4, 5, 7, 0.46) calc(var(--vh, 1vh) * 38), rgba(4, 5, 7, 0.56) calc(var(--vh, 1vh) * 105), rgba(4, 5, 7, 0.97) calc(var(--vh, 1vh) * 145)); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  .setup::before { inset: 0; background: linear-gradient(180deg, rgba(4, 5, 7, 0) 0, rgba(4, 5, 7, 0.46) calc(var(--vh, 1vh) * 38), rgba(4, 5, 7, 0.56) calc(var(--vh, 1vh) * 105), rgba(4, 5, 7, 0.97) calc(var(--vh, 1vh) * 145)); backdrop-filter: none; -webkit-backdrop-filter: none;
     -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 calc(var(--vh, 1vh) * 30)); mask-image: linear-gradient(180deg, transparent 0, #000 calc(var(--vh, 1vh) * 30)); -webkit-mask-composite: initial; mask-composite: initial; }
   .setup-inner { grid-template-columns: 1fr; }
   .setup-col { grid-column: 1; }
