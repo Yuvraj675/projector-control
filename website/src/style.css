@@ -15,10 +15,10 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { background: var(--bg); color: var(--ink); -webkit-text-size-adjust: 100%; }
+html { background: var(--bg); color: var(--ink); -webkit-text-size-adjust: 100%; overflow-x: clip; }
 html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
-body { margin: 0; font-family: var(--body); font-size: 1rem; line-height: 1.5; background: var(--bg); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+body { margin: 0; font-family: var(--body); font-size: 1rem; line-height: 1.5; background: var(--bg); -webkit-font-smoothing: antialiased; overflow-x: clip; }
 body.is-loading { overflow: hidden; height: calc(var(--vh, 1vh) * 100); }
 a { color: inherit; text-decoration: none; }
 button, input { font: inherit; color: inherit; }
@@ -322,9 +322,9 @@ details[open]:not(.closing) > summary b { transform: rotate(180deg); }
 
 /* ---------------------------------------------------------------- cinema layer */
 .vignette { position: fixed; inset: 0; z-index: 9; pointer-events: none; background: radial-gradient(125% 95% at 50% 46%, transparent 62%, rgba(2, 3, 5, 0.26) 100%); transition: opacity 0.9s; }
-.grain { position: fixed; inset: -50%; z-index: 89; pointer-events: none; opacity: 0.085; animation: grain 0.9s steps(1) infinite, flicker 7s linear infinite;
+.grain { position: fixed; inset: 0; z-index: 89; pointer-events: none; opacity: 0.085; animation: grain 0.9s steps(1) infinite, flicker 7s linear infinite;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n' x='0' y='0' width='100%25' height='100%25'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  1.6 0 0 0 -0.55'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>"); background-size: 180px 180px; }
-@keyframes grain { 0% { transform: translate(0, 0); } 17% { transform: translate(-7%, 4%); } 33% { transform: translate(5%, -9%); } 50% { transform: translate(-3%, 8%); } 67% { transform: translate(9%, 2%); } 83% { transform: translate(-6%, -5%); } }
+@keyframes grain { 0% { background-position: 0 0; } 17% { background-position: -37px 21px; } 33% { background-position: 61px -83px; } 50% { background-position: -29px 74px; } 67% { background-position: 97px 15px; } 83% { background-position: -71px -52px; } }
 @keyframes flicker { 0%, 100% { opacity: 0.085; } 8% { opacity: 0.11; } 9% { opacity: 0.075; } 31% { opacity: 0.09; } 52% { opacity: 0.1; } 53% { opacity: 0.07; } 77% { opacity: 0.09; } }
 .glow { position: fixed; z-index: 8; left: 0; top: 0; width: 0; height: 0; pointer-events: none; opacity: 0; transition: opacity 0.8s; }
 .glow::before { content: ''; position: absolute; left: -22rem; top: -22rem; width: 44rem; height: 44rem; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 150, 90, 0.2), rgba(255, 106, 53, 0.07) 55%, transparent); mix-blend-mode: screen; }

@@ -88,3 +88,6 @@ References looked at: Awwwards "mobile" collections (scroll-driven product stori
 - Short phones (<= 680px high) drop the one-line lede on chapters 2-4; widths under 360px shrink the brand and hide the GitHub button; portrait tablets (>= 600px) get larger type.
 - The fixed "screens are illustrations" footnote is hidden on phones (the footer says it).
 - Checked at 320x568, 360x640, 390x664, 390x844, 412x915, 430x932, 600x960, 768x1024, 820x1180. Landscape phones keep the desktop layout (tested at 844x390: cramped but nothing breaks).
+
+## Never let anything be wider than the screen
+Mobile browsers treat any element wider than the viewport as page width and zoom the whole page out (tiny text, "zoomed" top-left corner). The film grain was a fixed layer at `inset: -50%` (twice the screen) and caused exactly that on phones while desktop browsers just clipped it. It is now screen-sized (the grain pattern is shifted with `background-position`), and `html`/`body` use `overflow-x: clip`. Check with `document.documentElement.scrollWidth === innerWidth` at several scroll positions, ideally in a mobile-emulated context (`isMobile`, `hasTouch`).
