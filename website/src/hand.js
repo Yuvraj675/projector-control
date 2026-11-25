@@ -61,8 +61,8 @@ vec4 layer(sampler2D tex, mat3 H, vec2 uv){
 void main(){
   vec4 a = layer(uA, uHA, vUv);
   vec4 b = layer(uB, uHB, vUv);
-  // feather the image border: where the photographed arm is cut off by the frame it fades into the dark instead of showing a hard edge
-  float edge = smoothstep(0.0, 0.07, vUv.x) * smoothstep(0.0, 0.07, 1.0 - vUv.x) * smoothstep(0.0, 0.05, vUv.y) * smoothstep(0.0, 0.05, 1.0 - vUv.y);
+  // feather the top and right of the image border only. The arm leaves through the left and bottom edges, which sit just off-screen, and feathering them faded the palm and sleeve out of view whenever the hand shifted
+  float edge = smoothstep(0.0, 0.0001, vUv.x) * smoothstep(0.0, 0.07, 1.0 - vUv.x) * smoothstep(0.0, 0.0001, vUv.y) * smoothstep(0.0, 0.05, 1.0 - vUv.y);
   gl_FragColor = mix(a, b, uMix) * uOpacity * edge;
 }`;
 
