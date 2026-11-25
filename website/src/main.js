@@ -85,15 +85,61 @@ function keyframes(portrait) {
       { ...b, ...hand(-0.3, -0.17, 1.0, 0.3), wx: 2.8, wy: 3.4, ws: 0.5, wpow: 0, beam: 0.25, dust: 0.6, warm: 0.5, spill: 0.5, scroll: 2.0, cz: 10 },
     ];
   }
-  const b = { cx: 0, cy: 0, cz: 10, lx: 0, ly: 0, wz: -15, wpow: 0.5, key: 0, title: 0, proj: 0, room: 0 };
-  return [
-    { ...b, hx: -0.1, hy: -2.5, hs: 6.3, hrx: 0, hry: 0.15, hrz: 0, wx: 0, wy: 2.6, ws: 0.4, beam: 0.8, dust: 0.5, warm: 0.2, spill: 0.5, scroll: 0 },
-    { ...b, hx: -0.15, hy: -2.7, hs: 6.5, hrx: 0.04, hry: 0.1, hrz: 0, wx: 0, wy: 2.7, ws: 0.4, beam: 0.9, dust: 0.8, warm: 0.35, spill: 0.8, scroll: 0.4 },
-    { ...b, hx: -0.15, hy: -2.7, hs: 6.5, hrx: 0.06, hry: 0.16, hrz: 0.02, wx: 0, wy: 2.7, ws: 0.4, beam: 0.9, dust: 0.8, warm: 0.45, spill: 0.9, scroll: 0.8 },
-    { ...b, hx: -0.1, hy: -2.6, hs: 6.4, hrx: 0, hry: 0.2, hrz: -0.04, wx: 0, wy: 2.65, ws: 0.4, beam: 0.9, dust: 0.9, warm: 0.5, spill: 0.8, scroll: 1.2 },
-    { ...b, hx: 0, hy: -1.5, hs: 2.6, hrx: 0.02, hry: 0, hrz: 0, wx: 0, wy: 2.9, ws: 0.62, wpow: 0, beam: 0.3, dust: 1.0, warm: 0.3, spill: 0.7, scroll: 1.6, title: 1, room: 1 },
-    { ...b, hx: -0.6, hy: -4.4, hs: 5.2, hrx: 0, hry: 0.2, hrz: 0, wx: 0, wy: 3.4, ws: 0.4, beam: 0.4, dust: 0.6, warm: 0.5, spill: 0.4, scroll: 2.0, wpow: 0 },
+  return portraitFrames();
+}
+
+/** Portrait (phones, portrait tablets): copy on top, the wall right under it, then the whole phone in the hand, all fitted from the real
+ *  viewport through a camera identical to the scene's, so nothing overlaps and nothing is left empty. */
+function portraitFrames() {
+  const W = window.innerWidth, H = window.innerHeight;
+  const pad = Math.max(16, W * 0.04);
+  const cz = 10, ly = 0, wz = -15;
+  const cam = new THREE.PerspectiveCamera(stage.camera.fov, W / H, 0.1, 120);
+  cam.position.set(0, 0, cz);
+  cam.lookAt(0, ly, -4);
+  cam.updateMatrixWorld(true);
+  const at = (px, py, z) => {
+    const d = new THREE.Vector3((px / W) * 2 - 1, -(py / H) * 2 + 1, 0.5).unproject(cam).sub(cam.position).normalize();
+    return cam.position.clone().addScaledVector(d, (z - cam.position.z) / d.z);
+  };
+  const place = (cx, top, bottom, z) => {                      // a box given in pixels -> world centre + world height
+    const c = at(cx, (top + bottom) / 2, z), t = at(cx, top, z), b = at(cx, bottom, z);
+    return { x: c.x, y: c.y, h: t.y - b.y };
+  };
+  const base = { wz, key: 0, cx: 0, cy: 0, cz, lx: 0, ly, proj: 0, title: 0, room: 0, hrx: 0, hrz: 0 };
+  const fx = [
+    { beam: 0.8, dust: 0.5, warm: 0.2, spill: 0.5, scroll: 0 }, { beam: 0.9, dust: 0.8, warm: 0.35, spill: 0.8, scroll: 0.4 },
+    { beam: 0.9, dust: 0.8, warm: 0.45, spill: 0.9, scroll: 0.8 }, { beam: 0.9, dust: 0.9, warm: 0.5, spill: 0.8, scroll: 1.2 },
+    { beam: 0.3, dust: 1.0, warm: 0.3, spill: 0.7, scroll: 1.6 }, { beam: 0.25, dust: 0.6, warm: 0.5, spill: 0.4, scroll: 2.0 },
   ];
+  const tilt = [0.1, 0.06, 0.12, 0.16, 0, 0.12];
+  const out = [];
+  for (let i = 0; i < 4; i++) {                                 // hero, Remote, Type, Apps: copy / wall / phone
+    const r = copies[i].getBoundingClientRect();
+    const copyBottom = r.bottom;
+    const wallMaxH = ((W - 2 * pad - 24) * 9) / 16;
+    const wallH = Math.max(84, Math.min(wallMaxH, H - H * 0.44 - copyBottom - 18));
+    const wallTop = copyBottom + 8;
+    const wp = place(W / 2 - 8, wallTop, wallTop + wallH, wz);
+    const phoneTop = wallTop + wallH + 12;
+    const hp = (H - phoneTop - 2) / 0.662;                      // plane height in px so the whole phone fits down to the bottom edge
+    const planeTop = phoneTop - 0.0876 * hp;
+    const hpl = place(W * 0.5, planeTop, planeTop + hp, 0);
+    out.push({ ...base, ...fx[i], hx: hpl.x, hy: hpl.y, hs: hpl.h, hry: tilt[i], wx: wp.x, wy: wp.y, ws: wp.h / 9, wpow: 1 });
+  }
+  { // Auto keystone: the two-hand landscape shot across the bottom, the room behind everything
+    const hpx = (W * 1.24) / 1.5;
+    const cyPx = H * 0.795 + 0.03 * hpx;
+    const hpl = place(W / 2, cyPx - hpx / 2, cyPx + hpx / 2, 0);
+    out.push({ ...base, ...fx[4], hx: hpl.x, hy: hpl.y, hs: hpl.h, hry: 0, wx: 0, wy: 2.6, ws: 0.6, wpow: 0, title: 1, room: 1 });
+  }
+  { // Set up: the phone stays at the top while the instructions slide up over it
+    const hpx = H * 0.62;
+    const planeTop = 84 - 0.0876 * hpx;
+    const hpl = place(W * 0.52, planeTop, planeTop + hpx, 0);
+    out.push({ ...base, ...fx[5], hx: hpl.x, hy: hpl.y, hs: hpl.h, hry: 0.18, wx: 0, wy: 3.4, ws: 0.4, wpow: 0 });
+  }
+  return out;
 }
 
 const SCENES = [
@@ -111,7 +157,7 @@ let tl;
 let lockedToSetup = false;
 const copies = $$('.copy');
 const copyStack = $('#copy');
-const REST = '.kicker, .lede, .try, .cta-row, .note, .ks-col, .ks-actions, .ks-status';
+const REST = '.kicker, .lede, .lede-short, .try, .cta-row, .note, .ks-col, .ks-actions, .ks-status';
 
 /* ------------------------------------------------------- copy transitions */
 function prepLines() {
@@ -161,6 +207,8 @@ function setChapter(i, from) {
   $('#hud-i').textContent = i + 1;
   $('#hud-label').textContent = NAMES[i];
   $$('.nav a').forEach((a) => a.classList.toggle('on', +a.dataset.go === i));
+  $$('.rail a').forEach((a) => a.classList.toggle('on', +a.dataset.go === i));
+  $('.footnote').classList.toggle('ks-hide', i === 4);
   const inSetup = i === 5;
   $('.site-header').classList.toggle('solid', inSetup);
   copyStack.classList.toggle('off', inSetup);
@@ -241,12 +289,16 @@ function phoneTap(p) {
     input.value = val;
     typeAt(val, p);
   } else if (active === 3) {
+    let best = -1, bd = 0.1;                                    // nearest icon wins (rows are close together)
     for (let r = 0; r < 3; r++) {
       for (let c = 0; c < 3; c++) {
         const i = r * 3 + c;
-        if (i < 8 && Math.hypot(p.u - APP_GRID.x[c], (p.v - APP_GRID.y[r]) * 0.46) < 0.1) { openApp(i); return; }
+        if (i >= 8) continue;
+        const d = Math.hypot(p.u - APP_GRID.x[c], (p.v - APP_GRID.y[r]) * 0.46);
+        if (d < bd) { bd = d; best = i; }
       }
     }
+    if (best >= 0) openApp(best);
   } else if (active === 4 && stage.hand.rigName === 'landscape') {
     if (Math.hypot(p.u - 0.5, (p.v - 0.86) * 2.1) < 0.09) ksBtn?.click();
   } else {
@@ -463,7 +515,7 @@ function anchors() {
     e.preventDefault();
     const story = $('#story');
     const total = story.offsetHeight - window.innerHeight;
-    const y = i >= 5 ? $('#setup').offsetTop : (i / 5) * total + story.offsetTop;
+    const y = i >= 5 ? $('#setup').getBoundingClientRect().top + window.scrollY : (i / 5) * total + story.offsetTop;
     lenis?.scrollTo(y, { duration: 1.8, easing: (t) => 1 - Math.pow(1 - t, 4) });
   }));
 }

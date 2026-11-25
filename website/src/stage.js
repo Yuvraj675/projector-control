@@ -68,6 +68,7 @@ class Room {
           float tr = 1.5;                                   // photo aspect
           if (uAspect > tr) p.y *= tr / uAspect; else p.x *= uAspect / tr;
           p = p * 0.94 + 0.5 + uMouse * 0.012;              // slight overscan + parallax
+          if (uAspect < 1.0) p.x -= 0.03;                     // portrait crop: keep the projected picture centred
           vec3 col = mix(texture2D(uA, p, uBias).rgb, texture2D(uB, p, uBias).rgb, uMix);
           float d = length((vUv - 0.5) * vec2(1.0, 0.9));
           col *= 0.52 * (1.0 - smoothstep(0.25, 0.95, d) * 0.7);
@@ -280,7 +281,7 @@ export class Stage {
   layoutTitle() {
     const cam = this.camera, tt = this.title, g = tt.glyph;
     const zPlane = -3.2;
-    const mid = this.portrait ? 0.30 : 0.265;
+    const mid = this.portrait ? 0.235 : 0.265;
     const ndcY = 1 - 2 * mid;
     const dir = new THREE.Vector3(0, ndcY, 0.5).unproject(cam).sub(cam.position).normalize();
     const k = (zPlane - cam.position.z) / dir.z;

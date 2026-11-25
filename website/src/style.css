@@ -187,35 +187,67 @@ details[open] > summary b::after { transform: rotate(0); }
 .footer a:hover { color: var(--ink); }
 
 /* ------------------------------------------------------------------ mobile */
-@media (max-width: 900px) {
+.lede-short { display: none; }
+.rail { display: none; }
+
+/* ------------------------------------------------------------ phones and portrait tablets */
+@media (max-aspect-ratio: 17/20) {
+  :root { --pad: 1rem; }
   .nav-wrap { display: none; }
-  .footnote { display: none; }
-  .site-header { grid-template-columns: 1fr auto; }
-  .brand img { width: 38px; height: 38px; }
-  .wordmark { font-size: 1.12rem; }
-  .get { padding: 0.55rem 0.85rem; font-size: 0.82rem; }
+  .site-header { grid-template-columns: 1fr auto; padding: 0.7rem var(--pad); }
   .brand { gap: 0.5rem; }
-  .copy { left: var(--pad); right: var(--pad); width: auto; max-width: none; top: 5rem; bottom: auto; }
-  .copy::before { content: ''; position: absolute; inset: -6rem calc(var(--pad) * -1) -3rem; z-index: -1; background: linear-gradient(180deg, rgba(5, 6, 8, 0.9) 45%, rgba(5, 6, 8, 0)); }
-  .display { font-size: clamp(2.7rem, 13.5vw, 5rem); }
-  .lede { font-size: 0.97rem; margin-top: 1rem; max-width: 26rem; }
-  .try-remote, .try-apps, .copy .cta-row .ghost, .note { display: none; }
-  .try { margin-top: 1rem; }
-  .cta-row { margin-top: 1.2rem; }
+  .brand img { width: 38px; height: 38px; }
+  .wordmark { font-size: 1.1rem; }
+  .gh { width: 2.5rem; height: 2.5rem; }
+  .get { padding: 0.62rem 0.85rem; font-size: 0.82rem; }
+  .header-actions { gap: 0.45rem; }
+
+  /* chapter dots down the right edge: the phone's replacement for the nav */
+  .rail { display: flex; flex-direction: column; position: fixed; z-index: 25; right: 0; top: 50%; transform: translateY(-50%); }
+  .rail a { display: grid; place-items: center; width: 2.4rem; height: 1.9rem; }
+  .rail span { display: block; width: 6px; height: 6px; border-radius: 3px; background: rgba(244, 239, 232, 0.38); transition: height 0.4s var(--ease), background 0.3s; }
+  .rail a.on span { height: 20px; background: var(--accent); }
+
+  .copy { left: var(--pad); right: calc(var(--pad) + 1.6rem); width: auto; max-width: none; top: 4.5rem; bottom: auto; text-shadow: 0 1px 14px rgba(0, 0, 0, 0.7); }
+  .copy::before { content: ''; position: absolute; inset: -5rem calc(var(--pad) * -1 - 1.6rem) -1rem calc(var(--pad) * -1); z-index: -1; background: linear-gradient(180deg, rgba(5, 6, 8, 0.88) 55%, rgba(5, 6, 8, 0)); pointer-events: none; }
+  .display, .copy:not(#hero) .display, #hero .display { font-size: clamp(2.1rem, 10.4vw, 3.9rem); line-height: 0.95; }
+  .kicker { margin-bottom: 0.3rem; font-size: 0.8rem; }
+  .lede { display: none; }
+  .lede-short { display: block; margin: 0.55rem 0 0; max-width: 24rem; font-size: 0.93rem; line-height: 1.38; color: rgba(244, 239, 232, 0.82); }
+  .try, .note, .chips, .copy .cta-row .ghost { display: none; }
+  .cta-row { margin-top: 0.75rem; }
+  .btn { padding: 0.72rem 0.95rem 0.72rem 1.2rem; font-size: 0.92rem; border-radius: 12px; }
   .hud { display: none; }
-  .copy-wide { top: 0; bottom: 0; padding: 5rem var(--pad) 0; }
+  .footnote { display: block; left: var(--pad); right: 3.2rem; bottom: 0.55rem; max-width: none; font-size: 0.62rem; line-height: 1.3; }
+
+  /* Auto keystone */
+  .copy-wide { top: 0; bottom: 0; right: 0; left: 0; padding: 0; }
   .copy-wide::before { display: none; }
-  .ks-col { position: static; transform: none; width: auto; }
-  .ks-right, .ks-steps { display: none; }
-  .ks-actions { bottom: 1.6rem; }
-  .ks-status { display: none; }
+  .ks-col { position: absolute; left: var(--pad); right: calc(var(--pad) + 1.6rem); top: calc(var(--ks-top, 36vh) + 0.6rem); width: auto; transform: none; }
+  .ks-right { display: none; }
+  .ks-col h3 { font-size: 1.45rem; line-height: 1.05; }
+  .ks-steps { margin-top: 0.7rem; gap: 0.45rem; }
+  .ks-steps li { font-size: 0.84rem; line-height: 1.3; grid-template-columns: 1.35rem 1fr; }
+  .ks-steps li::before { width: 1.35rem; height: 1.35rem; font-size: 0.7rem; }
+  .ks-actions { bottom: 33vh; gap: 1rem; }
+  .ks-status { bottom: 0.45rem; font-size: 0.74rem; max-width: 70vw; text-align: center; white-space: normal; }
+  .footnote.ks-hide { opacity: 0; }
+
+  /* Set up: the hand stays visible at the top, the content slides up over it */
+  .setup { padding: 52vh var(--pad) 2rem; }
+  .setup::before { inset: 0; -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 36vh); mask-image: linear-gradient(180deg, transparent 0, #000 36vh); -webkit-mask-composite: initial; mask-composite: initial; }
   .setup-inner { grid-template-columns: 1fr; }
   .setup-col { grid-column: 1; }
-  .step-body { padding-left: 1.4rem; }
+  .setup-head .display { font-size: clamp(2.2rem, 11vw, 3.6rem); }
+  .steps { margin-top: 2rem; }
+  summary { padding: 1rem 1rem; font-size: 1rem; }
+  .step-body { padding: 0 1rem 1.1rem 1rem; }
+  .faq { margin-top: 4rem; }
   .faq-grid { grid-template-columns: 1fr; }
+  .footer { margin-top: 3.5rem; }
 }
 /* short desktop windows: tighter copy and smaller controls so the wall keeps a sensible size and nothing overlaps */
-@media (max-height: 820px) and (min-width: 901px) {
+@media (max-height: 820px) and (min-aspect-ratio: 17/20) {
   .copy { bottom: 2.6rem; }
   #hero .display { font-size: clamp(3rem, 5.2vw, 6.2rem); }
   .copy:not(#hero) .display { font-size: clamp(2.4rem, 4.1vw, 5rem); }
@@ -233,5 +265,13 @@ details[open] > summary b::after { transform: rotate(0); }
   .ks-col p, .ks-steps li { font-size: 0.9rem; }
   .ks-actions { bottom: 2rem; }
 }
-@media (max-height: 640px) and (min-width: 901px) { .display { font-size: clamp(2.6rem, 6vw, 5rem); } .lede { margin-top: 0.7rem; } }
+@media (max-height: 640px) and (min-aspect-ratio: 17/20) { .display { font-size: clamp(2.6rem, 6vw, 5rem); } .lede { margin-top: 0.7rem; } }
+/* landscape phones: same scene as desktop, minus the extras that need height */
+@media (max-height: 520px) and (min-aspect-ratio: 17/20) {
+  .nav-wrap, .try, .lede, .note, .hud { display: none; }
+  .copy { bottom: 1.4rem; }
+  #hero .display, .copy:not(#hero) .display { font-size: clamp(2rem, 6vw, 3.4rem); }
+  .site-header { padding: 0.5rem var(--pad); }
+  .ks-col p, .ks-steps { display: none; }
+}
 @media (prefers-reduced-motion: reduce) { .loader-logo { animation: none; } }
