@@ -20,6 +20,7 @@ uniform sampler2D uA; uniform sampler2D uB;
 uniform mat3 uHA; uniform mat3 uHB;
 uniform float uMix;
 uniform float uOpacity;
+uniform vec2 uFeatherLB;   // feather width at the left and bottom edge (0 where the arm leaves the photo off-screen)
 uniform sampler2D uScrA; uniform sampler2D uScrB;
 uniform float uScrMix; uniform float uScrShift;
 uniform float uGlow; uniform float uTouch; uniform vec2 uTouchAt; uniform float uSheen;
@@ -62,7 +63,7 @@ void main(){
   vec4 a = layer(uA, uHA, vUv);
   vec4 b = layer(uB, uHB, vUv);
   // feather the top and right of the image border only. The arm leaves through the left and bottom edges, which sit just off-screen, and feathering them faded the palm and sleeve out of view whenever the hand shifted
-  float edge = smoothstep(0.0, 0.0001, vUv.x) * smoothstep(0.0, 0.07, 1.0 - vUv.x) * smoothstep(0.0, 0.0001, vUv.y) * smoothstep(0.0, 0.05, 1.0 - vUv.y);
+  float edge = smoothstep(0.0, uFeatherLB.x, vUv.x) * smoothstep(0.0, 0.07, 1.0 - vUv.x) * smoothstep(0.0, uFeatherLB.y, vUv.y) * smoothstep(0.0, 0.05, 1.0 - vUv.y);
   gl_FragColor = mix(a, b, uMix) * uOpacity * edge;
 }`;
 
@@ -97,6 +98,9 @@ class Rig {
       uHB: { value: this.mats[this.def.rest] },
       uMix: { value: 0 },
       uOpacity: { value: 1 },
+      // portrait: the forearm leaves through the left and bottom edges, which sit off-screen, so they are not feathered;
+      // landscape: both forearms end inside the frame, so every edge fades
+      uFeatherLB: { value: name === 'landscape' ? new THREE.Vector2(0.07, 0.05) : new THREE.Vector2(0.0001, 0.0001) },
       ...shared,
     };
     const [w, h] = this.def.size;
