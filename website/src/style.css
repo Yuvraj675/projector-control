@@ -266,6 +266,17 @@ details[open] > summary b::after { transform: rotate(0); }
   .ks-actions { bottom: 2rem; }
 }
 @media (max-height: 640px) and (min-aspect-ratio: 17/20) { .display { font-size: clamp(2.6rem, 6vw, 5rem); } .lede { margin-top: 0.7rem; } }
+/* narrow phones */
+@media (max-width: 400px) and (max-aspect-ratio: 17/20) {
+  .site-header { padding-inline: 0.8rem; }
+  .brand { gap: 0.4rem; }
+  .brand img { width: 32px; height: 32px; }
+  .wordmark { font-size: 0.98rem; }
+  .gh { width: 2.3rem; height: 2.3rem; }
+  .get { padding: 0.55rem 0.7rem; font-size: 0.78rem; }
+  .header-actions { gap: 0.35rem; }
+}
+
 /* landscape phones: same scene as desktop, minus the extras that need height */
 @media (max-height: 520px) and (min-aspect-ratio: 17/20) {
   .nav-wrap, .try, .lede, .note, .hud { display: none; }
