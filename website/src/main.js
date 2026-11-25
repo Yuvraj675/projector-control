@@ -112,7 +112,7 @@ function keyframes(portrait) {
       { ...b, ...hand(-0.3, -0.13, 1.26, 0.2, 0.06, -0.02), ...fitWall(2), beam: 1.0, dust: 0.8, warm: 0.45, spill: 0.9, scroll: 0.8, proj: 0.6 },
       { ...b, ...hand(-0.29, -0.1, 1.2, 0.28, 0, -0.05), ...fitWall(3), beam: 1.0, dust: 0.9, warm: 0.5, spill: 0.8, scroll: 1.2, proj: 0.5 },
       { ...b, ...hand(0, -0.2, 0.58, 0, 0.03, 0), wx: 0, wy: 2.4, ws: 1.0, wpow: 0, beam: 0.15, dust: 1.0, warm: 0.3, spill: 0.6, scroll: 1.6, title: 1, room: 1, ly: 0.3 },
-      { ...b, ...hand(-0.3, -0.17, 1.0, 0.3), wx: 2.8, wy: 3.4, ws: 0.5, wpow: 0, beam: 0.25, dust: 0.6, warm: 0.5, spill: 0.5, scroll: 2.0, cz: 10 },
+      { ...b, ...hand(-0.29, -0.13, 1.22, 0.22), wx: 2.8, wy: 3.4, ws: 0.5, wpow: 0, beam: 0.25, dust: 0.6, warm: 0.5, spill: 0.5, scroll: 2.0, cz: 10 },
     ];
   }
   return portraitFrames();
