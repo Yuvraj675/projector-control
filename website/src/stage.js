@@ -41,7 +41,7 @@ const FinalPass = {
         for (int i = 0; i < 7; i++) acc += texture2D(tDiffuse, vUv + uMotion * (float(i) / 6.0 - 0.5)).rgb;
         col = mix(col, acc / 7.0, 0.85);
       }
-      col *= smoothstep(0.95, 0.25, length(c * vec2(1.0, 1.15)));
+      col *= mix(0.62, 1.0, smoothstep(1.0, 0.3, length(c * vec2(1.0, 1.15)))); // soft vignette: it used to crush the bottom of the hand to ~35%
       col += (hash(vUv * 1000.0) - 0.5) * uGrain;
       gl_FragColor = vec4(col * uFade, 1.0);
     }`,
