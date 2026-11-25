@@ -180,6 +180,7 @@ class Rig {
   update(dt) {
     const last = this.seq.length - 1;
     // ease the whole path: the thumb accelerates out of rest and settles into the target
+    const tPrev = this.t;
     this.t += dt;
     const lin = last > 0 ? Math.min(1, this.t / (last / this.fps)) : 1;
     const eased = lin * 0.35 + (lin * lin * (3 - 2 * lin)) * 0.65;
@@ -191,6 +192,10 @@ class Rig {
     const u = this.uniforms;
     const ta = this.tex(A), tb = this.tex(B);
     const ready = (t) => t.image && t.image.width;
+    // a frame that has not arrived yet must not be skipped: hold the clock until it is decoded, so a slow download
+    // shows as a short pause instead of the thumb jumping across several poses
+    if (last > 0 && !(ready(ta) && ready(tb)) && this.t < last / this.fps && (this.held = (this.held || 0) + dt) < 1.2) { this.t = tPrev; return; }
+    this.held = 0;
     if (ready(ta)) { u.uA.value = ta; u.uHA.value = this.mats[A]; }
     if (ready(tb)) { u.uB.value = tb; u.uHB.value = this.mats[B]; }
     u.uMix.value = ready(tb) ? f * f * (3 - 2 * f) : 0;

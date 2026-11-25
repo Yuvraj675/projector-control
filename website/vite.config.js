@@ -52,5 +52,5 @@ export default defineConfig(({ command }) => ({
       this.emitFile({ type: 'asset', fileName: 'robots.txt', source: `User-agent: *\nAllow: /\nSitemap: ${SITE_URL}/sitemap.xml\n` });
     },
   }],
-  build: { chunkSizeWarningLimit: 900, sourcemap: true },
+  build: { chunkSizeWarningLimit: 900, sourcemap: false },
 }));
