@@ -21,8 +21,10 @@ CACHE = os.path.join(ROOT, 'cache')  # raw RIFE output, reused between runs
 P = {'hold': 'raw/hero-hold', 'dpad-hover': 'raw/thumb-dpad', 'tap': 'raw/thumb-tap', 'swipe-end': 'raw/thumb-swipe'}
 for n in ['reach-1','reach-2','dpad-up','dpad-left','dpad-right','key-low-left','key-low-right','key-mid','swipe-start','swipe-mid','tilt-left','tilt-right']:
     P[n] = f'raw2/{n}'
-for n in ['sw-a','sw-b','sw-c','sw-d','kl-1','kr-1','up-1','left-1','right-1','tl-1','tr-1','lift']:
+for n in ['sw-c','sw-d','kl-1','kr-1','up-1','left-1','right-1','tl-1','tr-1','lift']:
     P[n] = f'raw3/{n}'
+# sw-a / sw-b were regenerated (prompt-J.md): the first versions had a stretched, swollen thumb
+P['sw-a'] = 'raw5/sw-a'; P['sw-b'] = 'raw5/sw-b'
 # direct Codex midpoints for the largest-motion hops (raw4); RIFE only bridges what is left
 MIDS = {  # (a, b): midpoint id
     ('hold', 'reach-1'): 'm-hold-reach1', ('reach-1', 'reach-2'): 'm-reach1-reach2', ('reach-2', 'dpad-hover'): 'm-reach2-hover',
