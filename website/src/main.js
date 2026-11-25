@@ -10,6 +10,7 @@ import { initAccordions } from './accordion.js';
 import { initCinema, cue, timecode } from './cinema.js';
 import kb from './keyboard-layout.json';
 
+ScrollTrigger.config({ ignoreMobileResize: true });
 gsap.registerPlugin(ScrollTrigger);
 
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -168,11 +169,11 @@ function portraitFrames() {
     const hpl = place(W / 2, cyPx - hpx / 2, cyPx + hpx / 2, 0);
     out.push({ ...base, ...fx[4], hx: hpl.x, hy: hpl.y, hs: hpl.h, hry: 0, wx: 0, wy: 2.6, ws: 0.6, wpow: 0, title: 1, room: 1 });
   }
-  { // Set up: the phone stays at the top while the instructions slide up over it
-    const hpx = H * 0.62;
-    const planeTop = 84 - 0.0876 * hpx;
-    const hpl = place(W * 0.52, planeTop, planeTop + hpx, 0);
-    out.push({ ...base, ...fx[5], hx: hpl.x, hy: hpl.y, hs: hpl.h, hry: 0.18, wx: 0, wy: 3.4, ws: 0.4, wpow: 0 });
+  { // Set up: the hand is pinned to the bottom-left corner (forearm leaves through the left and bottom edges) and the instructions slide up over it
+    const hpx = H * 0.7;
+    const bottom = H * 1.03;
+    const hpl = place(W * 0.27, bottom - hpx, bottom, 0);
+    out.push({ ...base, ...fx[5], hx: hpl.x, hy: hpl.y, hs: hpl.h, hry: 0.14, wx: 0, wy: 3.4, ws: 0.4, wpow: 0 });
   }
   return out;
 }
@@ -588,10 +589,16 @@ if (stage) {
   magnetic();
   copies.forEach((c) => { c.classList.remove('is-active'); c.dataset.shown = '0'; });
 
-  let lastPortrait = portrait, rt;
+  // rebuild only when the STABLE viewport really changed (rotation, window resize); the mobile address bar sliding in and out fires resize
+  // events too, and rebuilding the whole timeline on each of them is what made the page jump and glitch
+  let lastPortrait = portrait, rt, lastW = vp.w, lastH = vp.h;
   window.addEventListener('resize', () => {
     clearTimeout(rt);
-    rt = setTimeout(() => { lastPortrait = stage.portrait; buildStory(); ScrollTrigger.refresh(); }, 200);
+    rt = setTimeout(() => {
+      if (vp.w === lastW && vp.h === lastH) return;
+      lastW = vp.w; lastH = vp.h;
+      lastPortrait = stage.portrait; buildStory(); ScrollTrigger.refresh();
+    }, 200);
   });
 
   (document.fonts?.ready ?? Promise.resolve()).then(() => { buildStory(); ScrollTrigger.refresh(); });

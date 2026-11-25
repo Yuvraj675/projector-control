@@ -91,3 +91,8 @@ References looked at: Awwwards "mobile" collections (scroll-driven product stori
 
 ## Never let anything be wider than the screen
 Mobile browsers treat any element wider than the viewport as page width and zoom the whole page out (tiny text, "zoomed" top-left corner). The film grain was a fixed layer at `inset: -50%` (twice the screen) and caused exactly that on phones while desktop browsers just clipped it. It is now screen-sized (the grain pattern is shifted with `background-position`), and `html`/`body` use `overflow-x: clip`. Check with `document.documentElement.scrollWidth === innerWidth` at several scroll positions, ideally in a mobile-emulated context (`isMobile`, `hasTouch`).
+
+## Mobile address bar (the "stretch" bug)
+`vp.h` (src/viewport.js) is the stable height. Everything that is laid out against it must be tied to it, not to the live viewport: `#gl` and `.copy-stack` use `calc(var(--vh) * 100)` anchored at the top, so when Chrome's address bar slides away the canvas keeps its size and proportions (it used to be `height: 100%`, which stretched the picture). While the live viewport is taller than the stable height, `html.has-gap` fades the canvas into the page colour over its last 3rem. The resize handler only rebuilds the scroll timeline when the stable size changes, and `ScrollTrigger.config({ ignoreMobileResize: true })` is set, so the bar sliding in and out no longer makes the page jump. Test it by growing a mobile-emulated viewport by ~90px.
+
+Phone Auto keystone chapter: the explanation is a dark frosted-glass card (`backdrop-filter`) directly above the buttons. Set up: the hand is pinned to the bottom-left; `.setup::before` is translucent glass for the first screenful and solid further down.

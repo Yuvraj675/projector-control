@@ -6,7 +6,13 @@
 const touch = matchMedia('(pointer: coarse)').matches;
 let w = window.innerWidth, h = window.innerHeight;
 
-function publish() { document.documentElement.style.setProperty('--vh', h / 100 + 'px'); }
+function publish() {
+  const root = document.documentElement;
+  root.style.setProperty('--vh', h / 100 + 'px');
+  // the real viewport can be taller than the stable height (mobile address bar hidden): the canvas keeps the stable size, so it never stretches,
+  // and the strip below it is faded into the page colour instead of ending in a hard edge
+  root.classList.toggle('has-gap', window.innerHeight - h > 6);
+}
 
 function sync() {
   const nw = window.innerWidth, nh = window.innerHeight;
