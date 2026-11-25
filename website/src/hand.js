@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import frames from './frames.json';
 import { homography, toMat3 } from './math.js';
+import { vp } from './viewport.js';
 
 /* The hand is a flipbook: a graph of photographed poses with generated and
    flow-interpolated in-betweens. goTo() walks the shortest path through the
@@ -74,6 +75,10 @@ class Rig {
     this.name = name;
     this.renderer = renderer;
     this.def = frames[name];
+    // phones get the half-size frame set (a third of the GPU memory), so a deep cache fits and nothing is ever decoded in the middle of a move
+    this.small = vp.w < 800 || matchMedia('(pointer: coarse)').matches;
+    this.dir = this.def.dir + (this.small ? '-m' : '');
+    this.maxCache = this.small ? 56 : 80;
     this.loader = loader;
     this.cache = new Map();
     this.fps = 18;
@@ -132,7 +137,7 @@ class Rig {
     if (!t) {
       // no mipmaps (the frames are drawn close to 1:1) so uploads are cheap, and upload the moment the image
       // is decoded instead of in the middle of the first frame that needs it
-      t = this.loader.load(`/assets/hand/${this.def.dir}/${id}.webp`, (tex) => { try { this.renderer?.initTexture(tex); } catch {} });
+      t = this.loader.load(`/assets/hand/${this.dir}/${id}.webp`, (tex) => { try { this.renderer?.initTexture(tex); } catch {} });
       t.colorSpace = THREE.SRGBColorSpace;
       t.generateMipmaps = false;
       t.minFilter = THREE.LinearFilter;
@@ -143,6 +148,21 @@ class Rig {
   }
 
   preload(ids) { ids.forEach((i) => this.tex(i)); }
+
+  /** warm every frame one hop away from `id` (spread over idle time) so the next move never waits for a decode */
+  prefetch(id) {
+    if (this._pf === id) return;
+    this._pf = id;
+    const todo = [];
+    for (const e of this.graph.get(id) || []) todo.push(...e.frames);
+    let n = 0;
+    const step = () => {
+      if (this._pf !== id || n >= todo.length) return;
+      this.tex(todo[n++]);
+      (window.requestIdleCallback || ((f) => setTimeout(f, 60)))(step, { timeout: 400 });
+    };
+    step();
+  }
 
   /** shortest keyframe path a -> b, expanded to every in-between frame */
   path(a, b) {
@@ -202,16 +222,18 @@ class Rig {
     this.held = 0;
     if (ready(ta)) { u.uA.value = ta; u.uHA.value = this.mats[A]; }
     if (ready(tb)) { u.uB.value = tb; u.uHB.value = this.mats[B]; }
-    u.uMix.value = ready(tb) ? f * f * (3 - 2 * f) : 0;
+    // linear: a smoothstep per frame pair makes the picture dwell on each frame and then crossfade fast (stop-go judder at 18 fps)
+    u.uMix.value = ready(tb) ? f : 0;
     this.current = f > 0.5 ? B : A;
+    if (this.pos >= last - 1e-3) this.prefetch(this.seq[last]);
     this.evict(A, B);
   }
 
   evict(A, B) {
-    if (this.cache.size <= 22) return;
+    if (this.cache.size <= this.maxCache) return;
     const keep = new Set([A, B, this.def.rest, ...this.seq]);
     for (const [id, t] of this.cache) {
-      if (this.cache.size <= 18) break;
+      if (this.cache.size <= this.maxCache - 10) break;
       if (!keep.has(id)) { t.dispose(); this.cache.delete(id); }
     }
   }

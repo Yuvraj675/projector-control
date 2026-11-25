@@ -74,3 +74,9 @@ The site says so in a footnote: app screens are illustrations.
 ## Viewport sizes
 - Never use `vh` / `dvh` / `svh` in CSS. `src/viewport.js` publishes `--vh` (1% of a stable viewport height); write `calc(var(--vh, 1vh) * N)`. On touch devices the height ignores the small jumps of the collapsing address bar (it keeps the smaller value, so nothing is cut off); on desktop it is exactly `innerHeight`. JS reads the size from `vp.w` / `vp.h`, not from `window.inner*`.
 - Desktop hand placement (`keyframes` in `src/main.js`) is a fraction of a 16:10 window; wider windows keep the hand the same distance from the left edge so its cropped edge never shows (checked from 1024x600 to 3440x1440).
+
+## Hand frame polish
+After `art/build_frames.py`, run `python3 art/polish_frames.py` once (needs numpy, Pillow, scipy). It sharpens the softer RIFE in-betweens to match their keyframes, evens out
+exposure between poses (gain clamped to +-8%), and writes the half-size phone sets `public/assets/hand/portrait-m` and `landscape-m` that `src/hand.js` loads on small or touch screens.
+Playback (`hand.js`): linear blend between frames (a smoothstep per pair made the picture dwell and then jump), a deep texture cache (80 desktop, 56 phone) and idle prefetch of every
+frame one hop from the current pose, so a move never waits for a decode. Known limit: the biggest thumb moves (tilts, key presses) have few in-betweens and still step visibly; they need more generated midpoints.
