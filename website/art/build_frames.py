@@ -128,8 +128,19 @@ def rife(a, b, step, out):
     if os.path.exists(out): return
     subprocess.run([RIFE, '-0', a, '-1', b, '-o', out, '-s', str(step), '-m', MODEL], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
+def despill(arr):
+    """Remove the magenta cast from edge pixels (thumb outline against the screen) without touching skin or the fully keyed screen."""
+    a = arr.astype(np.int32)
+    m = np.minimum(a[..., 0], a[..., 2]) - a[..., 1]
+    sel = (m > 3) & (m < 72)
+    g = a[..., 1]
+    for ch in (0, 2):
+        a[..., ch] = np.where(sel, np.minimum(a[..., ch], g + 2), a[..., ch])
+    return a.clip(0, 255).astype(np.uint8)
+
 def save(arr, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
+    arr = despill(arr)
     al = (matte(arr) * 255).astype(np.uint8)
     rgb = arr.copy(); rgb[al == 0] = 0
     Image.fromarray(np.dstack([rgb, al]), 'RGBA').save(path, quality=88, alpha_quality=92, method=6)

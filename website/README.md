@@ -32,7 +32,9 @@ swipe, air-mouse tilts) plus 12 denser in-between poses, and the landscape two-h
 3. writes `public/assets/hand/**` and the pose graph `src/frames.json`.
 
 Frames also get a baked silhouette alpha (so the dark phone bezel is solid over any backdrop). Steps with a Codex-made midpoint in `raw4/` (the largest thumb
-moves) only need one RIFE in-between; the builder uses whichever `raw4` midpoints exist, so more can be added later (see `MIDS` in `build_frames.py`).
+moves) only need one RIFE in-between; the builder uses whichever `raw4` midpoints exist (see `MIDS` in `build_frames.py`). `raw4/hv-*.png` are
+"thumb hovering just above the button" poses: a D-pad click is hover, press, hold, lift, return. Magenta spill on edge pixels is removed when frames are built,
+and the shader keys on chroma (so the thumb's shadow on the screen darkens the UI instead of showing as a purple band).
 
 The originals are not in git: they live in `projector-redesign/assets/website/hand-frames-v2/` (`raw/`, `raw2/`, `raw3/`, `raw4/`).
 To rebuild, copy them to `art/raw`, `art/raw2`, `art/raw3`, `art/raw4`, download the RIFE release (`rife-ncnn-vulkan-20221029-ubuntu.zip` from

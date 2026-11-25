@@ -25,7 +25,9 @@ uniform float uScrMix; uniform float uScrShift;
 uniform float uGlow; uniform float uTouch; uniform vec2 uTouchAt; uniform float uSheen;
 uniform float uFlash;
 
-float magenta(vec3 c){ return smoothstep(0.1, 0.5, min(c.r,c.b) - c.g); }
+// key on chroma (how magenta the colour is), not brightness, so the thumb's shadow on the screen (dark magenta) keys cleanly
+float chroma(vec3 c){ return (min(c.r, c.b) - c.g) / max(max(c.r, c.b), 0.05); }
+float magenta(vec3 c){ return smoothstep(0.5, 0.82, chroma(c)) * smoothstep(0.03, 0.1, max(c.r, c.b)); }
 
 vec3 screenAt(vec2 su){
   vec2 a = su + vec2(0.0, -uScrShift * uScrMix);
@@ -37,7 +39,8 @@ vec4 layer(sampler2D tex, mat3 H, vec2 uv){
   vec4 tx = texture2D(tex, uv);
   vec3 c = tx.rgb;
   float k = magenta(c);
-  float spill = clamp((min(c.r,c.b) - c.g) * 4.0, 0.0, 1.0) * (1.0 - k);
+  float shade = clamp(max(c.r, c.b) / 0.92, 0.0, 1.0);        // how much light reaches the glass here (the thumb's shadow)
+  float spill = clamp(chroma(c) * 3.0, 0.0, 1.0) * (1.0 - k);
   c.rb = mix(c.rb, vec2(c.g * 1.1), spill);
   vec3 q = H * vec3(uv, 1.0);
   vec2 su = q.xy / q.z;
@@ -46,6 +49,7 @@ vec4 layer(sampler2D tex, mat3 H, vec2 uv){
   float rip = uTouch * (smoothstep(0.1, 0.0, d) * 0.14 + smoothstep(0.016, 0.0, abs(d - (1.0 - uTouch) * 0.18)) * 0.3);
   s += vec3(1.0, 0.45, 0.2) * rip;
   s += smoothstep(0.0, 1.0, 1.0 - abs((su.x + su.y * 0.55) - uSheen) * 6.0) * 0.012;
+  s *= mix(1.0, mix(0.35, 1.0, shade), k);                    // thumb shadow falls on the app UI
   s = s * uGlow + uFlash;
   float al = max(tx.a, k);                 // silhouette alpha baked into the frame (solid bezel)
   return vec4(mix(c, s, k) * al, al);
