@@ -35,6 +35,9 @@ Cheap Android projectors ship with a clumsy remote (or none), hidden settings, a
 
 > **Independent project.** Not affiliated with any projector maker. It works with the projector's standard Android debugging interface. Names of projectors, firmwares and apps are used only to describe compatibility.
 
+## Website
+The project site lives in [`website/`](website): an immersive hand-and-phone scene where the phone controls a projected screen, with a working D-pad, keyboard and app launcher you can try (tap the phone itself on a touch screen). See its README to run or deploy it.
+
 ## Features
 
 - **Remote**: *touchpad* (swipe to move, tap to click, two fingers to scroll, two-finger tap for Back, press and hold to drag), *air mouse* (point the phone like a Magic Remote), and a *D-pad*. Back, Home, recents, menu, volume, mute and play/pause are always there. Your phone's **volume buttons** control the projector too.

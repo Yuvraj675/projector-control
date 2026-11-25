@@ -40,6 +40,11 @@ tools/build-assets.sh            rebuilds ksall.jar and pattern.apk into app ass
 docs/screenshots/                README images, produced from the UI snapshot tests
 ```
 
+## The website (`website/`)
+Static marketing site (Vite, Three.js, GSAP, Lenis, Motion). Its own README covers the art pipeline (Codex-generated hand frames, RIFE in-betweens, alpha matting),
+the portrait/mobile layout solver, security headers and the audits. Quick start: `cd website && npm ci && npm run dev`; `SITE_URL=https://host npm run build` for production.
+The page shows illustrated screens (an asterisk footnote says so); the Home/Connect screens use a generic device name and IP on purpose (never a real address).
+
 ## The remote (how the phone becomes a mouse)
 The projector has `/system/bin/uinput` (Android 12 evdev format) and the shell user is in group `uhid`, so no root is needed.
 `RemoteInput` runs `uinput -` over one ADB shell stream and writes JSON lines: `register` (name, vid/pid, `configuration`
