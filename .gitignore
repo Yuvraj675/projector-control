@@ -18,3 +18,8 @@ dist/
 
 # website social-share image
 !website/public/assets/og.jpg
+
+# signing keys never go into the repo
+*.jks
+*.keystore
+*.p12

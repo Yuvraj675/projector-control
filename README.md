@@ -6,8 +6,8 @@
 
 ![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF?logo=kotlin&logoColor=white)
-![Version](https://img.shields.io/badge/version-0.7.2-blue)
-![Tests](https://img.shields.io/badge/JVM%20tests-101%20passing-brightgreen)
+[![Release](https://img.shields.io/github/v/release/Yuvraj675/projector-control)](https://github.com/Yuvraj675/projector-control/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 ![Projector](https://img.shields.io/badge/projector-Android%20TV%20%2F%20box%20with%20ADB-lightgrey)
 
 [Features](#features) · [Quick start](#quick-start) · [Set up your projector](#set-up-your-projector) · [Using the app](#using-the-app) · [Auto keystone](#auto-keystone) · [Troubleshooting](#troubleshooting) · [How it works](#how-it-works) · [Build from source](#build-from-source)
@@ -56,7 +56,7 @@ The project site lives in [`website/`](website): an immersive hand-and-phone sce
 ## Quick start
 
 1. **Turn on network debugging on the projector** ([guide below](#set-up-your-projector)).
-2. **Install ProjectorConnect on your Android phone** (Android 8.0+). Download the latest `ProjectorConnect-x.y.z.apk` from the Releases page, open it, and allow *install unknown apps* if asked. Or [build it yourself](#build-from-source).
+2. **Install ProjectorConnect on your Android phone** (Android 8.0+). Download the latest `ProjectorConnect.apk` from the [Releases page](https://github.com/Yuvraj675/projector-control/releases/latest), open it, and allow *install unknown apps* if asked. Or [build it yourself](#build-from-source).
 3. Put the phone and projector on the **same Wi-Fi**.
 4. Open the app and tap **Find my projector**. When the projector asks *Allow debugging?*, choose **Always allow**.
 
@@ -165,7 +165,7 @@ Still stuck? Open **Settings → Activity log** and include it, plus the diagnos
 | Air mouse | A phone with a gyroscope |
 | Best keystone accuracy | A phone that reports camera calibration (most recent ones). Others fall back to focal length and sensor size |
 
-Developed and tested on a 1 GB, 32-bit Hisilicon Hi3751 projector (Android 12) and a recent Android phone.
+Tested on a Hisilicon Hi3751 projector (32-bit, Android 12).
 
 ## Privacy and safety
 
@@ -204,50 +204,31 @@ A watchdog pings the projector every few seconds. If it stops answering, the app
 
 ```bash
 ./tools/build-assets.sh        # only when projector/ or pattern/ change (rebuilds the two projector-side files)
-./gradlew assembleRelease      # app/build/outputs/apk/release/ (debug-signed, installs over any build)
+./gradlew assembleRelease      # app/build/outputs/apk/release/ (signed with your local debug key)
 ./gradlew assembleDebug        # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew testDebugUnitTest    # all JVM tests, including UI snapshots
 ```
-
-### Releases
-
-Releases are published by a manually triggered GitHub Action (`.github/workflows/release.yml`), never by hand:
-
-1. Raise `versionCode` and `versionName` in `app/build.gradle` and commit/push.
-2. GitHub, **Actions, Release, Run workflow** (optional notes; otherwise they are generated from the commits).
-3. The workflow runs the unit tests, builds and signs the APK, creates the release `v<versionName>` with `ProjectorConnect-<version>.apk`,
-   `ProjectorConnect.apk` (fixed name, so `releases/latest/download/ProjectorConnect.apk` always points at the newest build) and `SHA256SUMS.txt`,
-   then commits `website/release.json` (version, size, SHA-256) so the website shows and links the new build. Rebuild/redeploy the site afterwards.
-
-**One-time setup:** the workflow refuses to run without these repository secrets (Settings, Secrets and variables, Actions). A release has to be
-signed with the same key as earlier builds, or phones cannot update in place. Existing builds use the local debug key:
-
-```sh
-gh secret set KEYSTORE_BASE64 < <(base64 -w0 ~/.android/debug.keystore)
-gh secret set KEYSTORE_PASSWORD --body android
-gh secret set KEY_ALIAS --body androiddebugkey
-gh secret set KEY_PASSWORD --body android
-```
-
-Use a new keystore instead if you do not need to update existing installs (then the first release is not an update for them).
-
 
 Requires JDK 17 and the Android SDK (platform 34, build-tools 34.0.0). Put `sdk.dir=...` in `local.properties`.
 
 **Tests.** Geometry, solver, pose (with a simulated camera), the marker detector on rendered photos, learning on a simulated wall, the ADB layer (against a simulated projector), remote input, installs and every projector tool run as ordinary JVM tests. UI snapshot tests render each screen with Robolectric to `app/build/ui-snapshots/`. Optional live tests run against real hardware: `KS_PROJECTOR=<ip>` for a read-only projector check and `KS_SCAN=<ip>/<prefix>` for the subnet scan. `KS_CAPTURES=<dir>` cross-checks the pipeline against real photos (never committed: they show a room).
 
-The code map, projector facts and repository conventions are in [CLAUDE.md](CLAUDE.md).
+The code map and the projector facts behind the app are in [CLAUDE.md](CLAUDE.md). Releases are described in [CONTRIBUTING.md](CONTRIBUTING.md#releasing-maintainers).
 
 ## Known limitations
 
-- The touchpad and air-mouse feel, and several 0.3.0 features (reconnect, sleep timer, send file, screenshot), have been verified in code and against a simulated projector, but not yet broadly on hardware.
+- Touchpad and air-mouse feel depend on the phone and projector; only a few device combinations have been tried on real hardware.
 - Non-English text cannot be typed, because the projector only receives key presses.
 - App names are guessed from package names for apps the app does not know.
 - The phone is assumed to face the wall (small deviations are absorbed by averaging and learning). Moving the projector or your seat may need a new run.
 
 ## Contributing
 
-Issues and field reports are welcome, especially from **other projector models**: say what you have, what worked and attach the diagnostics report. Pull requests are welcome too; run `./gradlew testDebugUnitTest` first and read [CLAUDE.md](CLAUDE.md) for the layout.
+Issues and field reports are welcome, especially from **other projector models**: say what you have, what worked and attach the diagnostics report. Pull requests are welcome too, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+[MIT](LICENSE)
 
 ## Credits
 
