@@ -11,8 +11,8 @@ android {
         applicationId 'dev.keystone.auto'
         minSdk 26
         targetSdk 34
-        versionCode 19
-        versionName '0.7.2'
+        versionCode 20
+        versionName '1.0.0'
     }
 
     // CI release builds (.github/workflows/release.yml) sign with the key from the KEYSTORE_* environment variables.

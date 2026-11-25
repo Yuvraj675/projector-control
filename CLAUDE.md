@@ -4,9 +4,9 @@ Engineering notes for working on this repository.
 
 ## Rules for this repo
 - Commit after every step with a descriptive message.
-- Commits use the user's own git identity (the configured `user.name` / `user.email`).
+- Commits use the committer's own configured git identity (`user.name` / `user.email`).
 - Never add `Co-Authored-By` lines or any other attribution trailers to commits.
-- Never commit personal photos (captures of the user's room). They are gitignored; keep them out of tests.
+- Never commit personal photos (captures of someone's room). They are gitignored; keep them out of tests.
 - Keep `README.md` and this file current whenever behaviour, layout or commands change.
 
 ## Releasing
@@ -132,6 +132,7 @@ on state (the keystone arrows) replayed their first action forever (one corner, 
 **Gotcha fixed in 0.7.2:** `PanelView`'s `pointerInput(Unit)` handlers outlive the Starting -> Ready change, which changes `TuneView.bounds` (hence the drawn scale). They had measured the scale once (from the neutral placeholder view), so only the top-left dot was hit. They now compute the scale from `viewNow` on every event. Any state a long-lived `pointerInput(Unit)` reads must come through `rememberUpdatedState`. `TuneUiTest` selects and drags all four corners in the real order (Starting, then Ready) and fails on the old code. Dragging feel on a phone is untested.
 
 ## Status, open items and wider context
+- Version 1.0.0: first published release (GitHub Releases through the manual workflow, see Releasing). No functional change from 0.7.2; the release is signed with a dedicated key instead of the debug key, so installs of earlier debug-signed builds must be uninstalled once.
 - Version 0.7.2: only the top-left corner could be selected (stale scale in the touch handlers, see the Manual keystone section); fixed with tests for all four corners.
 - Version 0.7.1: Fine-tune rebuilt after the first phone run (0.7.0 was unintuitive and its arrows moved one corner once): corrected view with the keystone as base, one captured frame warped live, arrows fixed (stale `RoundKey` callbacks), see above. `TuneView`/`TuneUiTest` added.
 - Version 0.7.0: **Fine-tune keystone** (first version, panel-space dots), the helper's `serve` mode, `ksall.jar` rebuilt. Bluetooth control was investigated and dropped: the shell user has no `BLUETOOTH_PRIVILEGED`, `BluetoothDevice.connect()` does not exist on this Android 12 build and the profile proxy cannot bind from `app_process`; the only route left (driving the projector's own Bluetooth screen) would cover a running video. Not run on a phone yet.
@@ -163,11 +164,8 @@ on state (the keystone arrows) replayed their first action forever (one corner, 
 - **Not yet run on a phone**: camera, sensors (gyro air mouse, gravity), speech recogniser, Wi-Fi scan, dadb on Android, the
   file picker/install path, and the touch feel. If something fails ask for Settings -> Activity log and the screen.
 - Firmware Auto keystone (see above) was found on in a real session and blocks every setter; Projector -> Keystone only shows it
-  (the user turns it off in the projector's own settings). Why it switched on is unknown.
+  (it has to be turned off in the projector's own settings). Why it switched on is unknown.
 - Ideas not built: non-ASCII typing (needs an IME or clipboard route on the projector),
   a launcher widget/quick-settings tile for the remote, CEC/HDMI control, multi-projector switcher, quick keystone re-check after moving.
-- No git remote is configured yet; the user will add one.
 - Fixed design decisions: BR marker offset from the corner (mute indicator), corner offsets capped in the solver at `Panel.MAX_X/MAX_Y` (230/220),
   limits always kept a nudge BELOW the firmware's suspected maximum (`persist.hisi.keystone.alias.edge=235`, unconfirmed), never raised to it, outlier rejection only for gross deviations, photos stay on the phone.
-- The wider project (the user's projector, what was changed on it, backups, research prototype, laptop setup) is described in
-  `../PROJECT_STATE.md`, which lives outside this repo and may not exist elsewhere. Read it first if it is there.
