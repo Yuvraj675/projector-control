@@ -1,4 +1,3 @@
-import './style.css';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -20,12 +19,41 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 /* ------------------------------------------------------------------ loader */
 const manager = new THREE.LoadingManager();
 const numEl = $('#loader-num');
+const quadEl = $('#lg-quad');
+const dotEls = [...$('#lg-dots').children];
+const statusEl = $('#loader-status');
 const shown = { v: 0 };
 let target = 0;
 manager.onProgress = (_u, loaded, total) => { target = (loaded / total) * 100; };
-gsap.ticker.add((_t, dtMs) => {
+
+/* The loader is the product in miniature: a projected picture that starts keystoned and is straightened as the page loads.
+   The four corners are the same calibration dots the Auto keystone chapter uses. */
+const QUAD_FROM = [[78, 52], [248, 20], [300, 178], [22, 146]];     // a tilted projector: trapezoid
+const QUAD_TO = [[40, 30], [280, 30], [280, 170], [40, 170]];       // straight 16:10 picture
+const STATUS = [[0, 'Warming up the lamp'], [30, 'Finding the picture'], [62, 'Straightening the corners'], [92, 'Picture locked']];
+let statusAt = -1;
+const renderLoader = (v, t) => {
+  const k = Math.min(1, Math.max(0, v / 100));
+  const e = 1 - Math.pow(1 - k, 3);
+  const wob = (1 - e) * Math.sin(t * 3.1) * 3.2;                     // a little drift while it is still off
+  const pts = QUAD_FROM.map((a, i) => {
+    const b = QUAD_TO[i];
+    const x = a[0] + (b[0] - a[0]) * e + wob * (i % 2 ? -1 : 1);
+    const y = a[1] + (b[1] - a[1]) * e + wob * (i < 2 ? 1 : -1) * 0.6;
+    return [x, y];
+  });
+  quadEl.setAttribute('points', pts.map((q) => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' '));
+  dotEls.forEach((d, i) => { d.setAttribute('cx', pts[i][0].toFixed(1)); d.setAttribute('cy', pts[i][1].toFixed(1)); });
+  document.documentElement.style.setProperty('--load', k.toFixed(3));
+  let si = 0;
+  STATUS.forEach(([from], i) => { if (v >= from) si = i; });
+  if (si !== statusAt) { statusAt = si; statusEl.textContent = STATUS[si][1]; }
+};
+renderLoader(0, 0);
+gsap.ticker.add((tSec, dtMs) => {
   shown.v += (target - shown.v) * (1 - Math.exp(-(dtMs / 1000) * 9));
   numEl.textContent = Math.min(100, Math.round(shown.v + 0.4));
+  renderLoader(shown.v, tSec);
 });
 
 let stage;

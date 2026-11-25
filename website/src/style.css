@@ -31,23 +31,21 @@ button, input { font: inherit; color: inherit; }
 #gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
 
 /* ------------------------------------------------------------------ loader */
-#loader { position: fixed; inset: 0; z-index: 100; display: grid; place-content: center; justify-items: center; gap: 1.6rem; background: var(--bg); transition: opacity 0.9s var(--ease), visibility 0.9s; }
+#loader { position: fixed; inset: 0; z-index: 100; display: grid; place-content: center; justify-items: center; gap: 1.5rem; background: var(--bg); overflow: hidden; transition: opacity 0.9s 0.25s var(--ease), visibility 0s 1.15s; }
 #loader.done { opacity: 0; visibility: hidden; }
-.loader-logo { animation: breathe 2.2s ease-in-out infinite; }
-.loader-logo { opacity: 0.8; }
-/* an old film leader: crosshair, two rings and a sweep that goes round once a second */
-.leader { position: relative; display: grid; place-items: center; width: min(46vw, 15rem); aspect-ratio: 1; }
-.leader i { position: absolute; }
-.leader-ring { inset: 0; border-radius: 50%; border: 2px solid rgba(244, 239, 232, 0.55); }
-.leader-ring.r2 { inset: 17%; border-width: 1px; border-color: rgba(244, 239, 232, 0.25); }
-.leader-h, .leader-v { background: rgba(244, 239, 232, 0.3); }
-.leader-h { left: -9%; right: -9%; top: calc(50% - 0.5px); height: 1px; }
-.leader-v { top: -9%; bottom: -9%; left: calc(50% - 0.5px); width: 1px; }
-.leader-sweep { inset: 0; border-radius: 50%; background: conic-gradient(from 0deg, rgba(255, 106, 53, 0) 0turn, rgba(255, 106, 53, 0) 0.7turn, rgba(255, 106, 53, 0.5) 1turn); animation: sweep 1s linear infinite; }
-@keyframes sweep { to { transform: rotate(1turn); } }
-.loader-count { position: relative; font: 800 clamp(3.4rem, 9vw, 5.6rem)/1 var(--display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; text-shadow: 0 0 40px rgba(5, 6, 8, 0.9); }
+/* a lamp that comes up with the percentage, behind the picture */
+.beam { position: absolute; left: 50%; top: 50%; width: 120vmax; height: 120vmax; margin: -60vmax 0 0 -60vmax; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255, 150, 90, calc(0.05 + var(--load, 0) * 0.2)), rgba(255, 106, 53, calc(var(--load, 0) * 0.06)) 38%, transparent 70%); }
+.calib { position: relative; display: grid; place-items: center; width: min(88vw, 34rem); aspect-ratio: 320 / 200; }
+.frame { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 calc(4px + var(--load, 0) * 22px) rgba(255, 150, 90, calc(0.15 + var(--load, 0) * 0.45))); transition: transform 1.05s cubic-bezier(0.7, 0, 0.2, 1), opacity 0.7s 0.3s; }
+#loader.done .frame { transform: scale(9); opacity: 0; }
+.loader-count { position: relative; font: 800 clamp(3.2rem, 9vw, 5.4rem)/1 var(--display); letter-spacing: -0.045em; font-variant-numeric: tabular-nums; transition: opacity 0.35s, transform 0.6s var(--ease); }
 .loader-count i { position: static; font-style: normal; font-size: 1rem; font-weight: 600; color: var(--mute); margin-left: 3px; }
-@keyframes breathe { 50% { transform: scale(1.08); opacity: 0.55; } }
+#loader.done .loader-count { opacity: 0; transform: scale(1.12); }
+.loader-status { position: relative; margin: 0; font: 500 0.78rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(244, 239, 232, 0.55); }
+.loader-logo { position: relative; opacity: 0.75; animation: breathe 2.2s ease-in-out infinite; }
+@keyframes breathe { 50% { transform: scale(1.08); opacity: 0.5; } }
+@media (prefers-reduced-motion: reduce) { .loader-logo { animation: none; } #loader.done .frame { transform: none; } }
 
 /* ------------------------------------------------------------------ cursor */
 .cursor { position: fixed; z-index: 90; top: 0; left: 0; pointer-events: none; mix-blend-mode: difference; display: none; }
@@ -329,4 +327,4 @@ body.lights-down .site-header { opacity: 0.55; }
 body.lights-down .site-header:hover { opacity: 1; }
 .site-header { transition: transform 0.6s var(--ease), opacity 0.6s; }
 @media (max-aspect-ratio: 17/20) { .lights { top: auto; bottom: 0.9rem; left: auto; right: 0.6rem; width: 2.1rem; height: 2.1rem; } .cue { top: 4.4rem; } }
-@media (prefers-reduced-motion: reduce) { .loader-logo, .leader-sweep { animation: none; } .grain { animation: none; } .cue, .glow { display: none; } }
+@media (prefers-reduced-motion: reduce) { .loader-logo { animation: none; } .grain { animation: none; } .cue, .glow { display: none; } }
