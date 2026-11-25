@@ -46,20 +46,28 @@ const metrics = () => {
 
 /** Fit the projected wall into the band between the nav and the chapter's headline, so it never overlaps text
  *  and never leaves a hole, whatever the window size. Returns world transform values for the wall. */
-function fitWall(i, cz = 9, wz = -15) {
+function fitWall(i, cz = 9, wz = -15, ly = 0.2) {
   const W = window.innerWidth, H = window.innerHeight;
-  const { tan } = metrics();
-  const perPx = (2 * (cz - wz) * tan) / H;
   const r = copies[i].getBoundingClientRect();
   const top = Math.round($('#nav-wrap').getBoundingClientRect().bottom) + 14;
   const bottom = r.top - 28;
   const right = W - 36;
-  let h = Math.max(150, Math.min(bottom - top, H * 0.52));
+  let h = Math.max(110, Math.min(bottom - top, H * 0.52));
   let w = (h * 16) / 9;
   if (w > right - r.left) { w = right - r.left; h = (w * 9) / 16; }
   const cx = r.left + w / 2;                       // shares its left edge with the copy
   const cy = top + (bottom - top) / 2;
-  return { wx: (cx - W / 2) * perPx, wy: (H / 2 - cy) * perPx, ws: (h * perPx) / 9 };
+  // unproject through a camera identical to the scene's (same fov, aspect, position and look-at) so the result is exact
+  const cam = new THREE.PerspectiveCamera(stage.camera.fov, W / H, 0.1, 120);
+  cam.position.set(0, 0, cz);
+  cam.lookAt(0, ly, -4);
+  cam.updateMatrixWorld(true);
+  const at = (px, py) => {
+    const d = new THREE.Vector3((px / W) * 2 - 1, -(py / H) * 2 + 1, 0.5).unproject(cam).sub(cam.position).normalize();
+    return cam.position.clone().addScaledVector(d, (wz - cam.position.z) / d.z);
+  };
+  const c = at(cx, cy), t = at(cx, cy - h / 2), b = at(cx, cy + h / 2);
+  return { wx: c.x, wy: c.y, ws: (t.y - b.y) / 9 };
 }
 
 // Desktop: the hand on the left (its cropped arm leaves the frame), the wall in the free band above the copy.
