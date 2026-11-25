@@ -19,7 +19,7 @@ html { background: var(--bg); color: var(--ink); -webkit-text-size-adjust: 100%;
 html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
 body { margin: 0; font-family: var(--body); font-size: 1rem; line-height: 1.5; background: var(--bg); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
-body.is-loading { overflow: hidden; height: 100vh; }
+body.is-loading { overflow: hidden; height: calc(var(--vh, 1vh) * 100); }
 a { color: inherit; text-decoration: none; }
 button, input { font: inherit; color: inherit; }
 ::selection { background: var(--accent); color: #000; }
@@ -94,10 +94,10 @@ button, input { font: inherit; color: inherit; }
 
 /* ------------------------------------------------------------- copy layers */
 main { position: relative; z-index: 10; }
-#story { height: 700vh; pointer-events: none; }
+#story { height: calc(var(--vh, 1vh) * 700); pointer-events: none; }
 .copy-stack { position: fixed; inset: 0; z-index: 10; pointer-events: none; }
 .copy-stack.off { visibility: hidden; }
-.copy { position: absolute; left: var(--col-l); bottom: clamp(3.4rem, 8.5vh, 6.5rem); width: max-content; max-width: calc(100vw - var(--col-l) - var(--pad)); visibility: hidden; pointer-events: none; text-shadow: 0 2px 22px rgba(0, 0, 0, 0.5); }
+.copy { position: absolute; left: var(--col-l); bottom: clamp(3.4rem, calc(var(--vh, 1vh) * 8.5), 6.5rem); width: max-content; max-width: calc(100vw - var(--col-l) - var(--pad)); visibility: hidden; pointer-events: none; text-shadow: 0 2px 22px rgba(0, 0, 0, 0.5); }
 .copy.is-active { visibility: visible; pointer-events: auto; }
 
 .copy:not(#hero) .display { font-size: clamp(2.6rem, 5vw, 6rem); }
@@ -141,7 +141,7 @@ main { position: relative; z-index: 10; }
 
 /* ------------------------------------------------------- auto keystone */
 .copy-wide { inset: 0; width: auto; max-width: none; right: 0; bottom: 0; }
-.ks-col { position: absolute; top: calc(var(--ks-top, 38vh) + 2.2rem); width: min(20vw, 22rem); }
+.ks-col { position: absolute; top: calc(var(--ks-top, calc(var(--vh, 1vh) * 38)) + 2.2rem); width: min(20vw, 22rem); }
 .ks-left { left: var(--pad); } .ks-right { right: var(--pad); }
 .ks-col { text-shadow: 0 1px 16px rgba(0, 0, 0, 0.65); }
 .ks-col h3 { margin: 0; font: 800 clamp(1.7rem, 2.5vw, 2.6rem)/1.02 var(--display); letter-spacing: -0.04em; text-wrap: balance; }
@@ -156,10 +156,10 @@ main { position: relative; z-index: 10; }
 .ks-status { position: absolute; left: 0; right: 0; bottom: 1.2rem; margin: 0; text-align: center; font-size: 0.86rem; color: var(--mute); }
 
 /* ------------------------------------------------------------------- setup */
-.setup { position: relative; isolation: isolate; padding: 16vh var(--pad) 3rem; }
+.setup { position: relative; isolation: isolate; padding: calc(var(--vh, 1vh) * 16) var(--pad) 3rem; }
 .setup::before { content: ''; position: absolute; inset: 0 0 0 24%; z-index: -1; pointer-events: none; background: rgba(4, 5, 7, 0.84); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 30vh), linear-gradient(90deg, transparent 0, #000 24%); -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(180deg, transparent 0, #000 30vh), linear-gradient(90deg, transparent 0, #000 24%); mask-composite: intersect; }
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 calc(var(--vh, 1vh) * 30)), linear-gradient(90deg, transparent 0, #000 24%); -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(180deg, transparent 0, #000 calc(var(--vh, 1vh) * 30)), linear-gradient(90deg, transparent 0, #000 24%); mask-composite: intersect; }
 .faq { position: relative; }
 .faq::before { content: ''; position: absolute; z-index: -1; inset: -16rem -100vw -18rem -100vw; pointer-events: none; background: rgba(4, 5, 7, 0.84); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 12rem); mask-image: linear-gradient(180deg, transparent 0, #000 12rem); }
 .setup-inner { max-width: 96rem; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr); }
@@ -190,7 +190,7 @@ details[open]:not(.closing) > summary b { transform: rotate(180deg); }
 .nested { margin: 1rem 0 0; border-radius: 0.8rem; background: rgba(255, 255, 255, 0.03); }
 .nested summary { padding: 0.8rem 1rem; font-size: 0.92rem; }
 .nested p { margin: 0; padding: 0 1rem 1rem; font-size: 0.92rem; }
-.faq { max-width: 96rem; margin: clamp(5rem, 14vh, 10rem) auto 0; }
+.faq { max-width: 96rem; margin: clamp(5rem, calc(var(--vh, 1vh) * 14), 10rem) auto 0; }
 .faq-title { margin: 0 0 2rem; font: 800 clamp(2.2rem, 4.6vw, 4rem)/1 var(--display); letter-spacing: -0.045em; }
 .faq-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; align-items: start; }
 .faq details p { margin: 0; padding: 0 1.3rem 1.3rem; color: var(--mute); font-size: 0.97rem; }
@@ -237,19 +237,19 @@ details[open]:not(.closing) > summary b { transform: rotate(180deg); }
   /* Auto keystone */
   .copy-wide { top: 0; bottom: 0; right: 0; left: 0; padding: 0; }
   .copy-wide::before { display: none; }
-  .ks-col { position: absolute; left: var(--pad); right: calc(var(--pad) + 1.6rem); top: calc(var(--ks-top, 36vh) + 0.6rem); width: auto; transform: none; }
+  .ks-col { position: absolute; left: var(--pad); right: calc(var(--pad) + 1.6rem); top: calc(var(--ks-top, calc(var(--vh, 1vh) * 36)) + 0.6rem); width: auto; transform: none; }
   .ks-right { display: none; }
   .ks-col h3 { font-size: 1.45rem; line-height: 1.05; }
   .ks-steps { margin-top: 0.7rem; gap: 0.45rem; }
   .ks-steps li { font-size: 0.84rem; line-height: 1.3; grid-template-columns: 1.35rem 1fr; }
   .ks-steps li::before { width: 1.35rem; height: 1.35rem; font-size: 0.7rem; }
-  .ks-actions { bottom: 33vh; gap: 1rem; }
+  .ks-actions { bottom: calc(var(--vh, 1vh) * 33); gap: 1rem; }
   .ks-status { bottom: 0.45rem; font-size: 0.74rem; padding: 0 15vw; white-space: normal; }
   .footnote.ks-hide { opacity: 0; }
 
   /* Set up: the hand stays visible at the top, the content slides up over it */
-  .setup { padding: 52vh var(--pad) 2rem; }
-  .setup::before { inset: 0; -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 36vh); mask-image: linear-gradient(180deg, transparent 0, #000 36vh); -webkit-mask-composite: initial; mask-composite: initial; }
+  .setup { padding: calc(var(--vh, 1vh) * 52) var(--pad) 2rem; }
+  .setup::before { inset: 0; -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 calc(var(--vh, 1vh) * 36)); mask-image: linear-gradient(180deg, transparent 0, #000 calc(var(--vh, 1vh) * 36)); -webkit-mask-composite: initial; mask-composite: initial; }
   .setup-inner { grid-template-columns: 1fr; }
   .setup-col { grid-column: 1; }
   .setup-head .display { font-size: clamp(2.2rem, 11vw, 3.6rem); }

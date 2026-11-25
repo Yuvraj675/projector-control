@@ -1,3 +1,4 @@
+import { vp } from './viewport.js';
 /* Small cinema details that sit on top of the scene: grain, vignette and flicker are pure CSS; this file drives
  * the cursor light, the reel-change cue marks, the timecode and the "lights down" switch. */
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -26,7 +27,7 @@ export function timecode(progress) {
 function cursorLight() {
   const el = $('.glow');
   if (!el || reduce || !matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-  let x = innerWidth / 2, y = innerHeight / 2, tx = x, ty = y, on = false;
+  let x = vp.w / 2, y = vp.h / 2, tx = x, ty = y, on = false;
   addEventListener('pointermove', (e) => { tx = e.clientX; ty = e.clientY; if (!on) { on = true; el.classList.add('on'); } }, { passive: true });
   document.addEventListener('pointerleave', () => { on = false; el.classList.remove('on'); });
   const tick = () => {

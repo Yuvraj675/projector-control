@@ -1,3 +1,4 @@
+import { vp } from './viewport.js';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -71,13 +72,13 @@ const NAMES = ['Welcome', 'Remote', 'Type and speak', 'Apps and files', 'Auto ke
 const metrics = () => {
   const tan = Math.tan((stage.camera.fov * Math.PI) / 360);
   const H0 = 2 * 9 * tan;                      // visible height at the hand's depth (camera z = 9)
-  return { tan, H0, W0: H0 * (window.innerWidth / window.innerHeight) };
+  return { tan, H0, W0: H0 * (vp.w / vp.h) };
 };
 
 /** Fit the projected wall into the band between the nav and the chapter's headline, so it never overlaps text
  *  and never leaves a hole, whatever the window size. Returns world transform values for the wall. */
 function fitWall(i, cz = 9, wz = -15, ly = 0.2) {
-  const W = window.innerWidth, H = window.innerHeight;
+  const W = vp.w, H = vp.h;
   const r = copies[i].getBoundingClientRect();
   const top = Math.round($('#nav-wrap').getBoundingClientRect().bottom) + 14;
   const bottom = r.top - 28;
@@ -104,7 +105,11 @@ function fitWall(i, cz = 9, wz = -15, ly = 0.2) {
 function keyframes(portrait) {
   if (!portrait) {
     const { H0, W0 } = metrics();
-    const hand = (fx, fy, fs, ry, rx = 0, rz = 0) => ({ hx: fx * W0, hy: fy * H0, hs: fs * H0, hrx: rx, hry: ry, hrz: rz });
+    // fx is a fraction of the width of a 16:10 window. Wider windows keep the hand the same distance from the LEFT edge (its size follows the
+    // height, not the width), otherwise on ultrawide screens the hand drifts inwards and its cropped left edge shows.
+    const WREF = H0 * 1.6;
+    const hx = (fx) => (W0 > WREF ? fx * WREF - (W0 - WREF) / 2 : fx * W0);
+    const hand = (fx, fy, fs, ry, rx = 0, rz = 0) => ({ hx: hx(fx), hy: fy * H0, hs: fs * H0, hrx: rx, hry: ry, hrz: rz });
     const b = { wz: -15, key: 0, wpow: 1, cz: 9, cx: 0, cy: 0, lx: 0, ly: 0.2, title: 0, proj: 0, room: 0 };
     return [
       { ...b, ...hand(-0.3, -0.08, 1.14, 0.22), ...fitWall(0), beam: 0.9, dust: 0.5, warm: 0.2, spill: 0.55, scroll: 0, proj: 1 },
@@ -121,7 +126,7 @@ function keyframes(portrait) {
 /** Portrait (phones, portrait tablets): copy on top, the wall right under it, then the whole phone in the hand, all fitted from the real
  *  viewport through a camera identical to the scene's, so nothing overlaps and nothing is left empty. */
 function portraitFrames() {
-  const W = window.innerWidth, H = window.innerHeight;
+  const W = vp.w, H = vp.h;
   const pad = Math.max(16, W * 0.04);
   const cz = 10, ly = 0, wz = -15;
   const cam = new THREE.PerspectiveCamera(stage.camera.fov, W / H, 0.1, 120);
@@ -182,7 +187,7 @@ const SCENES = [
 ];
 
 let active = -1;
-let portrait = window.innerWidth / window.innerHeight < 0.85;
+let portrait = vp.w / vp.h < 0.85;
 let tl;
 let lockedToSetup = false;
 const copies = $$('.copy');
@@ -507,7 +512,7 @@ function buildStory() {
  *  so a fast jump (back button, anchor, restored scroll) can never leave a stale chapter behind. */
 function syncChapter() {
   if (!tl?.scrollTrigger) return;
-  const inSetup = $('#setup').getBoundingClientRect().top < window.innerHeight * 0.7;
+  const inSetup = $('#setup').getBoundingClientRect().top < vp.h * 0.7;
   lockedToSetup = inSetup;
   setChapter(inSetup ? 5 : Math.round(tl.scrollTrigger.progress * 5), active);
 }
@@ -546,7 +551,7 @@ function anchors() {
     const i = +a.dataset.go;
     e.preventDefault();
     const story = $('#story');
-    const total = story.offsetHeight - window.innerHeight;
+    const total = story.offsetHeight - vp.h;
     const y = i >= 5 ? $('#setup').getBoundingClientRect().top + window.scrollY : (i / 5) * total + story.offsetTop;
     lenis?.scrollTo(y, { duration: 1.8, easing: (t) => 1 - Math.pow(1 - t, 4) });
   }));
@@ -590,7 +595,7 @@ if (stage) {
       ScrollTrigger.refresh();
       const setupTop = $('#setup').getBoundingClientRect().top;
       const p = tl?.scrollTrigger?.progress ?? 0;
-      setChapter(setupTop < window.innerHeight * 0.7 ? 5 : Math.round(p * 5));
+      setChapter(setupTop < vp.h * 0.7 ? 5 : Math.round(p * 5));
     });
   };
   let ready = false;

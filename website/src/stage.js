@@ -1,3 +1,4 @@
+import { vp } from './viewport.js';
 import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -125,7 +126,7 @@ export class Stage {
     this.projector.rotation.z = 0.05;
     this.projector.renderOrder = 0;
     this.scene.add(this.projector);
-    this.dust = new Dust(window.innerWidth < 800 ? 3500 : 7000);
+    this.dust = new Dust(vp.w < 800 ? 3500 : 7000);
     this.scene.add(this.dust.points);
 
     this.hand = new Hand(this.renderer, manager);
@@ -187,10 +188,10 @@ export class Stage {
     this.motion = new THREE.Vector2();
 
     window.addEventListener('pointermove', (e) => {
-      this.mouse.set((e.clientX / window.innerWidth) * 2 - 1, -((e.clientY / window.innerHeight) * 2 - 1));
+      this.mouse.set((e.clientX / vp.w) * 2 - 1, -((e.clientY / vp.h) * 2 - 1));
     });
     // adaptive quality: 2 = full, 1 = lighter, 0 = lightest. Starts lower on phones and only ever steps down when frames run slow.
-    this.tier = window.innerWidth < 800 ? 1 : 2;
+    this.tier = vp.w < 800 ? 1 : 2;
     this.ema = 1 / 60;
     this.tierClock = 0;
     this.applyTier(false);
@@ -211,7 +212,7 @@ export class Stage {
   get portrait() { return this.aspect < 0.85; }
 
   resize() {
-    const w = window.innerWidth, h = window.innerHeight;
+    const w = vp.w, h = vp.h;
     this.aspect = w / h;
     const dpr = Math.min(window.devicePixelRatio || 1, w < 800 ? 1.75 : 2, this.maxDpr ?? 2);
     this.renderer.setPixelRatio(dpr);
@@ -301,7 +302,7 @@ export class Stage {
     if (this.cur.title > 0.4) {
       const bottomY = tt.mesh.position.y - (g.bottom - 0.5) * tt.baseH * scale;
       const v = new THREE.Vector3(0, bottomY, zPlane).project(cam);
-      const px = Math.round((1 - v.y) / 2 * window.innerHeight);
+      const px = Math.round((1 - v.y) / 2 * vp.h);
       if (Math.abs(px - (this._ksTop ?? -99)) > 1) { this._ksTop = px; document.documentElement.style.setProperty('--ks-top', px + 'px'); }
     }
   }
