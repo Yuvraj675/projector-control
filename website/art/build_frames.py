@@ -113,10 +113,13 @@ def matte(arr):
     a = arr.astype(np.int32)
     mx = a.max(axis=2)
     h0, w0 = mx.shape
-    core = (mx > 46).astype(np.uint8)
+    warm = a[..., 0] - a[..., 2]
+    # skin is warm, the cast-shadow smudge is neutral: a warm pixel is kept down to a very low brightness, so the shadowed underside of the
+    # palm and fingers (value 12-45) is no longer cut away. A plain brightness threshold used to chop the heel of the hand off with a hard edge.
+    core = ((mx > 46) | ((warm >= 6) & (mx > 12))).astype(np.uint8)
     core = cv2.morphologyEx(core, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9)))   # thin slivers of cast shadow
-    sleeve = np.zeros_like(core); sleeve[int(h0 * 0.74):, :int(w0 * 0.32)] = 1                            # the dark knit cuff is lower than the smudge
-    core |= ((mx > 17) & (sleeve > 0)).astype(np.uint8)
+    sleeve = np.zeros_like(core); sleeve[int(h0 * 0.66):, :int(w0 * 0.36)] = 1                            # the dark knit cuff is lower than the smudge
+    core |= ((mx > 8) & (sleeve > 0)).astype(np.uint8)
     # the phone's bezel is almost black, so it is kept by position instead: everything within a bezel's width of the screen
     scr = cv2.morphologyEx(magenta_mask(arr), cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
     core |= cv2.dilate(scr, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (27, 27)))

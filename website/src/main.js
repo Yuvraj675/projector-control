@@ -79,10 +79,10 @@ function keyframes(portrait) {
     const hand = (fx, fy, fs, ry, rx = 0, rz = 0) => ({ hx: fx * W0, hy: fy * H0, hs: fs * H0, hrx: rx, hry: ry, hrz: rz });
     const b = { wz: -15, key: 0, wpow: 1, cz: 9, cx: 0, cy: 0, lx: 0, ly: 0.2, title: 0, proj: 0, room: 0 };
     return [
-      { ...b, ...hand(-0.3, -0.03, 1.14, 0.22), ...fitWall(0), beam: 0.9, dust: 0.5, warm: 0.2, spill: 0.55, scroll: 0, proj: 1 },
-      { ...b, ...hand(-0.29, -0.065, 1.22, 0.12, 0.04, 0.03), ...fitWall(1), beam: 1.0, dust: 0.8, warm: 0.35, spill: 0.8, scroll: 0.4, proj: 0.7 },
-      { ...b, ...hand(-0.3, -0.085, 1.26, 0.2, 0.06, -0.02), ...fitWall(2), beam: 1.0, dust: 0.8, warm: 0.45, spill: 0.9, scroll: 0.8, proj: 0.6 },
-      { ...b, ...hand(-0.29, -0.055, 1.2, 0.28, 0, -0.05), ...fitWall(3), beam: 1.0, dust: 0.9, warm: 0.5, spill: 0.8, scroll: 1.2, proj: 0.5 },
+      { ...b, ...hand(-0.3, -0.08, 1.14, 0.22), ...fitWall(0), beam: 0.9, dust: 0.5, warm: 0.2, spill: 0.55, scroll: 0, proj: 1 },
+      { ...b, ...hand(-0.29, -0.11, 1.22, 0.12, 0.04, 0.03), ...fitWall(1), beam: 1.0, dust: 0.8, warm: 0.35, spill: 0.8, scroll: 0.4, proj: 0.7 },
+      { ...b, ...hand(-0.3, -0.13, 1.26, 0.2, 0.06, -0.02), ...fitWall(2), beam: 1.0, dust: 0.8, warm: 0.45, spill: 0.9, scroll: 0.8, proj: 0.6 },
+      { ...b, ...hand(-0.29, -0.1, 1.2, 0.28, 0, -0.05), ...fitWall(3), beam: 1.0, dust: 0.9, warm: 0.5, spill: 0.8, scroll: 1.2, proj: 0.5 },
       { ...b, ...hand(0, -0.2, 0.58, 0, 0.03, 0), wx: 0, wy: 2.4, ws: 1.0, wpow: 0, beam: 0.15, dust: 1.0, warm: 0.3, spill: 0.6, scroll: 1.6, title: 1, room: 1, ly: 0.3 },
       { ...b, ...hand(-0.3, -0.17, 1.0, 0.3), wx: 2.8, wy: 3.4, ws: 0.5, wpow: 0, beam: 0.25, dust: 0.6, warm: 0.5, spill: 0.5, scroll: 2.0, cz: 10 },
     ];
