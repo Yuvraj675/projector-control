@@ -127,6 +127,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add website/release.json
-          git commit -m "Release ${{ steps.ver.outputs.tag }}: update website/release.json [skip ci]"
+          git commit -m "Release ${{ steps.ver.outputs.tag }}: update website/release.json"
           git pull --rebase origin "${{ github.ref_name }}"
           git push origin "HEAD:${{ github.ref_name }}"
