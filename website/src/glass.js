@@ -12,7 +12,10 @@ import { animate, spring } from 'motion';
  */
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const chromium = /Chrome\/|Chromium\//.test(navigator.userAgent);
+// the SVG displacement refraction only exists in Chromium and its rim bent the text too much; every engine now gets the same frosted lens.
+// Flip REFRACT to bring the edge refraction back.
+const REFRACT = false;
+const chromium = REFRACT && /Chrome\/|Chromium\//.test(navigator.userAgent);
 
 const surface = (t) => Math.pow(1 - Math.pow(1 - t, 4), 0.25); // convex squircle height profile
 

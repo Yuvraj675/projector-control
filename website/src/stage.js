@@ -344,7 +344,7 @@ export class Stage {
     hg.scale.setScalar(c.hs);
     this.hand.shared.uSheen.value = (this.mouseS.x * 0.5 + 0.5) * 1.6 - 0.3;
     this.hand.update(dt);
-    this.spill.material.uniforms.uI.value = c.spill * (0.8 + 0.2 * Math.sin(t * 2.3));
+    this.spill.material.uniforms.uI.value = c.spill * 0.4 * (0.8 + 0.2 * Math.sin(t * 2.3));
 
     // wall
     this.wallGroup.position.set(c.wx - this.mouseS.x * 0.4, c.wy - this.mouseS.y * 0.25, c.wz);
@@ -428,7 +428,7 @@ export class Stage {
     const moving = Math.min(1, this.motion.length() * 140);
     this.wall.uniforms.uBlur.value = 0.15 + this.focus * 0.55 + moving * 0.7;
     this.room.uniforms.uBias.value = 0.8 + this.focus * 0.9 + moving * 0.8;
-    this.spill.material.uniforms.uI.value += this.pulse * 0.55;
+    this.spill.material.uniforms.uI.value += this.pulse * 0.25;
     this.bloom.strength = 0.5 + c.spill * 0.15 + this.pulse * 0.18;
 
     this.composer.render();

@@ -42,6 +42,9 @@ vec4 layer(sampler2D tex, mat3 H, vec2 uv){
   float shade = clamp(max(c.r, c.b) / 0.92, 0.0, 1.0);        // how much light reaches the glass here (the thumb's shadow)
   float spill = clamp(chroma(c) * 3.0, 0.0, 1.0) * (1.0 - k);
   c.rb = mix(c.rb, vec2(c.g * 1.1), spill);
+  // open up the deep shadows, most of all towards the bottom of the photo (palm and sleeve), so they read as soft shade instead of a hard dark cut
+  float lum = dot(c, vec3(0.3, 0.59, 0.11));
+  c += vec3(0.085, 0.06, 0.05) * (1.0 - smoothstep(0.0, 0.4, lum)) * (1.0 - k) * (0.6 + 0.9 * smoothstep(0.55, 0.0, uv.y));
   vec3 q = H * vec3(uv, 1.0);
   vec2 su = q.xy / q.z;
   vec3 s = screenAt(clamp(su, 0.001, 0.999));

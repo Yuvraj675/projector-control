@@ -303,7 +303,7 @@ details[open]:not(.closing) > summary b { transform: rotate(180deg); }
 }
 
 /* ---------------------------------------------------------------- cinema layer */
-.vignette { position: fixed; inset: 0; z-index: 9; pointer-events: none; background: radial-gradient(125% 95% at 50% 46%, transparent 52%, rgba(2, 3, 5, 0.5) 100%); transition: opacity 0.9s; }
+.vignette { position: fixed; inset: 0; z-index: 9; pointer-events: none; background: radial-gradient(125% 95% at 50% 46%, transparent 62%, rgba(2, 3, 5, 0.26) 100%); transition: opacity 0.9s; }
 .grain { position: fixed; inset: -50%; z-index: 89; pointer-events: none; opacity: 0.085; animation: grain 0.9s steps(1) infinite, flicker 7s linear infinite;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n' x='0' y='0' width='100%25' height='100%25'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  1.6 0 0 0 -0.55'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>"); background-size: 180px 180px; }
 @keyframes grain { 0% { transform: translate(0, 0); } 17% { transform: translate(-7%, 4%); } 33% { transform: translate(5%, -9%); } 50% { transform: translate(-3%, 8%); } 67% { transform: translate(9%, 2%); } 83% { transform: translate(-6%, -5%); } }
