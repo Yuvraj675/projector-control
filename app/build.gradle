@@ -15,11 +15,24 @@ android {
         versionName '0.7.2'
     }
 
+    // CI release builds (.github/workflows/release.yml) sign with the key from the KEYSTORE_* environment variables.
+    // Local builds fall back to the debug key, so a local release APK still installs over a debug build.
+    def ciKeystore = System.getenv('KEYSTORE_FILE')
+    signingConfigs {
+        ci {
+            if (ciKeystore) {
+                storeFile file(ciKeystore)
+                storePassword System.getenv('KEYSTORE_PASSWORD')
+                keyAlias System.getenv('KEY_ALIAS')
+                keyPassword System.getenv('KEY_PASSWORD')
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
-            // Sideloaded, never published: sign with the debug key so it installs over a debug build.
-            signingConfig signingConfigs.debug
+            signingConfig ciKeystore ? signingConfigs.ci : signingConfigs.debug
         }
     }
 

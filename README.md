@@ -209,6 +209,29 @@ A watchdog pings the projector every few seconds. If it stops answering, the app
 ./gradlew testDebugUnitTest    # all JVM tests, including UI snapshots
 ```
 
+### Releases
+
+Releases are published by a manually triggered GitHub Action (`.github/workflows/release.yml`), never by hand:
+
+1. Raise `versionCode` and `versionName` in `app/build.gradle` and commit/push.
+2. GitHub, **Actions, Release, Run workflow** (optional notes; otherwise they are generated from the commits).
+3. The workflow runs the unit tests, builds and signs the APK, creates the release `v<versionName>` with `ProjectorConnect-<version>.apk`,
+   `ProjectorConnect.apk` (fixed name, so `releases/latest/download/ProjectorConnect.apk` always points at the newest build) and `SHA256SUMS.txt`,
+   then commits `website/release.json` (version, size, SHA-256) so the website shows and links the new build. Rebuild/redeploy the site afterwards.
+
+**One-time setup:** the workflow refuses to run without these repository secrets (Settings, Secrets and variables, Actions). A release has to be
+signed with the same key as earlier builds, or phones cannot update in place. Existing builds use the local debug key:
+
+```sh
+gh secret set KEYSTORE_BASE64 < <(base64 -w0 ~/.android/debug.keystore)
+gh secret set KEYSTORE_PASSWORD --body android
+gh secret set KEY_ALIAS --body androiddebugkey
+gh secret set KEY_PASSWORD --body android
+```
+
+Use a new keystore instead if you do not need to update existing installs (then the first release is not an update for them).
+
+
 Requires JDK 17 and the Android SDK (platform 34, build-tools 34.0.0). Put `sdk.dir=...` in `local.properties`.
 
 **Tests.** Geometry, solver, pose (with a simulated camera), the marker detector on rendered photos, learning on a simulated wall, the ADB layer (against a simulated projector), remote input, installs and every projector tool run as ordinary JVM tests. UI snapshot tests render each screen with Robolectric to `app/build/ui-snapshots/`. Optional live tests run against real hardware: `KS_PROJECTOR=<ip>` for a read-only projector check and `KS_SCAN=<ip>/<prefix>` for the subnet scan. `KS_CAPTURES=<dir>` cross-checks the pipeline against real photos (never committed: they show a room).

@@ -57,7 +57,7 @@ The site says so in a footnote: app screens are illustrations.
 
 ## Notes
 - Loader: a keystoned picture (trapezoid with the four calibration dots, drawn in SVG by `renderLoader` in `main.js`) that is straightened as assets load, a lamp that brightens with the percentage, and a status line; on completion the straight frame zooms through the camera. The stylesheet is a blocking `<link>` in `index.html` (it used to be imported from JS, which showed unstyled HTML in dev), plus a two-line critical style for the background.
-- Download: replace `public/assets/ProjectorConnect-*.apk` and update the link and version in `index.html`.
+- Download: the page reads `website/release.json` (written by the release workflow, see the root README) for the APK link, version, size and SHA-256. Without it the button links to the Releases page.
 - The old (first) version of the site is backed up in `projector-redesign/website-backup-2026-11-25/`.
 - Layout: the desktop wall and hand are fitted from the real DOM and viewport (see `fitWall` in `src/main.js`), so nothing overlaps at other window sizes.
 - Phone layout hides the D-pad and app tiles (the hand still demos them); the type field stays. Mobile polish is still to do.

@@ -1,0 +1,132 @@
+name: Release
+
+# Manual only: Actions tab -> Release -> Run workflow. Builds the signed APK from the version in app/build.gradle,
+# publishes it as a GitHub release, and updates website/release.json so the website links to it.
+on:
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: Release notes (leave empty to generate them from the commits since the last release)
+        required: false
+        default: ''
+      prerelease:
+        description: Mark as a pre-release (the website's "latest" link ignores pre-releases)
+        type: boolean
+        default: false
+      run_tests:
+        description: Run the unit tests before building
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the version
+        id: ver
+        run: |
+          version=$(sed -nE "s/^\s*versionName\s+'([^']+)'.*/\1/p" app/build.gradle | head -n1)
+          [ -n "$version" ] || { echo "::error::could not read versionName from app/build.gradle"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Refuse to overwrite an existing release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "${{ steps.ver.outputs.tag }}" >/dev/null 2>&1; then
+            echo "::error::release ${{ steps.ver.outputs.tag }} already exists. Raise versionCode and versionName in app/build.gradle, commit, and run again."
+            exit 1
+          fi
+
+      - name: Check the signing secrets
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          for v in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            [ -n "${!v}" ] || { echo "::error::repository secret $v is missing. A release must be signed with the same key as earlier builds or phones cannot update in place (see README, Releases)."; exit 1; }
+          done
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          echo "KEYSTORE_FILE=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Unit tests
+        if: ${{ inputs.run_tests }}
+        run: ./gradlew --no-daemon testDebugUnitTest
+
+      - name: Build the release APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew --no-daemon assembleRelease
+
+      - name: Name and hash the APK
+        id: apk
+        run: |
+          src=$(ls app/build/outputs/apk/release/*.apk | head -n1)
+          mkdir -p out
+          cp "$src" "out/ProjectorConnect-${{ steps.ver.outputs.version }}.apk"
+          cp "$src" out/ProjectorConnect.apk      # fixed name, so releases/latest/download/ProjectorConnect.apk always works
+          (cd out && sha256sum ProjectorConnect-*.apk ProjectorConnect.apk > SHA256SUMS.txt)
+          echo "sha=$(sha256sum out/ProjectorConnect.apk | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          echo "bytes=$(stat -c%s out/ProjectorConnect.apk)" >> "$GITHUB_OUTPUT"
+          apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n1)
+          "$apksigner" verify --print-certs out/ProjectorConnect.apk | tee "$RUNNER_TEMP/certs.txt"
+
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTES: ${{ inputs.notes }}
+        run: |
+          args=(--target "$GITHUB_SHA" --title "ProjectorConnect ${{ steps.ver.outputs.version }}")
+          [ "${{ inputs.prerelease }}" = "true" ] && args+=(--prerelease)
+          if [ -n "$NOTES" ]; then args+=(--notes "$NOTES"); else args+=(--generate-notes); fi
+          gh release create "${{ steps.ver.outputs.tag }}" out/ProjectorConnect-${{ steps.ver.outputs.version }}.apk out/ProjectorConnect.apk out/SHA256SUMS.txt "${args[@]}"
+          {
+            echo "### Released ${{ steps.ver.outputs.tag }}"
+            echo "SHA-256 \`${{ steps.apk.outputs.sha }}\`"
+            echo '```'; grep -E 'certificate (SHA-256|SHA-1) digest' "$RUNNER_TEMP/certs.txt"; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Point the website at the new release
+        if: ${{ !inputs.prerelease }}
+        continue-on-error: true      # the release itself is already published; this only refreshes the page data
+        run: |
+          cat > website/release.json <<JSON
+          {
+            "version": "${{ steps.ver.outputs.version }}",
+            "file": "ProjectorConnect.apk",
+            "url": "https://github.com/${{ github.repository }}/releases/latest/download/ProjectorConnect.apk",
+            "sha256": "${{ steps.apk.outputs.sha }}",
+            "bytes": ${{ steps.apk.outputs.bytes }},
+            "date": "$(date -u +%F)"
+          }
+          JSON
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add website/release.json
+          git commit -m "Release ${{ steps.ver.outputs.tag }}: update website/release.json [skip ci]"
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push origin "HEAD:${{ github.ref_name }}"

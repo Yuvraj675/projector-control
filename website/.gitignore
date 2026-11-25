@@ -10,3 +10,6 @@ art/tools/
 art/cache/
 art/*.log
 art/raw5/
+
+# release APKs are published to GitHub Releases by the release workflow, never committed
+public/assets/*.apk

@@ -9,6 +9,13 @@ Engineering notes for working on this repository.
 - Never commit personal photos (captures of the user's room). They are gitignored; keep them out of tests.
 - Keep `README.md` and this file current whenever behaviour, layout or commands change.
 
+## Releasing
+`.github/workflows/release.yml` (manual, `workflow_dispatch`) builds the signed APK from `versionName` in `app/build.gradle`, publishes the GitHub release
+(`ProjectorConnect-<v>.apk`, `ProjectorConnect.apk`, `SHA256SUMS.txt`) and commits `website/release.json`, which the site build reads for the download link,
+version, size and SHA-256 (no APK is committed any more). It needs the secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`; `app/build.gradle`
+signs with them when `KEYSTORE_FILE` is set and with the debug key otherwise. Bump `versionCode`/`versionName` before running; an existing tag is refused.
+Not yet run on GitHub (written without CI access), so the first run may need small fixes.
+
 ## What it is
 An Android app (Kotlin, Jetpack Compose, CameraX) called **ProjectorConnect**: a phone remote for an Android projector (mouse/keyboard/remote keys, apps, APK install, links, power and status) that also contains **Auto keystone**, which fixes the keystone of a Hisilicon "bigfish"/Hi3751 projector
 (Newlink/Zhiying firmware). The projector advertises auto keystone but has no camera or tilt sensor, so the phone does the
