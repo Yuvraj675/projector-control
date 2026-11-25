@@ -113,7 +113,7 @@ export class Stage {
     this.title.draw();
 
     // the projector that casts the beam: a soft, slightly out-of-focus foreground object
-    const pj = new THREE.TextureLoader(manager).load('/assets/projector.png');
+    const pj = new THREE.TextureLoader(manager).load('/assets/projector.webp');
     pj.colorSpace = THREE.SRGBColorSpace;
     this.projector = new THREE.Mesh(
       new THREE.PlaneGeometry(3.6, 3.6 * 641 / 1100),
@@ -167,7 +167,7 @@ export class Stage {
     this.mouse = new THREE.Vector2();
     this.mouseS = new THREE.Vector2();
     this.vel = 0;
-    this.clock = new THREE.Clock();
+    this.clock = { t: performance.now(), getDelta() { const n = performance.now(), d = (n - this.t) / 1000; this.t = n; return d; } };
     this.time = 0;
     this.running = false;
     this.cornerKey = keystoneCorners.square;
@@ -176,6 +176,7 @@ export class Stage {
     this.ray = new THREE.Raycaster();
     this.plane0 = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
     this.pulseAt = 0;
+    this.reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.lastInput = 0;
     this.focus = 0;
     this.pulse = 0;
@@ -185,9 +186,23 @@ export class Stage {
     window.addEventListener('pointermove', (e) => {
       this.mouse.set((e.clientX / window.innerWidth) * 2 - 1, -((e.clientY / window.innerHeight) * 2 - 1));
     });
+    // adaptive quality: 2 = full, 1 = lighter, 0 = lightest. Starts lower on phones and only ever steps down when frames run slow.
+    this.tier = window.innerWidth < 800 ? 1 : 2;
+    this.ema = 1 / 60;
+    this.tierClock = 0;
+    this.applyTier(false);
     this.resize();
     window.addEventListener('resize', () => this.resize());
     document.addEventListener('visibilitychange', () => (this.clock.getDelta(), 0));
+  }
+
+  applyTier(resize = true) {
+    const t = this.tier;
+    this.maxDpr = [1, 1.35, 2][t];
+    this.bloom.enabled = t >= 1;
+    const frac = t >= 2 ? 1 : t === 1 ? 0.55 : 0.3;
+    this.dust.points.geometry.setDrawRange(0, Math.floor(this.dust.count * frac));
+    if (resize) this.resize();
   }
 
   get portrait() { return this.aspect < 0.85; }
@@ -195,7 +210,7 @@ export class Stage {
   resize() {
     const w = window.innerWidth, h = window.innerHeight;
     this.aspect = w / h;
-    const dpr = Math.min(window.devicePixelRatio || 1, w < 800 ? 1.75 : 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, w < 800 ? 1.75 : 2, this.maxDpr ?? 2);
     this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(w, h, false);
     this.composer.setPixelRatio(dpr);
@@ -218,10 +233,19 @@ export class Stage {
     this.renderer.setAnimationLoop(() => this.frame());
   }
 
+  /** pointer -> position on the phone's screen (uv, v from the top), or null if the pointer is not over the glass */
+  hitPhone(clientX, clientY) {
+    const r = this.canvas.getBoundingClientRect();
+    const ndc = new THREE.Vector2(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+    this.ray.setFromCamera(ndc, this.camera);
+    this.hand.group.updateMatrixWorld(true);
+    return this.hand.hitScreen(this.ray);
+  }
+
   /** thumb tip on the glass (screen uv) for each frame, used to place the touch ripple */
   tipOf(id) {
     return {
-      'tap': [0.67, 0.385], 'dpad-hover': [0.66, 0.41], 'dpad-up': [0.69, 0.65], 'dpad-left': [0.23, 0.4], 'dpad-right': [0.88, 0.39],
+      'tap': [0.67, 0.385], 'dpad-hover': [0.66, 0.41], 'up-1': [0.6, 0.52], 'left-1': [0.45, 0.4], 'right-1': [0.78, 0.395], 'dpad-up': [0.69, 0.65], 'dpad-left': [0.23, 0.4], 'dpad-right': [0.88, 0.39],
       'key-mid': [0.5, 0.3], 'key-low-left': [0.38, 0.18], 'key-low-right': [0.66, 0.2],
       'swipe-start': [0.45, 0.38], 'swipe-mid': [0.55, 0.52], 'swipe-end': [0.6, 0.65],
       'land-press-2': [0.9, 0.5], 'land-press-1': [0.93, 0.5],
@@ -280,8 +304,16 @@ export class Stage {
   }
 
   frame() {
-    const dt = Math.min(this.clock.getDelta(), 0.05);
+    const raw = this.clock.getDelta();
+    const dt = Math.min(raw, 0.05);
     this.time += dt;
+    // governor: sustained slow frames -> step quality down one tier
+    this.ema += (Math.min(raw, 0.2) - this.ema) * 0.05;
+    this.tierClock += dt;
+    if (this.tierClock > 1.5 && this.time > 4) {
+      this.tierClock = 0;
+      if (this.ema > 1 / 36 && this.tier > 0) { this.tier--; this.applyTier(); this.ema = 1 / 60; }
+    }
     const t = this.time;
     const s = this.state, c = this.cur;
 
@@ -388,6 +420,7 @@ export class Stage {
     const mvy = clamp(dy * k * 0.0016 + this.vel * 0.00005, -0.007, 0.007) + clamp(dz * k * 0.0004, 0, 0.003);
     this.motion.x = damp(this.motion.x, mvx, 8, dt);
     this.motion.y = damp(this.motion.y, mvy, 8, dt);
+    if (this.reduce) { this.motion.set(0, 0); this.pulse = 0; }
     this.final.uniforms.uMotion.value.copy(this.motion);
     const moving = Math.min(1, this.motion.length() * 140);
     this.wall.uniforms.uBlur.value = 0.15 + this.focus * 0.55 + moving * 0.7;

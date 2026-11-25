@@ -24,6 +24,8 @@ a { color: inherit; text-decoration: none; }
 button, input { font: inherit; color: inherit; }
 ::selection { background: var(--accent); color: #000; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
+.skip { position: fixed; z-index: 120; left: 1rem; top: -4rem; padding: 0.7rem 1rem; border-radius: 10px; background: var(--ink); color: #0a0a0a; font-weight: 600; transition: top 0.2s; }
+.skip:focus { top: 1rem; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 #gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
@@ -53,7 +55,10 @@ button, input { font: inherit; color: inherit; }
 .brand img { display: block; filter: drop-shadow(0 2px 14px rgba(255, 106, 53, 0.35)); }
 .wordmark { font: 700 1.35rem/1 var(--display); letter-spacing: -0.035em; }
 .wordmark b { font-weight: 700; color: var(--accent); }
-.get { justify-self: end; white-space: nowrap; padding: 0.7rem 1.2rem; border-radius: 12px; background: var(--ink); color: #0a0a0a; font-size: 0.9rem; font-weight: 600; }
+.header-actions { justify-self: end; display: flex; align-items: center; gap: 0.6rem; }
+.gh { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 12px; color: var(--ink); background: rgba(255, 255, 255, 0.07); box-shadow: inset 0 0 0 1px var(--faint); transition: background 0.3s, transform 0.4s var(--ease); }
+.gh:hover { background: rgba(255, 255, 255, 0.16); transform: translateY(-2px); }
+.get { white-space: nowrap; padding: 0.7rem 1.2rem; border-radius: 12px; background: var(--ink); color: #0a0a0a; font-size: 0.9rem; font-weight: 600; }
 
 /* liquid-glass nav. Glass bar, links and lens are siblings on purpose: a backdrop-filter nested in another one only sees its parent. */
 .nav-wrap { position: relative; justify-self: center; }
@@ -74,7 +79,7 @@ button, input { font: inherit; color: inherit; }
 .hud-bar span { position: absolute; inset: 0; background: var(--accent); transform-origin: left; transform: scaleX(0); }
 .hud.off { opacity: 0; }
 
-.footnote { position: fixed; z-index: 20; left: var(--pad); bottom: 1.4rem; margin: 0; max-width: 24rem; font-size: 0.74rem; line-height: 1.4; color: rgba(244, 239, 232, 0.5); transition: opacity 0.5s; pointer-events: none; }
+.footnote { position: fixed; z-index: 20; left: var(--pad); bottom: 1.4rem; margin: 0; max-width: 24rem; font-size: 0.74rem; line-height: 1.4; color: rgba(244, 239, 232, 0.64); transition: opacity 0.5s; pointer-events: none; }
 .footnote.off { opacity: 0; }
 
 /* ------------------------------------------------------------- copy layers */
@@ -92,7 +97,7 @@ main { position: relative; z-index: 10; }
 .display .line > span { display: inline-block; will-change: transform; }
 .display em { font-style: normal; color: var(--accent); }
 .lede { margin: 1.2rem 0 0; max-width: 32rem; font-size: clamp(1rem, 1.2vw, 1.15rem); color: rgba(244, 239, 232, 0.76); text-wrap: pretty; }
-.note { margin: 1rem 0 0; max-width: 27rem; font-size: 0.84rem; color: rgba(244, 239, 232, 0.48); }
+.note { margin: 1rem 0 0; max-width: 27rem; font-size: 0.84rem; color: rgba(244, 239, 232, 0.66); }
 
 .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 1.4rem; margin-top: 2rem; }
 .btn { display: inline-flex; align-items: center; gap: 1rem; padding: 0.95rem 1.2rem 0.95rem 1.5rem; border-radius: 14px; border: 0; background: var(--accent); color: #170800; font-weight: 650; font-size: 1rem; letter-spacing: -0.01em; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) inset, 0 12px 36px -10px rgba(255, 106, 53, 0.75); transition: box-shadow 0.4s, transform 0.4s var(--ease), opacity 0.3s; }
@@ -105,7 +110,7 @@ main { position: relative; z-index: 10; }
 
 /* ---------------------------------------------------- try-it controls */
 .try { margin-top: 1.5rem; display: flex; align-items: center; gap: 1.4rem; }
-.try-hint { margin: 0; max-width: 15rem; font-size: 0.86rem; color: rgba(244, 239, 232, 0.55); }
+.try-hint { margin: 0; max-width: 15rem; font-size: 0.86rem; color: rgba(244, 239, 232, 0.66); }
 .dpad { display: grid; grid-template: repeat(3, 3.1rem) / repeat(3, 3.1rem); gap: 0.3rem; padding: 0.5rem; border-radius: 50%; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--faint); }
 .dpad button { display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.07); transition: background 0.25s, transform 0.2s var(--ease); }
 .dpad button svg { width: 1.4rem; height: 1.4rem; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -149,6 +154,9 @@ main { position: relative; z-index: 10; }
 .setup-col { grid-column: 2; }
 .setup-head .display { font-size: clamp(2.8rem, 5.6vw, 6.4rem); }
 .setup-head .btn { margin-top: 2rem; }
+.meta.sha { margin-top: 0.4rem; font-size: 0.72rem; word-break: break-all; max-width: 32rem; }
+.meta code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: rgba(244, 239, 232, 0.7); }
+.meta a { color: var(--accent); border-bottom: 1px solid rgba(255, 106, 53, 0.4); }
 .meta { margin: 1rem 0 0; font-size: 0.82rem; color: rgba(244, 239, 232, 0.55); font-variant-numeric: tabular-nums; }
 .steps { display: grid; gap: 0.7rem; margin-top: 3rem; }
 .step, .faq details { border: 1px solid var(--faint); border-radius: 1.1rem; background: rgba(12, 13, 17, 0.78); transition: border-color 0.4s, background 0.4s; }

@@ -3,17 +3,39 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!--csp-->
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#050608">
-  <meta name="description" content="ProjectorConnect turns your Android phone into the remote, keyboard and control panel for any Android projector or TV box. Over Wi-Fi, no computer.">
-  <title>ProjectorConnect. Your phone is the remote.</title>
-  <link rel="icon" type="image/png" href="/assets/logo.png">
+  <title>ProjectorConnect: Android projector remote and auto keystone</title>
+  <meta name="description" content="Turn your Android phone into the remote, keyboard and app launcher for any Android projector or TV box over Wi-Fi, and straighten the picture with camera-based auto keystone. Free, no computer.">
+  <!--canonical-->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="ProjectorConnect">
+  <meta property="og:title" content="ProjectorConnect: your phone is the projector remote">
+  <meta property="og:description" content="Mouse, keyboard, apps and auto keystone for your Android projector, over Wi-Fi. No computer, no clutter.">
+  <meta property="og:image" content="%SITE_URL%/assets/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A hand holds a phone running ProjectorConnect while a projector shows a film on the wall.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ProjectorConnect: your phone is the projector remote">
+  <meta name="twitter:description" content="Mouse, keyboard, apps and auto keystone for your Android projector, over Wi-Fi.">
+  <meta name="twitter:image" content="%SITE_URL%/assets/og.jpg">
+  <link rel="icon" type="image/png" sizes="48x48" href="/assets/favicon-48.png">
+  <link rel="icon" type="image/png" sizes="256x256" href="/assets/logo.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"ProjectorConnect","applicationCategory":"MultimediaApplication","operatingSystem":"Android 8.0 or later","description":"Use your Android phone as the remote, keyboard and control panel for an Android projector or TV box over Wi-Fi, with camera-based auto keystone for compatible Hisilicon projectors.","softwareVersion":"%APK_VERSION%","downloadUrl":"%SITE_URL%/assets/%APK_FILE%","fileSize":"%APK_MB% MB","image":"%SITE_URL%/assets/og.jpg","sameAs":["%REPO%"],"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
   <script type="module" src="/src/main.js"></script>
 </head>
 <body class="is-loading">
+  <a class="skip" href="#setup">Skip to download</a>
+  <div class="sr-only" id="announce" role="status" aria-live="polite"></div>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs id="glass-defs"></defs></svg>
 
   <div id="loader" aria-hidden="true">
-    <img class="loader-logo" src="/assets/logo.png" width="72" height="72" alt="">
+    <img class="loader-logo" src="/assets/logo-96.webp" width="72" height="72" alt="">
     <div class="loader-count"><span id="loader-num">0</span><i>%</i></div>
   </div>
 
@@ -22,7 +44,7 @@
 
   <header class="site-header">
     <a class="brand" href="#top" aria-label="ProjectorConnect, back to top">
-      <img src="/assets/logo.png" width="46" height="46" alt="">
+      <img src="/assets/logo-96.webp" width="46" height="46" alt="">
       <span class="wordmark">Projector<b>Connect</b></span>
     </a>
     <div class="nav-wrap" id="nav-wrap">
@@ -36,7 +58,10 @@
       </nav>
       <span class="nav-lens" aria-hidden="true"></span>
     </div>
-    <a class="get magnetic" href="#setup" data-go="5">Get the app</a>
+    <div class="header-actions">
+      <a class="gh" href="%REPO%" target="_blank" rel="noopener noreferrer" aria-label="ProjectorConnect on GitHub (opens in a new tab)" title="View the source on GitHub"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+      <a class="get magnetic" href="#setup" data-go="5">Get the app</a>
+    </div>
   </header>
 
   <div class="hud" aria-hidden="true">
@@ -45,12 +70,23 @@
     <span class="hud-count"><b id="hud-i">1</b> / 6</span>
   </div>
 
-  <p class="footnote">* App screens shown are illustrations and may differ from the real app.</p>
+  <aside class="footnote" aria-label="About the screenshots">* App screens shown are illustrations and may differ from the real app.</aside>
 
   <main id="top">
+    <section class="sr-only" aria-labelledby="overview-h">
+      <h1 id="overview-h">ProjectorConnect: your phone is the remote</h1>
+      <p>The page scrolls through five features. Each is shown on a hand holding a phone that controls a projected screen.</p>
+      <ul>
+        <li><strong>Remote.</strong> A touchpad, an air mouse you steer by tilting the phone, and a D-pad. The phone's volume keys control the projector too.</li>
+        <li><strong>Type and speak.</strong> Type or dictate on the phone and the words appear on the wall as you go. Paste a link to open it.</li>
+        <li><strong>Apps and files.</strong> Open, stop and pin apps. Send an APK or a video from the phone and it installs or plays on the projector.</li>
+        <li><strong>Auto keystone.</strong> Take four photos of a test pattern and the app straightens the projected picture. Save named setups and fine-tune any corner. Needs a compatible Hisilicon projector.</li>
+        <li><strong>Set up.</strong> Install the Android app, turn on network debugging on the projector and find it on your Wi-Fi.</li>
+      </ul>
+    </section>
     <div class="copy-stack" id="copy">
       <section class="copy is-active" data-i="0" id="hero" aria-labelledby="h0">
-        <h1 id="h0" class="display"><span class="line">Your phone</span><span class="line">is the <em>remote.</em></span></h1>
+        <p id="h0" class="display" aria-hidden="true"><span class="line">Your phone</span><span class="line">is the <em>remote.</em></span></p>
         <p class="lede">Mouse, keyboard, apps and picture correction for your Android projector, over your Wi-Fi. No computer, no clutter.</p>
         <div class="cta-row">
           <a class="btn magnetic" href="#setup" data-go="5"><span>Set up my projector</span><i aria-hidden="true">→</i></a>
@@ -88,7 +124,7 @@
         <p class="kicker">Apps and files</p>
         <h2 id="h3" class="display"><span class="line">Every app,</span><span class="line">one <em>tap.</em></span></h2>
         <p class="lede">Open, stop and pin apps. Send an APK or a video from your phone and it installs or plays on the projector.</p>
-        <div class="try try-apps" aria-label="Try opening an app"><button data-app="0" style="--c:#ff0000" aria-label="YouTube"><img src="/assets/icons/youtube.png" width="44" height="44" alt=""><span>YouTube</span></button><button data-app="1" style="--c:#e50914" aria-label="Netflix"><img src="/assets/icons/netflix.png" width="44" height="44" alt=""><span>Netflix</span></button><button data-app="2" style="--c:#00a8e1" aria-label="Prime Video"><img src="/assets/icons/prime.png" width="44" height="44" alt=""><span>Prime Video</span></button><button data-app="3" style="--c:#a23bff" aria-label="JioHotstar"><img src="/assets/icons/jiohotstar.png" width="44" height="44" alt=""><span>JioHotstar</span></button><button data-app="4" style="--c:#1ed760" aria-label="Spotify"><img src="/assets/icons/spotify.png" width="44" height="44" alt=""><span>Spotify</span></button><button data-app="5" style="--c:#ff8800" aria-label="VLC"><img src="/assets/icons/vlc.png" width="44" height="44" alt=""><span>VLC</span></button><button data-app="6" style="--c:#4285f4" aria-label="Chrome"><img src="/assets/icons/chrome.png" width="44" height="44" alt=""><span>Chrome</span></button><button data-app="7" style="--c:#685cee" aria-label="Stremio"><img src="/assets/icons/stremio.png" width="44" height="44" alt=""><span>Stremio</span></button></div>
+        <div class="try try-apps" aria-label="Try opening an app"><button data-app="0" style="--c:#ff0000" aria-label="YouTube"><img src="/assets/icons/youtube.webp" width="44" height="44" alt=""><span>YouTube</span></button><button data-app="1" style="--c:#e50914" aria-label="Netflix"><img src="/assets/icons/netflix.webp" width="44" height="44" alt=""><span>Netflix</span></button><button data-app="2" style="--c:#00a8e1" aria-label="Prime Video"><img src="/assets/icons/prime.webp" width="44" height="44" alt=""><span>Prime Video</span></button><button data-app="3" style="--c:#a23bff" aria-label="JioHotstar"><img src="/assets/icons/jiohotstar.webp" width="44" height="44" alt=""><span>JioHotstar</span></button><button data-app="4" style="--c:#1ed760" aria-label="Spotify"><img src="/assets/icons/spotify.webp" width="44" height="44" alt=""><span>Spotify</span></button><button data-app="5" style="--c:#ff8800" aria-label="VLC"><img src="/assets/icons/vlc.webp" width="44" height="44" alt=""><span>VLC</span></button><button data-app="6" style="--c:#4285f4" aria-label="Chrome"><img src="/assets/icons/chrome.webp" width="44" height="44" alt=""><span>Chrome</span></button><button data-app="7" style="--c:#685cee" aria-label="Stremio"><img src="/assets/icons/stremio.webp" width="44" height="44" alt=""><span>Stremio</span></button></div>
       </section>
 
       <section class="copy copy-wide" data-i="4" id="picture" aria-labelledby="h4">
@@ -124,8 +160,9 @@
         <div class="setup-head">
           <h2 id="h5" class="display"><span class="line">Three steps to</span><span class="line">the <em>big screen.</em></span></h2>
           <p class="lede">Keep your projector's original remote nearby for the first minute. After that, you won't need it.</p>
-          <a class="btn magnetic" href="/assets/ProjectorConnect-0.7.2.apk" download><span>Download for Android</span><i aria-hidden="true">↓</i></a>
-          <p class="meta">Version 0.7.2 · Android 8 or later · 7.6 MB</p>
+          <a class="btn magnetic" href="/assets/%APK_FILE%" download><span>Download for Android</span><i aria-hidden="true">↓</i></a>
+          <p class="meta">Version %APK_VERSION% · Android 8 or later · %APK_MB% MB · <a href="%REPO%/releases" target="_blank" rel="noopener noreferrer">All releases</a></p>
+          <p class="meta sha">SHA-256 <code>%APK_SHA256%</code></p>
         </div>
         <div class="steps">
           <details class="step" open>
@@ -148,7 +185,7 @@
               </ol>
               <details class="nested">
                 <summary>I can't find Android Settings</summary>
-                <p>Many projectors hide it. Install <a href="https://github.com/5ham5h33r/Project-Settings/releases">Project Settings</a> on the projector and open its new Settings icon.</p>
+                <p>Many projectors hide it. Install <a href="https://github.com/5ham5h33r/Project-Settings/releases" target="_blank" rel="noopener noreferrer">Project Settings</a> on the projector and open its new Settings icon.</p>
               </details>
               <p class="note">Use a Wi-Fi network you trust, and switch network debugging off when you no longer need it.</p>
             </div>
@@ -169,7 +206,7 @@
       </div>
 
       <div class="faq" id="help">
-        <h3 class="faq-title">If something stays dark.</h3>
+        <h2 class="faq-title">If something stays dark.</h2>
         <div class="faq-grid">
           <details name="help"><summary>Will my projector work?<b aria-hidden="true"></b></summary><p>You need an Android projector or TV box with network debugging. The remote, typing, apps and files work on any of them. Keystone needs a compatible Hisilicon model.</p></details>
           <details name="help"><summary>Why can't the app find my projector?<b aria-hidden="true"></b></summary><p>Check both are on the same Wi-Fi and neither is on a guest network. Confirm network debugging is on and keep the projector awake while it scans.</p></details>
@@ -179,9 +216,9 @@
       </div>
 
       <footer class="footer">
-        <a class="brand" href="#top"><img src="/assets/logo.png" width="34" height="34" alt=""><span class="wordmark">Projector<b>Connect</b></span></a>
+        <a class="brand" href="#top"><img src="/assets/logo-96.webp" width="34" height="34" alt=""><span class="wordmark">Projector<b>Connect</b></span></a>
         <p>An independent project. Not affiliated with any projector maker or app shown. App names and logos belong to their owners. * Screens are illustrations.</p>
-        <a href="https://github.com/Yuvraj675/projector-control">Source on GitHub</a>
+        <a href="%REPO%" target="_blank" rel="noopener noreferrer">Source on GitHub</a>
       </footer>
     </section>
   </main>

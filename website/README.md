@@ -43,6 +43,16 @@ the context-aware Apps and Type screens (`public/assets/ui/apps.webp`, `keyboard
 The other five app icons are exact vector logos from simple-icons, tiled by `art/make_icons.mjs`. The Home and Connect screens are edits of real app screenshots with the device name and IP replaced by generic values; the Type screen shows an on-screen keyboard.
 The site says so in a footnote: app screens are illustrations.
 
+## Hosting, SEO and security
+- Set `SITE_URL=https://your.domain npm run build` to emit absolute canonical, Open Graph and sitemap URLs (without it the canonical link is simply omitted).
+- The build injects a strict Content-Security-Policy meta tag (no inline or third-party script, no external requests at all). `public/_headers` carries the same policy plus
+  HSTS, `nosniff`, `X-Frame-Options`, a locked-down Permissions-Policy and immutable caching for Netlify/Cloudflare Pages. Mirror it on any other host.
+- The download section shows the APK's SHA-256, computed at build time from the file in `public/assets`, so the page can never drift from the real file.
+- `public/.well-known/security.txt` points reports to the repo's private security advisories.
+- Audited: `npm audit` clean, no secrets in the current tree or the full git history, user input only ever reaches a canvas (never the DOM).
+- Lighthouse (production build, headless software WebGL): Accessibility 100, Best Practices 100, SEO 100 with `SITE_URL` set. Performance is limited by software rendering in CI; adaptive quality steps resolution, bloom and particles down on slow devices.
+- Accessibility: one persistent `h1` and a screen-reader outline of every chapter (the visual chapters are shown one at a time), skip link, live announcements of the current chapter, keyboard-operable controls, reduced-motion support.
+
 ## Notes
 - Download: replace `public/assets/ProjectorConnect-*.apk` and update the link and version in `index.html`.
 - The old (first) version of the site is backed up in `projector-redesign/website-backup-2026-11-25/`.

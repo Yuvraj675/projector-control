@@ -92,7 +92,7 @@ export class Wall {
     this.film.src = '/assets/film.webp';
 
     this.icons = {};
-    APPS.forEach(([, , k]) => { const i = new Image(); i.onload = () => manager?.itemEnd('icon-' + k); i.onerror = () => manager?.itemEnd('icon-' + k); manager?.itemStart('icon-' + k); i.src = `/assets/icons/${k}.png`; this.icons[k] = i; });
+    APPS.forEach(([, , k]) => { const i = new Image(); i.onload = () => manager?.itemEnd('icon-' + k); i.onerror = () => manager?.itemEnd('icon-' + k); manager?.itemStart('icon-' + k); i.src = `/assets/icons/${k}.webp`; this.icons[k] = i; });
 
     this.uniforms = {
       uTex: { value: this.tex },

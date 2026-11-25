@@ -73,6 +73,7 @@ export class Beam {
 /* ------------------------------------------------------------------ dust */
 export class Dust {
   constructor(count = 7000) {
+    this.count = count;
     const pos = new Float32Array(count * 3);
     const seed = new Float32Array(count * 4);
     for (let i = 0; i < count; i++) {

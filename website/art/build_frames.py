@@ -33,9 +33,14 @@ MIDS = {  # (a, b): midpoint id
 MIDS = {k: v for k, v in MIDS.items() if os.path.exists(os.path.join(ROOT, 'raw4', v + '.png'))}   # use whichever midpoints exist
 for mid in MIDS.values():
     P[mid] = f'raw4/{mid}'
+# hover-above-the-button poses (raw4): dpad-hover -> hv-x (slide in the air) -> pressed pose (press down)
+HOVERS = {'hv-right': 'right-1', 'hv-left': 'left-1', 'hv-up': 'up-1'}
+HOVERS = {k: v for k, v in HOVERS.items() if os.path.exists(os.path.join(ROOT, 'raw4', k + '.png'))}
+for hv in HOVERS:
+    P[hv] = f'raw4/{hv}'
 
 def with_mids(edges):
-    out = []
+    out = [e for hv, press in HOVERS.items() for e in (('dpad-hover', hv), (hv, press))]
     for a, b2 in edges:
         m = MIDS.get((a, b2))
         out += [(a, m), (m, b2)] if m else [(a, b2)]

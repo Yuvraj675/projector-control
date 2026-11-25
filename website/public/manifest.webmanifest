@@ -1,0 +1,13 @@
+{
+  "name": "ProjectorConnect",
+  "short_name": "ProjectorConnect",
+  "description": "Your Android phone as the remote for any Android projector or TV box.",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#050608",
+  "theme_color": "#050608",
+  "icons": [
+    { "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

@@ -255,6 +255,29 @@ export class Hand {
 
   setPose(id, fps) { this.rig.goTo(id, fps); }
 
+  /** play a pose path and resolve when the thumb has arrived (eased, so the end is a touch longer than frames / fps) */
+  play(id, fps = 12) {
+    this.rig.goTo(id, fps);
+    const frames = Math.max(0, this.rig.seq.length - 1);
+    return new Promise((r) => setTimeout(r, (frames / fps) * 1000 + 40));
+  }
+
+  hasPose(id) { return !!this.rig.def.frames[id]; }
+
+  /** where on the phone screen (uv, v from the TOP like the screen layouts) a ray lands, or null */
+  hitScreen(ray) {
+    const rig = this.rig;
+    const hits = ray.intersectObject(rig.mesh, false);
+    if (!hits.length || !hits[0].uv) return null;
+    const uv = hits[0].uv;
+    const A = rig.seq[Math.min(rig.seq.length - 1, Math.floor(rig.pos))];
+    const e = rig.mats[A].elements;
+    const w = e[2] * uv.x + e[5] * uv.y + e[8];
+    const su = (e[0] * uv.x + e[3] * uv.y + e[6]) / w, sv = (e[1] * uv.x + e[4] * uv.y + e[7]) / w;
+    if (su < 0 || su > 1 || sv < 0 || sv > 1) return null;
+    return { u: su, v: 1 - sv };
+  }
+
   setScreen(name, direction = 1) {
     if (name === this.screenName) return;
     const u = this.shared;

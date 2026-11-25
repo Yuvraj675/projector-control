@@ -15,3 +15,6 @@ __pycache__/
 *.jpeg
 !**/res/**/*.jpg
 dist/
+
+# website social-share image
+!website/public/assets/og.jpg

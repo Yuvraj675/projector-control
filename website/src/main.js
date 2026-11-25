@@ -6,6 +6,7 @@ import Lenis from 'lenis';
 import { animate, spring } from 'motion';
 import { Stage } from './stage.js';
 import { initNavGlass } from './glass.js';
+import kb from './keyboard-layout.json';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -148,6 +149,7 @@ function setChapter(i, from) {
   startDemo(i);
   if (i === 4) { resetKeystone(true); keystoneAutoRun(); }
 
+  $('#announce').textContent = `${NAMES[i]}, section ${i + 1} of 6`;
   $('#hud-i').textContent = i + 1;
   $('#hud-label').textContent = NAMES[i];
   $$('.nav a').forEach((a) => a.classList.toggle('on', +a.dataset.go === i));
@@ -158,17 +160,91 @@ function setChapter(i, from) {
   $('.footnote').classList.toggle('off', inSetup);
 }
 
-const DIR_POSE = { up: 'dpad-up', left: 'dpad-left', right: 'dpad-right', down: 'tap', ok: 'tap' };
+// D-pad: a deliberate click. The thumb floats over the button, presses down, holds for a beat, then lifts and comes back.
+// Presses are queued so quick clicks play one after another instead of flicking.
+const DIR_HOVER = { up: 'hv-up', left: 'hv-left', right: 'hv-right', down: 'lift', ok: 'lift' };
+const DIR_PRESS = { up: 'up-1', left: 'left-1', right: 'right-1', down: 'tap', ok: 'tap' };
+let padChain = Promise.resolve();
+let padPending = 0;
 function remoteKey(dir) {
-  stage.thumb(DIR_POSE[dir], { wall: dir, burst: 22 });
-  clearTimeout(remoteKey.t);
-  remoteKey.t = setTimeout(() => active === 1 && stage.hand.setPose('dpad-hover', 18), 650);
+  if (!stage || padPending >= 3) return;
+  padPending++;
+  stage.lastInput = performance.now();
+  padChain = padChain.then(() => padPress(dir)).catch(() => {}).finally(() => { padPending--; });
+}
+async function padPress(dir) {
+  if (active !== 1) return;
+  const hover = stage.hand.hasPose(DIR_HOVER[dir]) ? DIR_HOVER[dir] : null;
+  const press = DIR_PRESS[dir];
+  if (hover) await stage.hand.play(hover, 12);
+  if (active !== 1) return;
+  await stage.hand.play(press, 12);                       // the thumb reaches the glass: this is the click
+  const [x, y] = stage.tipOf(press);
+  stage.hand.tap(x, y);
+  stage.pulse = 1;
+  stage.signals.burst(stage.time, 22);
+  stage.wall.move(dir);
+  stage.lastInput = performance.now();
+  await wait(340);                                         // hold
+  if (active !== 1) return;
+  if (hover) await stage.hand.play(hover, 11);
+  await stage.hand.play('dpad-hover', 11);                // and return
 }
 const KEYS = ['key-low-left', 'key-mid', 'key-low-right', 'key-mid'];
 let keyI = 0;
 function typeKey(value) {
   stage.wall.setTyped(value);
   stage.thumb(KEYS[keyI++ % KEYS.length], { burst: 5, fps: 26 });
+}
+
+/** type a character by tapping a key on the phone: the thumb goes to that third of the keyboard, the glass ripples at the key */
+function typeAt(value, p) {
+  stage.wall.setTyped(value);
+  const pose = p.u < 0.4 ? 'key-low-left' : p.u > 0.62 ? 'key-low-right' : 'key-mid';
+  stage.hand.setPose(pose, 20);
+  stage.hand.tap(p.u, 1 - p.v);
+  stage.signals.burst(stage.time, 5);
+  stage.pulse = 1;
+  stage.lastInput = performance.now();
+}
+
+function openApp(i) {
+  stage.thumb(['swipe-mid', 'tap', 'swipe-end'][i % 3], { fps: 22, burst: 26 });
+  stage.wall.openApp(i);
+}
+
+/** a tap on the phone's own glass does what the matching on-page control does */
+const PAD = { up: [0.5, 0.408], down: [0.5, 0.609], left: [0.282, 0.508], right: [0.718, 0.508], ok: [0.5, 0.509] };
+const APP_GRID = { x: [0.198, 0.501, 0.805], y: [0.224, 0.356, 0.487] };
+function phoneTap(p) {
+  stage.lastInput = performance.now();
+  if (active === 1) {
+    let best = null, bd = 0.085;
+    for (const [dir, [u, v]] of Object.entries(PAD)) { const d = Math.hypot(p.u - u, (p.v - v) * 0.46); if (d < bd) { bd = d; best = dir; } }
+    if (best) remoteKey(best);
+  } else if (active === 2) {
+    const k = kb.keys.find((q) => Math.abs(p.u - q.u) <= q.w / 2 + 0.004 && Math.abs(p.v - q.v) <= q.h / 2 + 0.006);
+    const input = $('#try-input');
+    if (!k || !input) return;
+    let val = input.value;
+    if (k.k === 'BACKSPACE') val = val.slice(0, -1);
+    else if (k.k === 'ENTER') { stage.signals.burst(stage.time, 40); stage.hand.setPose('tap', 20); return; }
+    else if (val.length < 22) val += k.k === ' ' ? ' ' : /[A-Z]/.test(k.k) ? k.k.toLowerCase() : k.k;
+    input.value = val;
+    typeAt(val, p);
+  } else if (active === 3) {
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        const i = r * 3 + c;
+        if (i < 8 && Math.hypot(p.u - APP_GRID.x[c], (p.v - APP_GRID.y[r]) * 0.46) < 0.1) { openApp(i); return; }
+      }
+    }
+  } else if (active === 4 && stage.hand.rigName === 'landscape') {
+    if (Math.hypot(p.u - 0.5, (p.v - 0.86) * 2.1) < 0.09) ksBtn?.click();
+  } else {
+    stage.hand.tap(p.u, 1 - p.v);
+    stage.signals.burst(stage.time, 14);
+  }
 }
 
 function startDemo(i) {
@@ -181,7 +257,7 @@ function startDemo(i) {
     demoTimer = setInterval(() => { if (idle()) stage.hand.setPose(poses[n++ % 4], 14); }, 2400);
   } else if (i === 1) {
     const seq = ['right', 'right', 'down', 'left', 'up', 'ok'];
-    demoTimer = setInterval(() => { if (idle()) remoteKey(seq[n++ % seq.length]); }, 1500);
+    demoTimer = setInterval(() => { if (idle() && padPending === 0) remoteKey(seq[n++ % seq.length]); }, 3400);
   } else if (i === 2) {
     const word = 'interstellar';
     demoTimer = setInterval(() => {
@@ -273,16 +349,22 @@ function interactions() {
   const input = $('#try-input');
   input?.addEventListener('input', () => typeKey(input.value));
   input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { stage.signals.burst(stage.time, 40); stage.hand.setPose('tap', 20); } });
-  $$('[data-app]').forEach((b) => b.addEventListener('click', () => {
-    stage.thumb(['swipe-mid', 'tap', 'swipe-end'][+b.dataset.app % 3], { fps: 22, burst: 26 });
-    stage.wall.openApp(+b.dataset.app);
-  }));
-  // click anywhere on the scene to tap the phone
-  window.addEventListener('pointerdown', (e) => {
-    if (!stage || active === 4 || e.target.closest('a,button,summary,details,input,label,.setup-inner,.faq,.try')) return;
-    stage.lastInput = performance.now();
-    stage.hand.tap(0.3 + Math.random() * 0.4, 0.25 + Math.random() * 0.4);
-    stage.signals.burst(stage.time, 26);
+  $$('[data-app]').forEach((b) => b.addEventListener('click', () => openApp(+b.dataset.app)));
+  // tap the phone itself (mouse or finger). A drag is a scroll, not a tap.
+  let down = null;
+  window.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+  window.addEventListener('pointerup', (e) => {
+    if (!stage || !down) return;
+    const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y), dt = performance.now() - down.t;
+    down = null;
+    if (moved > 10 || dt > 600 || e.target.closest('a,button,summary,details,input,label,.setup-inner,.faq,.try,.ks-col,.ks-actions')) return;
+    const hit = stage.hitPhone(e.clientX, e.clientY);
+    if (hit) phoneTap(hit);
+    else if (e.pointerType === 'mouse' && active !== 4) {   // ambient: a click elsewhere just pings the glass
+      stage.lastInput = performance.now();
+      stage.hand.tap(0.3 + Math.random() * 0.4, 0.25 + Math.random() * 0.4);
+      stage.signals.burst(stage.time, 22);
+    }
   });
 }
 
