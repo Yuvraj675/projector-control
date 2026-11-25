@@ -563,10 +563,22 @@ function magnetic() {
   });
 }
 
+function startDownload() {
+  const src = document.querySelector('#setup a.btn[href]');
+  if (!src) return;
+  const d = document.createElement('a');
+  d.href = src.href; d.rel = 'noopener'; d.download = ''; d.hidden = true;
+  document.body.appendChild(d);
+  d.click();
+  d.remove();
+}
+
 function anchors() {
   $$('[data-go]').forEach((a) => a.addEventListener('click', (e) => {
     const i = +a.dataset.go;
     e.preventDefault();
+    // the header's "Get the app" also starts the download (same link as the big button), straight from the click so browsers allow it
+    if (a.classList.contains('get')) startDownload();
     const story = $('#story');
     const total = story.offsetHeight - vp.h;
     const y = i >= 5 ? $('#setup').getBoundingClientRect().top + window.scrollY : (i / 5) * total + story.offsetTop;
