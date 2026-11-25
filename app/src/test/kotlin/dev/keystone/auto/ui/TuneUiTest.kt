@@ -11,7 +11,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import dev.keystone.auto.TuneState
 import dev.keystone.auto.core.*
 import dev.keystone.auto.ui.screens.TuneContent
-import dev.keystone.auto.ui.theme.ProjectorConnectTheme
+import dev.keystone.auto.ui.theme.ProjectorControlTheme
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -33,7 +33,7 @@ class TuneUiTest {
         var cur by mutableStateOf(base)
         val view = TuneView(base)
         rule.setContent {
-            ProjectorConnectTheme(true) {
+            ProjectorControlTheme(true) {
                 TuneContent(TuneState.Ready(view, null), cur, onMove = { cur = it; onMoved(it) }, onRetry = {}, onBack = {}, initiallySelected = initiallySelected)
             }
         }
@@ -97,7 +97,7 @@ class TuneUiTest {
 
     @Test fun nothingMovesBeforeTheProjectorIsReady() {
         var moved = false
-        rule.setContent { ProjectorConnectTheme(true) { TuneContent(TuneState.Starting(), base, { moved = true }, {}, {}, initiallySelected = 2) } }
+        rule.setContent { ProjectorControlTheme(true) { TuneContent(TuneState.Starting(), base, { moved = true }, {}, {}, initiallySelected = 2) } }
         rule.waitForIdle()
         assertTrue(rule.onAllNodesWithContentDescription("Move right").fetchSemanticsNodes().isEmpty())
         assertFalse(moved)
@@ -112,7 +112,7 @@ class TuneUiTest {
         var state by mutableStateOf<TuneState>(TuneState.Starting())
         val view = TuneView(base)
         rule.setContent {
-            ProjectorConnectTheme(true) { TuneContent(state, cur, onMove = { cur = it }, onRetry = {}, onBack = {}) }
+            ProjectorControlTheme(true) { TuneContent(state, cur, onMove = { cur = it }, onRetry = {}, onBack = {}) }
         }
         rule.waitForIdle()
         return Live({ cur }, { state = TuneState.Ready(view, null); rule.waitForIdle() })

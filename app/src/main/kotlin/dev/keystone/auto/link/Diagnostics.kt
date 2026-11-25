@@ -15,7 +15,7 @@ data class DiagnosticsInput(
 object Diagnostics {
     /** Plain-text report. Contains no IP address or MAC: it is meant to be shared. */
     fun report(d: DiagnosticsInput): String = buildString {
-        appendLine("ProjectorConnect ${d.appVersion} on ${d.phone}")
+        appendLine("ProjectorControl ${d.appVersion} on ${d.phone}")
         appendLine("Projector: ${d.info.displayName}, Android ${d.info.androidRelease} (API ${d.info.sdk})")
         appendLine("Supported (Hisilicon TV API): ${if (d.info.supported) "yes" else "no - ${d.info.unsupportedReason}"}")
         appendLine("Link: ${d.link}, response time: ${d.pingMs?.let { "$it ms" } ?: "unknown"} (${rate(d.pingMs)})")

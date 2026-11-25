@@ -71,12 +71,12 @@ class ProjectorTools(private val sh: Shell) {
     }
 
     /**
-     * Copies a phone file (video, photo, music) to the projector's Download/ProjectorConnect folder and opens it in
+     * Copies a phone file (video, photo, music) to the projector's Download/ProjectorControl folder and opens it in
      * whatever player the projector has. Returns the path on the projector.
      */
     fun sendAndOpen(source: InstallSource, mime: String?, onStep: (String) -> Unit = {}): InstallResult {
         val name = safeFileName(source.name)
-        val dir = "/sdcard/Download/ProjectorConnect"
+        val dir = "/sdcard/Download/ProjectorControl"
         val remote = "$dir/$name"
         sh.run("mkdir -p ${dir.shellQuote()}")
         onStep("Sending $name…")
@@ -85,7 +85,7 @@ class ProjectorTools(private val sh: Shell) {
         val type = (mime?.takeIf { it.contains('/') && !it.endsWith("/*") } ?: mimeFor(name))
         val r = sh.run("am start -a android.intent.action.VIEW -d ${("file://$remote").shellQuote()} -t ${type.shellQuote()} 2>&1")
         val failed = r.out.contains("Error", true) || r.out.contains("unable to resolve", true) || r.out.contains("Exception", true)
-        return if (failed) InstallResult(false, "Sent, but the projector has no app that opens $type. It is in Download/ProjectorConnect.")
+        return if (failed) InstallResult(false, "Sent, but the projector has no app that opens $type. It is in Download/ProjectorControl.")
         else InstallResult(true, "Playing on the projector.")
     }
 

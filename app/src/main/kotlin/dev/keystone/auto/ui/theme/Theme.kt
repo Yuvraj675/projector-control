@@ -86,7 +86,7 @@ private val AppShapes = Shapes(
 )
 
 @Composable
-fun ProjectorConnectTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+fun ProjectorControlTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     CompositionLocalProvider(LocalAppColors provides (if (dark) DarkApp else LightApp)) {
         MaterialTheme(
             colorScheme = if (dark) DarkScheme else LightScheme,

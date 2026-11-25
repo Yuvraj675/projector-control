@@ -4,7 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 
 // Build-time details so the page can never drift from the real APK, plus the production Content-Security-Policy.
-const SITE_URL = (process.env.SITE_URL || '').replace(/\/$/, '');   // e.g. https://projectorconnect.example (optional)
+const SITE_URL = (process.env.SITE_URL || '').replace(/\/$/, '');   // e.g. https://projectorcontrol.example (optional)
 const REPO = 'https://github.com/Yuvraj675/projector-control';
 
 // website/release.json is written by the release workflow (.github/workflows/release.yml) every time a release is published, so the
@@ -33,7 +33,7 @@ const CSP = [
 
 export default defineConfig(({ command }) => ({
   plugins: [{
-    name: 'projectorconnect-html',
+    name: 'projectorcontrol-html',
     transformIndexHtml(html) {
       const a = apkInfo();
       let out = html

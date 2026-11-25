@@ -991,7 +991,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 val version = runCatching { app.packageManager.getPackageInfo(app.packageName, 0).versionName }.getOrNull() ?: "?"
                 val text = Diagnostics.report(DiagnosticsInput(c.info, st, ping, temp, auto, link.value, version, "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"))
                 val cm = app.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                cm.setPrimaryClip(android.content.ClipData.newPlainText("ProjectorConnect report", text))
+                cm.setPrimaryClip(android.content.ClipData.newPlainText("ProjectorControl report", text))
                 toast.value = "Report copied. Paste it wherever you need it."
             } catch (e: Exception) { fail("Couldn't build the report", e) }
         }

@@ -1,6 +1,6 @@
 <div align="center">
 
-# ProjectorConnect
+# ProjectorControl
 
 **Your phone as the remote for any Android projector or TV box, over Wi-Fi, with no computer. Mouse, keyboard, apps, APK installs, file sending, and camera-based Auto keystone for Hisilicon projectors.**
 
@@ -31,7 +31,7 @@
 
 ---
 
-Cheap Android projectors ship with a clumsy remote (or none), hidden settings, and an "auto keystone" that does nothing. ProjectorConnect turns your phone into the missing remote and control panel. It talks to the projector over **ADB on your Wi-Fi**, so nothing needs to be installed on the projector and no computer is involved.
+Cheap Android projectors ship with a clumsy remote (or none), hidden settings, and an "auto keystone" that does nothing. ProjectorControl turns your phone into the missing remote and control panel. It talks to the projector over **ADB on your Wi-Fi**, so nothing needs to be installed on the projector and no computer is involved.
 
 > **Independent project.** Not affiliated with any projector maker. It works with the projector's standard Android debugging interface. Names of projectors, firmwares and apps are used only to describe compatibility.
 
@@ -56,7 +56,7 @@ The project site lives in [`website/`](website): an immersive hand-and-phone sce
 ## Quick start
 
 1. **Turn on network debugging on the projector** ([guide below](#set-up-your-projector)).
-2. **Install ProjectorConnect on your Android phone** (Android 8.0+). Download the latest `ProjectorConnect.apk` from the [Releases page](https://github.com/Yuvraj675/projector-control/releases/latest), open it, and allow *install unknown apps* if asked. Or [build it yourself](#build-from-source).
+2. **Install ProjectorControl on your Android phone** (Android 8.0+). Download the latest `ProjectorControl.apk` from the [Releases page](https://github.com/Yuvraj675/projector-control/releases/latest), open it, and allow *install unknown apps* if asked. Or [build it yourself](#build-from-source).
 3. Put the phone and projector on the **same Wi-Fi**.
 4. Open the app and tap **Find my projector**. When the projector asks *Allow debugging?*, choose **Always allow**.
 
@@ -64,7 +64,7 @@ That's it. Next time it reconnects by itself.
 
 ## Set up your projector
 
-ProjectorConnect needs one thing from the projector: **ADB debugging over the network**. How you turn it on depends on whether the projector lets you reach Android's Settings.
+ProjectorControl needs one thing from the projector: **ADB debugging over the network**. How you turn it on depends on whether the projector lets you reach Android's Settings.
 
 ### Option A: the Android Settings are available
 
@@ -98,7 +98,7 @@ adb connect <projector-ip>:5555        # works if the port is already open
 adb tcpip 5555
 ```
 
-The projector's IP address is shown in its Wi-Fi settings. You can type it into ProjectorConnect with **Enter IP address**.
+The projector's IP address is shown in its Wi-Fi settings. You can type it into ProjectorControl with **Enter IP address**.
 
 > **Good to know.** ADB over the network has no password on most projector firmwares. Anyone on your Wi-Fi can connect, so use it on a network you trust and switch network debugging off if you don't need it.
 
@@ -110,8 +110,8 @@ The projector's IP address is shown in its Wi-Fi settings. You can type it into 
 | Point instead of swipe | **Remote → Air**. Hold the big button, aim, tap to click |
 | Move around menus | **Remote → D-pad** |
 | Type a search or password | **Type & speak**. Turn off *Type as I go* to compose first and send once |
-| Open a link on the big screen | Share it to ProjectorConnect from any app, or paste it in **Type & speak** |
-| Play a video from my phone | Home → Send file, or share the video to ProjectorConnect |
+| Open a link on the big screen | Share it to ProjectorControl from any app, or paste it in **Type & speak** |
+| Play a video from my phone | Home → Send file, or share the video to ProjectorControl |
 | Use the projector like a touch screen | Home → Projector screen |
 | Install an app | Home → **Install app** and pick the APK. 32-bit projectors need *armeabi-v7a* builds |
 | Launch YouTube in one tap | **Apps**, press and hold YouTube, **Pin to Home** |
@@ -122,7 +122,7 @@ The projector's IP address is shown in its Wi-Fi settings. You can type it into 
 
 ## Auto keystone
 
-The picture on a tilted projector is a trapezium. These projectors advertise *auto keystone* but have no camera or tilt sensor, so "Auto" only resets the shape. ProjectorConnect uses your **phone's camera, gravity sensor and calibrated lens** instead, and applies the result through the projector's own four-corner keystone engine.
+The picture on a tilted projector is a trapezium. These projectors advertise *auto keystone* but have no camera or tilt sensor, so "Auto" only resets the shape. ProjectorControl uses your **phone's camera, gravity sensor and calibrated lens** instead, and applies the result through the projector's own four-corner keystone engine.
 
 **Works on:** projectors with the Hisilicon TV API (`HitvShare.jar`, `HitvManager.jar`, `hitvservice`), for example Newlink / Zhiying firmware on a Hi3751 board (the "HY300" style units). The app checks and tells you if yours is not one.
 

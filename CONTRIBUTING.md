@@ -1,4 +1,4 @@
-# Contributing to ProjectorConnect
+# Contributing to ProjectorControl
 
 Thanks for helping. Bug reports, field reports from other projector models, fixes and features are all welcome.
 
@@ -48,8 +48,8 @@ Releases are published by a manually triggered GitHub Action, `.github/workflows
 
 1. Raise `versionCode` and `versionName` in `app/build.gradle` and push to the default branch.
 2. GitHub, **Actions, Release, Run workflow**. Optional release notes; otherwise they are generated from the commits.
-3. The workflow runs the unit tests, builds and signs the APK and creates the release `v<versionName>` with `ProjectorConnect-<version>.apk`, `ProjectorConnect.apk`
-   (fixed name, so `releases/latest/download/ProjectorConnect.apk` always points at the newest build) and `SHA256SUMS.txt`. It then commits `website/release.json`
+3. The workflow runs the unit tests, builds and signs the APK and creates the release `v<versionName>` with `ProjectorControl-<version>.apk`, `ProjectorControl.apk`
+   (fixed name, so `releases/latest/download/ProjectorControl.apk` always points at the newest build) and `SHA256SUMS.txt`. It then commits `website/release.json`
    (version, size, SHA-256) so the website links and describes the new build. Rebuild and redeploy the site afterwards.
 
 The workflow needs four repository secrets: `KEYSTORE_BASE64` (the release keystore, base64), `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`.

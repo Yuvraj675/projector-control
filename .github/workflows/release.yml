@@ -87,23 +87,23 @@ jobs:
         run: |
           src=$(ls app/build/outputs/apk/release/*.apk | head -n1)
           mkdir -p out
-          cp "$src" "out/ProjectorConnect-${{ steps.ver.outputs.version }}.apk"
-          cp "$src" out/ProjectorConnect.apk      # fixed name, so releases/latest/download/ProjectorConnect.apk always works
-          (cd out && sha256sum ProjectorConnect-*.apk ProjectorConnect.apk > SHA256SUMS.txt)
-          echo "sha=$(sha256sum out/ProjectorConnect.apk | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
-          echo "bytes=$(stat -c%s out/ProjectorConnect.apk)" >> "$GITHUB_OUTPUT"
+          cp "$src" "out/ProjectorControl-${{ steps.ver.outputs.version }}.apk"
+          cp "$src" out/ProjectorControl.apk      # fixed name, so releases/latest/download/ProjectorControl.apk always works
+          (cd out && sha256sum ProjectorControl-*.apk ProjectorControl.apk > SHA256SUMS.txt)
+          echo "sha=$(sha256sum out/ProjectorControl.apk | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          echo "bytes=$(stat -c%s out/ProjectorControl.apk)" >> "$GITHUB_OUTPUT"
           apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n1)
-          "$apksigner" verify --print-certs out/ProjectorConnect.apk | tee "$RUNNER_TEMP/certs.txt"
+          "$apksigner" verify --print-certs out/ProjectorControl.apk | tee "$RUNNER_TEMP/certs.txt"
 
       - name: Publish the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
           NOTES: ${{ inputs.notes }}
         run: |
-          args=(--target "$GITHUB_SHA" --title "ProjectorConnect ${{ steps.ver.outputs.version }}")
+          args=(--target "$GITHUB_SHA" --title "ProjectorControl ${{ steps.ver.outputs.version }}")
           [ "${{ inputs.prerelease }}" = "true" ] && args+=(--prerelease)
           if [ -n "$NOTES" ]; then args+=(--notes "$NOTES"); else args+=(--generate-notes); fi
-          gh release create "${{ steps.ver.outputs.tag }}" out/ProjectorConnect-${{ steps.ver.outputs.version }}.apk out/ProjectorConnect.apk out/SHA256SUMS.txt "${args[@]}"
+          gh release create "${{ steps.ver.outputs.tag }}" out/ProjectorControl-${{ steps.ver.outputs.version }}.apk out/ProjectorControl.apk out/SHA256SUMS.txt "${args[@]}"
           {
             echo "### Released ${{ steps.ver.outputs.tag }}"
             echo "SHA-256 \`${{ steps.apk.outputs.sha }}\`"
@@ -117,8 +117,8 @@ jobs:
           cat > website/release.json <<JSON
           {
             "version": "${{ steps.ver.outputs.version }}",
-            "file": "ProjectorConnect.apk",
-            "url": "https://github.com/${{ github.repository }}/releases/latest/download/ProjectorConnect.apk",
+            "file": "ProjectorControl.apk",
+            "url": "https://github.com/${{ github.repository }}/releases/latest/download/ProjectorControl.apk",
             "sha256": "${{ steps.apk.outputs.sha }}",
             "bytes": ${{ steps.apk.outputs.bytes }},
             "date": "$(date -u +%F)"

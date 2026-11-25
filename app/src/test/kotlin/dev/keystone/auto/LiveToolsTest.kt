@@ -30,7 +30,7 @@ class LiveToolsTest {
     @Test
     fun virtualMouseAndKeyboardAppearAndDisappear() {
         AdbConnection.connect(host()).use { c ->
-            fun devices() = c.run("dumpsys input | grep -E '^  Device [0-9]+: ProjectorConnect' | wc -l").out.trim().toIntOrNull() ?: -1
+            fun devices() = c.run("dumpsys input | grep -E '^  Device [0-9]+: ProjectorControl' | wc -l").out.trim().toIntOrNull() ?: -1
             assertEquals("a stale virtual device is already there", 0, devices())
             RemoteInput(c).use { r ->
                 val t0 = System.currentTimeMillis()
@@ -65,7 +65,7 @@ class LiveMirrorTest {
             assertTrue(units.isNotEmpty())
             assertTrue("the first unit must be a key frame with SPS/PPS", units.first().second)
 
-            fun touchDevices() = c.run("dumpsys input | grep -E '^  Device [0-9]+: ProjectorConnect Touch' | wc -l").out.trim().toIntOrNull() ?: -1
+            fun touchDevices() = c.run("dumpsys input | grep -E '^  Device [0-9]+: ProjectorControl Touch' | wc -l").out.trim().toIntOrNull() ?: -1
             assertEquals(0, touchDevices())
             TouchInput(c).use { t -> t.start(); assertTrue(t.isOpen); assertEquals(1, touchDevices()) }
             Thread.sleep(1500)

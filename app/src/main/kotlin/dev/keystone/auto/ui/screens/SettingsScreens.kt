@@ -116,7 +116,7 @@ fun SettingsScreen(vm: AppViewModel) {
             Text("Activity log", Modifier.fillMaxWidth().clickable { vm.go(Screen.Log) }.padding(vertical = 8.dp), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
         }
         Spacer(Modifier.height(20.dp))
-        Hint("ProjectorConnect $version. Photos are analysed on your phone and are not uploaded or kept.", center = true)
+        Hint("ProjectorControl $version. Photos are analysed on your phone and are not uploaded or kept.", center = true)
     }
 
     if (confirmReset) {

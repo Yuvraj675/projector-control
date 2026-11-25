@@ -13,7 +13,7 @@ import dev.keystone.auto.data.HistoryEntry
 import dev.keystone.auto.link.ProjectorInfo
 import dev.keystone.auto.platform.AppLog
 import dev.keystone.auto.ui.screens.*
-import dev.keystone.auto.ui.theme.ProjectorConnectTheme
+import dev.keystone.auto.ui.theme.ProjectorControlTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,7 +35,7 @@ class UiSnapshotTest {
     private fun vm() = AppViewModel(ApplicationProvider.getApplicationContext<Application>())
 
     private fun snap(name: String, dark: Boolean = true, content: @Composable () -> Unit) {
-        rule.setContent { ProjectorConnectTheme(dark) { content() } }
+        rule.setContent { ProjectorControlTheme(dark) { content() } }
         rule.waitForIdle()
         rule.mainClock.advanceTimeBy(1500)
         rule.waitForIdle()
@@ -164,7 +164,7 @@ class UiSnapshotTest {
         snap("16_log") { LogScreen(vm()) }
     }
 
-    // ---- ProjectorConnect: home, remote, keyboard, apps, install, projector --------------------------------------
+    // ---- ProjectorControl: home, remote, keyboard, apps, install, projector --------------------------------------
     private fun connectedVm(): AppViewModel = vm().also { it.connect.value = ConnectState.Connected(info, ks) }
 
     @Test fun home() = snap("20_home") { HomeScreen(connectedVm()) }

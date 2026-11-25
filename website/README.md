@@ -1,4 +1,4 @@
-# ProjectorConnect website
+# ProjectorControl website
 
 An immersive one-page site for the app. A photographed hand holds a phone whose screen is the real app; scrolling moves a
 Three.js camera through the chapters (Remote, Type, Apps, Auto keystone, Set up) while the phone drives a projected "Android TV" on a

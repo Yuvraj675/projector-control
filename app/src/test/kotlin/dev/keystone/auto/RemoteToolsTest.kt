@@ -193,9 +193,9 @@ class RemoteToolsTest {
         val src = object : InstallSource { override val name = "My Film.mp4"; override fun open() = ByteArrayInputStream(ByteArray(10)) }
         val r = ProjectorTools(sh).sendAndOpen(src, "video/*")
         assertTrue(r.ok)
-        assertEquals(setOf("/sdcard/Download/ProjectorConnect/My Film.mp4"), sh.pushed.keys)
+        assertEquals(setOf("/sdcard/Download/ProjectorControl/My Film.mp4"), sh.pushed.keys)
         val open = sh.commands.last()
-        assertTrue(open.contains("-t 'video/mp4'") && open.contains("file:///sdcard/Download/ProjectorConnect/My Film.mp4"))
+        assertTrue(open.contains("-t 'video/mp4'") && open.contains("file:///sdcard/Download/ProjectorControl/My Film.mp4"))
     }
 
     @Test

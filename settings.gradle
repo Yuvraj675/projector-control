@@ -12,6 +12,6 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "ProjectorConnect"
+rootProject.name = "ProjectorControl"
 include ':app'
 include ':pattern'

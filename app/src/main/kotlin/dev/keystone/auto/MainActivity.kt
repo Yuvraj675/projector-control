@@ -13,7 +13,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import dev.keystone.auto.link.RemoteKey
 import dev.keystone.auto.ui.AppRoot
-import dev.keystone.auto.ui.theme.ProjectorConnectTheme
+import dev.keystone.auto.ui.theme.ProjectorControlTheme
 
 class MainActivity : ComponentActivity() {
     private val vm: AppViewModel by viewModels()
@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
             SideEffect {
                 WindowCompat.getInsetsController(window, view).apply { isAppearanceLightStatusBars = !dark; isAppearanceLightNavigationBars = !dark }
             }
-            ProjectorConnectTheme(dark) { AppRoot(vm, finish = { finish() }) }
+            ProjectorControlTheme(dark) { AppRoot(vm, finish = { finish() }) }
         }
     }
 

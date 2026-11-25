@@ -18,7 +18,7 @@ object AppLog {
     fun e(msg: String, t: Throwable? = null) = add("E", msg + (t?.let { " (${it.javaClass.simpleName}: ${it.message})" } ?: ""))
 
     private fun add(level: String, msg: String) {
-        try { Log.println(if (level == "E") Log.ERROR else Log.DEBUG, "ProjectorConnect", msg) } catch (_: Throwable) { }
+        try { Log.println(if (level == "E") Log.ERROR else Log.DEBUG, "ProjectorControl", msg) } catch (_: Throwable) { }
         _lines.value = (_lines.value + "${fmt.format(Date())} $level $msg").takeLast(300)
     }
 

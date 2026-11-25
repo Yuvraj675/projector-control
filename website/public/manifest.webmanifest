@@ -1,6 +1,6 @@
 {
-  "name": "ProjectorConnect",
-  "short_name": "ProjectorConnect",
+  "name": "ProjectorControl",
+  "short_name": "ProjectorControl",
   "description": "Your Android phone as the remote for any Android projector or TV box.",
   "start_url": "/",
   "display": "browser",

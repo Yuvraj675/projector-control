@@ -76,15 +76,15 @@ object InputProtocol {
     val KEYBOARD_KEYS: List<Int> = (1..248).toList() + listOf(352, 353, 358, 362, 402, 403, 580)
 
     fun registerMouse(): String =
-        """{"id":$MOUSE_ID,"command":"register","name":"ProjectorConnect Mouse","vid":6353,"pid":11330,"bus":"usb","configuration":[""" +
+        """{"id":$MOUSE_ID,"command":"register","name":"ProjectorControl Mouse","vid":6353,"pid":11330,"bus":"usb","configuration":[""" +
             """{"type":100,"data":[1,2]},{"type":101,"data":[272,273,274]},{"type":102,"data":[0,1,6,8]}],"ff_effects_max":0}"""
 
     fun registerKeyboard(): String =
-        """{"id":$KEYBOARD_ID,"command":"register","name":"ProjectorConnect Keyboard","vid":6353,"pid":11331,"bus":"usb","configuration":[""" +
+        """{"id":$KEYBOARD_ID,"command":"register","name":"ProjectorControl Keyboard","vid":6353,"pid":11331,"bus":"usb","configuration":[""" +
             """{"type":100,"data":[1]},{"type":101,"data":[${KEYBOARD_KEYS.joinToString(",")}]}],"ff_effects_max":0}"""
 
     const val TOUCH_ID = 3
-    const val TOUCH_NAME = "ProjectorConnect Touch"
+    const val TOUCH_NAME = "ProjectorControl Touch"
     const val TOUCH_SLOTS = 2
 
     /** A virtual multi-touch screen (protocol B) the size of the projector's 1280x720 framebuffer. */
@@ -211,7 +211,7 @@ class RemoteInput(private val sh: Shell, private val registerTimeoutMs: Long = R
         // The projector's JVM is slow to start: wait until Android lists the keyboard (the second device registered).
         val deadline = System.currentTimeMillis() + registerTimeoutMs
         while (System.currentTimeMillis() < deadline) {
-            val seen = try { sh.run("dumpsys input | grep -c 'ProjectorConnect Keyboard'").out.trim().toIntOrNull() ?: 0 } catch (_: Exception) { 0 }
+            val seen = try { sh.run("dumpsys input | grep -c 'ProjectorControl Keyboard'").out.trim().toIntOrNull() ?: 0 } catch (_: Exception) { 0 }
             if (seen > 0) break
             Thread.sleep(300)
         }

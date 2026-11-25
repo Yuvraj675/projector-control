@@ -44,7 +44,7 @@ class MirrorTest {
     @Test
     fun touchScreenRegistrationDeclaresMultiTouchAndDirectProperty() {
         val r = InputProtocol.registerTouch()
-        assertTrue(r.contains("\"name\":\"ProjectorConnect Touch\""))
+        assertTrue(r.contains("\"name\":\"ProjectorControl Touch\""))
         assertTrue(r.contains("{\"type\":110,\"data\":[1]}"))                    // INPUT_PROP_DIRECT: a touch screen, not a pad
         assertTrue(r.contains("\"code\":53,\"info\":{\"value\":0,\"minimum\":0,\"maximum\":1279"))
         assertTrue(r.contains("\"code\":54,\"info\":{\"value\":0,\"minimum\":0,\"maximum\":719"))
